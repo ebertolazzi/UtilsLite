@@ -1,0 +1,107 @@
+require "rake"
+require "fileutils"
+
+if File.exist?(File.expand_path('../../cmake_utils/Rakefile_common.rb', File.dirname(__FILE__))) then
+  require_relative "../../cmake_utils/Rakefile_common.rb"
+else
+  require_relative "../../../Rakefile_common.rb"
+end
+
+task :default => [:install_osx]
+
+VER='1.1.2'
+
+desc "download autodiff sources"
+task :download do
+  filename = "v#{VER}.tar.gz"
+  url_download( "https://github.com/autodiff/autodiff/archive/refs/tags/#{filename}", filename )
+end
+
+desc "untar autodiff file"
+task :targz => [:download] do
+  tar_gz_archive = "v#{VER}.tar.gz"
+  if File.directory?('autodiff')
+    puts "directory: `autodiff` present, nothing to do".bold.green
+  else
+    extract_tgz( tar_gz_archive )
+    FileUtils.rm_rf 'autodiff'
+    FileUtils.mv    "autodiff-#{VER}", 'autodiff'
+  end
+end
+
+desc "build AUTODIFF"
+task :build => [:targz] do
+  FileUtils.cd 'autodiff'
+    FileUtils.rm_rf '.build'
+    FileUtils.mkdir '.build'
+    FileUtils.cd '.build'
+      sh "cmake -G Ninja .. -DAUTODIFF_BUILD_TESTS=OFF -DAUTODIFF_BUILD_PYTHON=OFF -DCMAKE_INSTALL_PREFIX=../../lib"
+      sh "cmake --build . --target install "+PARALLEL+QUIET
+    FileUtils.cd '..'
+  FileUtils.cd '..'
+end
+
+desc "install AUTODIFF for OSX"
+task :build_osx => [:build] do end
+
+desc "install AUTODIFF for LINUX"
+task :build_linux => [:build] do end
+
+desc "install AUTODIFF for MINGW"
+task :build_mingw => [:build] do end
+
+desc "install AUTODIFF for WINDOWS"
+task :build_win => [:build] do end
+
+task :install => [:build] do
+  hdrdir = Dir.pwd+"/../../src/Utils/3rd"
+  FileUtils.cd 'autodiff/.build'
+    sh "cmake --build . --target install "+PARALLEL+QUIET
+  FileUtils.cd '../..'
+  Dir.glob("lib/include/autodiff/*/*").each do |file|
+    next unless File.file?(file)
+  
+    content = File.read(file)
+    new_content = content.gsub(/\#include \<autodiff\/(.*)\>/, '#include "../\1"')
+                         .gsub(/\#include \<Eigen\/(.*)\>/, '#include "../../../Eigen/\1"')
+  
+    if content != new_content
+      File.write(file, new_content)
+      puts "Updated: #{file}"
+    end
+  end 
+  Dir.glob("lib/include/autodiff/*/*/*").each do |file|
+    next unless File.file?(file)
+  
+    content = File.read(file)
+    new_content = content.gsub(/\#include \<autodiff\/(.*)\>/, '#include "../../\1"')
+                         .gsub(/\#include \<Eigen\/(.*)\>/, '#include "../../../Eigen/\1"')
+  
+    if content != new_content
+      File.write(file, new_content)
+      puts "Updated: #{file}"
+    end
+  end 
+  FileUtils.cp_r "lib/include/autodiff", hdrdir
+end
+
+desc "install AUTODIFF for OSX"
+task :install_osx do Rake::Task[:install].invoke("os_mac","_osx"); end
+
+desc "install AUTODIFF for LINUX"
+task :install_linux do Rake::Task[:install].invoke("os_linux","_linux"); end
+
+desc "install AUTODIFF for MINGW"
+task :install_mingw do Rake::Task[:install].invoke("os_mingw","_mingw"); end
+
+desc "install AUTODIFF for WINDOWS"
+task :install_mingw do Rake::Task[:install].invoke("os_win","_win"); end
+
+task :clean do
+  FileUtils.rm_rf 'autodiff'
+end
+
+task :clean_osx   => [:clean] do end
+task :clean_linux => [:clean] do end
+task :clean_mingw => [:clean] do end
+task :clean_win   => [:clean] do end

@@ -25,6 +25,7 @@ task :install_common do
   FileUtils.cp_r "eigen-#{VER}/Eigen", '../../src/Utils/3rd'
 end
 
+task :install       => :install_common do end
 task :install_osx   => :install_common do end
 task :install_linux => :install_common do end
 task :install_mingw => :install_common do end
