@@ -40,8 +40,10 @@ namespace Utils
         ( m_dynamic_block ? Eigen::Dynamic : BlockSize ),
         ( m_dynamic_block ? Eigen::Dynamic : BlockSize )>>::type;
 
-    using VecB = typename std::
-      conditional<m_scalar_case, Scalar, Eigen::Matrix<Scalar, ( m_dynamic_block ? Eigen::Dynamic : BlockSize ), 1>>::type;
+    using VecB = typename std::conditional<
+      m_scalar_case,
+      Scalar,
+      Eigen::Matrix<Scalar, ( m_dynamic_block ? Eigen::Dynamic : BlockSize ), 1>>::type;
 
     using MatB    = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
     using integer = Eigen::Index;
