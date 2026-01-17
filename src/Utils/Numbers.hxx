@@ -313,7 +313,7 @@ namespace Utils
       if ( is_infinite( pv[i] ) )
       {
         UTILS_ERROR(
-          fmt::runtime("{:─{}}\n({}):{}) found Infinity at {}[{}]\n{:─{}}\n"),
+          fmt::runtime( "{:─{}}\n({}):{}) found Infinity at {}[{}]\n{:─{}}\n" ),
           78,
           "",
           std::filesystem::path( file ).parent_path().string(),
@@ -326,7 +326,7 @@ namespace Utils
       if ( is_NaN( pv[i] ) )
       {
         UTILS_ERROR(
-          fmt::runtime("{:─{}}\n({}):{}) found NaN at {}[{}]\n{:─{}}\n"),
+          fmt::runtime( "{:─{}}\n({}):{}) found NaN at {}[{}]\n{:─{}}\n" ),
           78,
           "",
           std::filesystem::path( file ).parent_path().string(),
@@ -351,7 +351,7 @@ namespace Utils
       if ( is_infinite( pv[i] ) )
       {
         UTILS_ERROR(
-          fmt::runtime("{:─{}}\n({}):{}) found Infinity at {}[{}]\n{:─{}}\n"),
+          fmt::runtime( "{:─{}}\n({}):{}) found Infinity at {}[{}]\n{:─{}}\n" ),
           78,
           "",
           std::filesystem::path( file ).parent_path().string(),
@@ -364,7 +364,7 @@ namespace Utils
       if ( is_NaN( pv[i] ) )
       {
         UTILS_ERROR(
-          fmt::runtime("{:─{}}\n({}):{}) found NaN at {}[{}]\n{:─{}}\n"),
+          fmt::runtime( "{:─{}}\n({}):{}) found NaN at {}[{}]\n{:─{}}\n" ),
           78,
           "",
           std::filesystem::path( file ).parent_path().string(),

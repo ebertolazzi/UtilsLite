@@ -329,7 +329,7 @@ void test_utf8_core_functions( TestRunner & runner )
     []()
     {
       std::string test = "Aα€𝄞";  // A (U+0041), α (U+03B1), € (U+20AC), 𝄞 (U+1D11E)
-      size_t      pos  = 0;
+      int         pos  = 0;
 
       int cp1 = Utils::utf8_next( test, pos );
       assert( cp1 == 0x41 );  // 'A'
@@ -361,7 +361,7 @@ void test_utf8_core_functions( TestRunner & runner )
     []()
     {
       std::string invalid = "\xC3";  // Start byte without continuation
-      size_t      pos     = 0;
+      int         pos     = 0;
 
       int cp = Utils::utf8_next( invalid, pos );
       assert( cp == -1 );  // Should return -1 for error

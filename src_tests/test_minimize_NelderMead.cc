@@ -29,17 +29,17 @@
 #include "Utils_minimize_NelderMead_BlockCoordinate.hh"
 #include "ND_func.cxx"
 
-#if defined(__clang__)
+#if defined( __clang__ )
 #pragma clang diagnostic ignored "-Wunused-variable"
 #pragma clang diagnostic ignored "-Wunused-parameter"
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic ignored "-Wunused-macros"
-#elif defined(__llvm__) || defined(__GNUC__)
+#elif defined( __llvm__ ) || defined( __GNUC__ )
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #pragma GCC diagnostic ignored "-Wunused-macros"
-#elif defined(_MSC_VER)
+#elif defined( _MSC_VER )
 #pragma warning( disable : 4100 )
 #pragma warning( disable : 4101 )
 #pragma warning( disable : 4189 )
