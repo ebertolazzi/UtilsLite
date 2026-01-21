@@ -224,6 +224,134 @@ template <typename Scalar> TestResult test_scalar_non_cyclic( Eigen::Index n, Ei
 }
 
 // ===========================================================================
+// Test 1b: Scalar Tridiagonal Inplace - Non Cyclic
+// ===========================================================================
+
+template <typename Scalar> TestResult test_scalar_non_cyclic_inplace( Eigen::Index n, Eigen::Index n_rhs = 1 )
+{
+  TestResult result;
+  result.method        = "Inplace";
+  result.type          = "Scalar";
+  result.configuration = fmt::format( "n={}, rhs={}", n, n_rhs );
+
+  using Solver = TridiagonalSolver<Scalar>;
+  using VecS   = typename Solver::VecS;
+
+  TicToc tm;
+  tm.tic();
+
+  try
+  {
+    // Generate random tridiagonal system
+    VecS a = random_vector<Scalar>( n - 1, 0.1, 1.0 );
+    VecS b = random_vector<Scalar>( n, 2.0, 5.0 );
+    VecS c = random_vector<Scalar>( n - 1, 0.1, 1.0 );
+
+    // Create solver and factorize
+    Solver solver( n );
+    solver.factorize( a, b, c );
+
+    double max_error = 0.0;
+
+    // Test with multiple RHS
+    for ( Eigen::Index rhs_idx = 0; rhs_idx < n_rhs; ++rhs_idx )
+    {
+      // Generate RHS and make a copy for inplace solve
+      VecS rhs1 = random_vector<Scalar>( n, -1.0, 1.0 );
+      VecS rhs2 = rhs1;  // Copy for inplace solve
+
+      // Solve with regular method
+      VecS x1( n );
+      solver.solve( a, b, rhs1, x1 );
+
+      // Solve with inplace method
+      solver.solve_inplace( a, b, rhs2 );
+
+      // Compare solutions
+      double error = vector_norm( x1 - rhs2 );
+      max_error    = std::max( max_error, error );
+    }
+
+    result.error  = max_error;
+    result.passed = result.error < 1e-10;
+  }
+  catch ( const std::exception & e )
+  {
+    fmt::print( fg( fmt::color::red ), "Error in scalar non-cyclic inplace test n={}: {}\n", n, e.what() );
+    result.error  = 1.0;
+    result.passed = false;
+  }
+
+  tm.toc();
+  result.time_mus = tm.elapsed_mus();
+
+  return result;
+}
+
+// ===========================================================================
+// Test 1c: Scalar Tridiagonal Batch Inplace - Non Cyclic
+// ===========================================================================
+
+template <typename Scalar> TestResult test_scalar_non_cyclic_batch_inplace( Eigen::Index n, Eigen::Index n_rhs = 1 )
+{
+  TestResult result;
+  result.method        = "BatchInplace";
+  result.type          = "Scalar";
+  result.configuration = fmt::format( "n={}, rhs={}", n, n_rhs );
+
+  using Solver = TridiagonalSolver<Scalar>;
+  using VecS   = typename Solver::VecS;
+  using MatB   = typename Solver::MatB;
+
+  TicToc tm;
+  tm.tic();
+
+  try
+  {
+    // Generate random tridiagonal system
+    VecS a = random_vector<Scalar>( n - 1, 0.1, 1.0 );
+    VecS b = random_vector<Scalar>( n, 2.0, 5.0 );
+    VecS c = random_vector<Scalar>( n - 1, 0.1, 1.0 );
+
+    // Create solver and factorize
+    Solver solver( n );
+    solver.factorize( a, b, c );
+
+    // Generate random RHS matrix
+    MatB RHS1 = random_matrix<Scalar>( n, n_rhs, -1.0, 1.0 );
+    MatB RHS2 = RHS1;  // Copy for inplace solve
+
+    // Solve with regular batch method
+    MatB X1 = solver.solve_batch( a, b, RHS1 );
+
+    // Solve with inplace batch method
+    solver.solve_batch_inplace( a, b, RHS2 );
+
+    // Compare solutions
+    double error = ( X1 - RHS2 ).template lpNorm<Eigen::Infinity>();
+
+    result.error  = error;
+    result.passed = result.error < 1e-10;
+  }
+  catch ( const std::exception & e )
+  {
+    fmt::print(
+      fg( fmt::color::red ),
+      "Error in scalar non-cyclic batch inplace test n={}, rhs={}: {}\n",
+      n,
+      n_rhs,
+      e.what() );
+    result.error  = 1.0;
+    result.passed = false;
+  }
+
+  tm.toc();
+  result.time_mus = tm.elapsed_mus();
+
+  return result;
+}
+
+// ===========================================================================
 // Test 2: Scalar Cyclic Tridiagonal
 // ===========================================================================
 
@@ -396,6 +524,99 @@ template <typename Scalar> TestResult test_block_non_cyclic( Eigen::Index n, Eig
   catch ( const std::exception & e )
   {
     fmt::print( fg( fmt::color::red ), "Error in block non-cyclic test n={}, m={}: {}\n", n, m, e.what() );
+    result.error  = 1.0;
+    result.passed = false;
+  }
+
+  tm.toc();
+  result.time_mus = tm.elapsed_mus();
+
+  return result;
+}
+
+// ===========================================================================
+// Test 3b: Block Tridiagonal Inplace - Non Cyclic
+// ===========================================================================
+
+template <typename Scalar>
+TestResult test_block_non_cyclic_inplace( Eigen::Index n, Eigen::Index m, Eigen::Index n_rhs = 1 )
+{
+  TestResult result;
+  result.method        = "BlockInplace";
+  result.type          = "Non-Cyclic";
+  result.configuration = fmt::format( "n={}, m={}, rhs={}", n, m, n_rhs );
+
+  using Solver = BlockTridiagonalSolver<Scalar, -1>;
+  using Block  = typename Solver::Block;
+  using VecB   = typename Solver::VecB;
+
+  TicToc tm;
+  tm.tic();
+
+  try
+  {
+    // Generate random block-tridiagonal system
+    std::vector<Block> A( n - 1 ), B( n ), C( n - 1 );
+
+    for ( Eigen::Index i = 0; i < n - 1; ++i )
+    {
+      A[i].resize( m, m );
+      C[i].resize( m, m );
+      A[i] = random_matrix<Scalar>( m, m, 0.1, 1.0 );
+      C[i] = random_matrix<Scalar>( m, m, 0.1, 1.0 );
+    }
+
+    for ( Eigen::Index i = 0; i < n; ++i )
+    {
+      B[i].resize( m, m );
+      B[i] = random_matrix<Scalar>( m, m, 2.0, 5.0 );
+      // Make diagonally dominant for stability
+      for ( Eigen::Index j = 0; j < m; ++j ) { B[i]( j, j ) += 5.0; }
+    }
+
+    // Create solver and factorize
+    Solver solver( n, m );
+    solver.factorize( A, B, C );
+
+    double max_error = 0.0;
+
+    // Test with multiple RHS
+    for ( Eigen::Index rhs_idx = 0; rhs_idx < n_rhs; ++rhs_idx )
+    {
+      // Generate random RHS as block vectors
+      std::vector<VecB> RHS1( n );
+      std::vector<VecB> RHS2( n );
+      for ( Eigen::Index i = 0; i < n; ++i )
+      {
+        RHS1[i].resize( m );
+        RHS1[i] = random_vector<Scalar>( m, -1.0, 1.0 );
+        RHS2[i] = RHS1[i];  // Copy for inplace solve
+      }
+
+      // Solve with regular method
+      std::vector<VecB> X1( n );
+      solver.solve( A, B, RHS1, X1 );
+
+      // Solve with inplace method
+      solver.solve_inplace( A, B, RHS2 );
+
+      // Compare solutions
+      double error = 0.0;
+      for ( Eigen::Index i = 0; i < n; ++i )
+      {
+        double block_error = vector_norm( X1[i] - RHS2[i] );
+        error              = std::max( error, block_error );
+      }
+
+      max_error = std::max( max_error, error );
+    }
+
+    result.error  = max_error;
+    result.passed = result.error < 1e-10;
+  }
+  catch ( const std::exception & e )
+  {
+    fmt::print( fg( fmt::color::red ), "Error in block non-cyclic inplace test n={}, m={}: {}\n", n, m, e.what() );
     result.error  = 1.0;
     result.passed = false;
   }
@@ -622,6 +843,51 @@ void run_scalar_non_cyclic_tests()
   print_test_table( results, "SCALAR NON-CYCLIC TRIDIAGONAL SYSTEMS" );
 }
 
+void run_scalar_inplace_tests()
+{
+  fmt::print(
+    fg( fmt::color::yellow ) | fmt::emphasis::bold,
+    "╔══════════════════════════════════════╗\n"
+    "║ TEST 1b: Scalar Inplace              ║\n"
+    "║    (Inplace Thomas Algorithm)        ║\n"
+    "╚══════════════════════════════════════╝\n\n" );
+
+  std::vector<TestConfig> test_configs = {
+    // Test inplace per singolo RHS
+    { "n=1, rhs=1", []() { return test_scalar_non_cyclic_inplace<double>( 1, 1 ); } },
+    { "n=2, rhs=1", []() { return test_scalar_non_cyclic_inplace<double>( 2, 1 ); } },
+    { "n=5, rhs=5", []() { return test_scalar_non_cyclic_inplace<double>( 5, 5 ); } },
+    { "n=10, rhs=10", []() { return test_scalar_non_cyclic_inplace<double>( 10, 10 ); } },
+    { "n=50, rhs=1", []() { return test_scalar_non_cyclic_inplace<double>( 50, 1 ); } },
+    { "n=50, rhs=10", []() { return test_scalar_non_cyclic_inplace<double>( 50, 10 ); } },
+    { "n=100, rhs=1", []() { return test_scalar_non_cyclic_inplace<double>( 100, 1 ); } },
+    { "n=100, rhs=5", []() { return test_scalar_non_cyclic_inplace<double>( 100, 5 ); } },
+    { "n=200, rhs=1", []() { return test_scalar_non_cyclic_inplace<double>( 200, 1 ); } },
+    { "n=500, rhs=1", []() { return test_scalar_non_cyclic_inplace<double>( 500, 1 ); } },
+    { "n=1000, rhs=1", []() { return test_scalar_non_cyclic_inplace<double>( 1000, 1 ); } },
+    { "n=2000, rhs=1", []() { return test_scalar_non_cyclic_inplace<double>( 2000, 1 ); } },
+
+    // Test inplace batch
+    { "n=1, rhs=10 (batch)", []() { return test_scalar_non_cyclic_batch_inplace<double>( 1, 10 ); } },
+    { "n=2, rhs=10 (batch)", []() { return test_scalar_non_cyclic_batch_inplace<double>( 2, 10 ); } },
+    { "n=5, rhs=20 (batch)", []() { return test_scalar_non_cyclic_batch_inplace<double>( 5, 20 ); } },
+    { "n=10, rhs=30 (batch)", []() { return test_scalar_non_cyclic_batch_inplace<double>( 10, 30 ); } },
+    { "n=20, rhs=50 (batch)", []() { return test_scalar_non_cyclic_batch_inplace<double>( 20, 50 ); } },
+    { "n=50, rhs=100 (batch)", []() { return test_scalar_non_cyclic_batch_inplace<double>( 50, 100 ); } },
+    { "n=100, rhs=50 (batch)", []() { return test_scalar_non_cyclic_batch_inplace<double>( 100, 50 ); } },
+    { "n=200, rhs=20 (batch)", []() { return test_scalar_non_cyclic_batch_inplace<double>( 200, 20 ); } },
+  };
+
+  std::vector<TestResult> results;
+  for ( size_t i = 0; i < test_configs.size(); ++i )
+  {
+    fmt::print( fg( fmt::color::cyan ), "Running test {}/{}: {}\n", i + 1, test_configs.size(), test_configs[i].name );
+    results.push_back( test_configs[i].test_func() );
+  }
+
+  print_test_table( results, "SCALAR NON-CYCLIC INPLACE TRIDIAGONAL SYSTEMS" );
+}
+
 void run_scalar_cyclic_tests()
 {
   fmt::print(
@@ -812,6 +1078,49 @@ void run_block_non_cyclic_tests()
   print_test_table( results, "BLOCK NON-CYCLIC TRIDIAGONAL SYSTEMS" );
 }
 
+void run_block_inplace_tests()
+{
+  fmt::print(
+    fg( fmt::color::yellow ) | fmt::emphasis::bold,
+    "╔═══════════════════════════════════════╗\n"
+    "║ TEST 3b: Block Inplace                ║\n"
+    "║    (Inplace Block Thomas Algorithm)   ║\n"
+    "╚═══════════════════════════════════════╝\n\n" );
+
+  std::vector<TestConfig> test_configs = {
+    // Test inplace per vari dimensioni di blocco
+    { "n=1, m=1, rhs=1", []() { return test_block_non_cyclic_inplace<double>( 1, 1, 1 ); } },
+    { "n=1, m=2, rhs=1", []() { return test_block_non_cyclic_inplace<double>( 1, 2, 1 ); } },
+    { "n=1, m=5, rhs=1", []() { return test_block_non_cyclic_inplace<double>( 1, 5, 1 ); } },
+    { "n=2, m=1, rhs=1", []() { return test_block_non_cyclic_inplace<double>( 2, 1, 1 ); } },
+    { "n=2, m=2, rhs=1", []() { return test_block_non_cyclic_inplace<double>( 2, 2, 1 ); } },
+    { "n=2, m=3, rhs=1", []() { return test_block_non_cyclic_inplace<double>( 2, 3, 1 ); } },
+    { "n=3, m=2, rhs=5", []() { return test_block_non_cyclic_inplace<double>( 3, 2, 5 ); } },
+    { "n=3, m=3, rhs=5", []() { return test_block_non_cyclic_inplace<double>( 3, 3, 5 ); } },
+    { "n=5, m=2, rhs=10", []() { return test_block_non_cyclic_inplace<double>( 5, 2, 10 ); } },
+    { "n=5, m=5, rhs=10", []() { return test_block_non_cyclic_inplace<double>( 5, 5, 10 ); } },
+    { "n=10, m=3, rhs=1", []() { return test_block_non_cyclic_inplace<double>( 10, 3, 1 ); } },
+    { "n=10, m=5, rhs=1", []() { return test_block_non_cyclic_inplace<double>( 10, 5, 1 ); } },
+    { "n=10, m=10, rhs=1", []() { return test_block_non_cyclic_inplace<double>( 10, 10, 1 ); } },
+    { "n=10, m=3, rhs=10", []() { return test_block_non_cyclic_inplace<double>( 10, 3, 10 ); } },
+    { "n=20, m=3, rhs=5", []() { return test_block_non_cyclic_inplace<double>( 20, 3, 5 ); } },
+    { "n=20, m=5, rhs=5", []() { return test_block_non_cyclic_inplace<double>( 20, 5, 5 ); } },
+    { "n=30, m=3, rhs=3", []() { return test_block_non_cyclic_inplace<double>( 30, 3, 3 ); } },
+    { "n=50, m=2, rhs=1", []() { return test_block_non_cyclic_inplace<double>( 50, 2, 1 ); } },
+    { "n=50, m=3, rhs=1", []() { return test_block_non_cyclic_inplace<double>( 50, 3, 1 ); } },
+    { "n=100, m=2, rhs=1", []() { return test_block_non_cyclic_inplace<double>( 100, 2, 1 ); } },
+  };
+
+  std::vector<TestResult> results;
+  for ( size_t i = 0; i < test_configs.size(); ++i )
+  {
+    fmt::print( fg( fmt::color::cyan ), "Running test {}/{}: {}\n", i + 1, test_configs.size(), test_configs[i].name );
+    results.push_back( test_configs[i].test_func() );
+  }
+
+  print_test_table( results, "BLOCK NON-CYCLIC INPLACE TRIDIAGONAL SYSTEMS" );
+}
+
 void run_block_cyclic_tests()
 {
   fmt::print(
@@ -927,8 +1236,7 @@ void run_block_cyclic_tests()
 // Test 5: Scalar Tridiagonal with Eigen::Map (Non Cyclic and Cyclic)
 // ===========================================================================
 
-template <typename Scalar>
-TestResult test_scalar_non_cyclic_map( Eigen::Index n, Eigen::Index n_rhs = 1 )
+template <typename Scalar> TestResult test_scalar_non_cyclic_map( Eigen::Index n, Eigen::Index n_rhs = 1 )
 {
   TestResult result;
   result.method        = "Thomas-Map";
@@ -1013,8 +1321,7 @@ TestResult test_scalar_non_cyclic_map( Eigen::Index n, Eigen::Index n_rhs = 1 )
   return result;
 }
 
-template <typename Scalar>
-TestResult test_scalar_cyclic_map( Eigen::Index n, Eigen::Index n_rhs = 1 )
+template <typename Scalar> TestResult test_scalar_cyclic_map( Eigen::Index n, Eigen::Index n_rhs = 1 )
 {
   TestResult result;
   result.method        = "Cyclic-Map";
@@ -1149,12 +1456,14 @@ int main()
 
   fmt::print( fg( fmt::color::cyan ), "Starting extensive testing...\n\n" );
 
-  // Run all 5 test suites
+  // Run all 7 test suites
   run_scalar_non_cyclic_tests();
+  run_scalar_inplace_tests();  // Nuova suite per inplace scalare
   run_scalar_cyclic_tests();
   run_block_non_cyclic_tests();
+  run_block_inplace_tests();  // Nuova suite per inplace a blocchi
   run_block_cyclic_tests();
-  run_scalar_map_tests();  // <-- Nuova suite aggiunta qui
+  run_scalar_map_tests();
 
   // Final summary
   fmt::print(
@@ -1168,11 +1477,13 @@ int main()
   fmt::print( fg( fmt::color::green ) | fmt::emphasis::bold, "✅ All test suites completed successfully! ✅\n" );
   fmt::print( fg( fmt::color::cyan ), "\nSummary:\n" );
   fmt::print( "  • Scalar non-cyclic: ~50 tests\n" );
+  fmt::print( "  • Scalar non-cyclic inplace: ~20 tests\n" );
   fmt::print( "  • Scalar cyclic: ~50 tests\n" );
   fmt::print( "  • Block non-cyclic: ~50 tests\n" );
+  fmt::print( "  • Block non-cyclic inplace: ~20 tests\n" );
   fmt::print( "  • Block cyclic: ~50 tests\n" );
-  fmt::print( "  • Scalar with Eigen::Map: 10 tests\n" );  // <-- Aggiorna il sommario
-  fmt::print( "  • Total: ~210 tests with varying dimensions and RHS counts\n" );
+  fmt::print( "  • Scalar with Eigen::Map: 10 tests\n" );
+  fmt::print( "  • Total: ~250 tests with varying dimensions and RHS counts\n" );
 
   return 0;
 }
