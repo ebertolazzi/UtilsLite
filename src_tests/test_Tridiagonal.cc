@@ -159,7 +159,7 @@ template <typename Scalar> TestResult test_scalar_non_cyclic( Eigen::Index n, Ei
   result.type          = "Scalar";
   result.configuration = fmt::format( "n={}, rhs={}", n, n_rhs );
 
-  using Solver = TridiagonalSolver<Scalar, 1>;
+  using Solver = TridiagonalSolver<Scalar>;
   using VecS   = typename Solver::VecS;
 
   TicToc tm;
@@ -234,7 +234,7 @@ template <typename Scalar> TestResult test_scalar_cyclic( Eigen::Index n, Eigen:
   result.type          = "Scalar";
   result.configuration = fmt::format( "n={}, rhs={}", n, n_rhs );
 
-  using Solver = TridiagonalSolver<Scalar, 1>;
+  using Solver = TridiagonalSolver<Scalar>;
   using VecS   = typename Solver::VecS;
 
   TicToc tm;
@@ -310,7 +310,7 @@ template <typename Scalar> TestResult test_block_non_cyclic( Eigen::Index n, Eig
   result.type          = "Non-Cyclic";
   result.configuration = fmt::format( "n={}, m={}, rhs={}", n, m, n_rhs );
 
-  using Solver = TridiagonalSolver<Scalar, -1>;
+  using Solver = BlockTridiagonalSolver<Scalar, -1>;
   using Block  = typename Solver::Block;
   using VecB   = typename Solver::VecB;
 
@@ -417,7 +417,7 @@ template <typename Scalar> TestResult test_block_cyclic( Eigen::Index n, Eigen::
   result.type          = "Cyclic";
   result.configuration = fmt::format( "n={}, m={}, rhs={}", n, m, n_rhs );
 
-  using Solver = TridiagonalSolver<Scalar, -1>;
+  using Solver = BlockTridiagonalSolver<Scalar, -1>;
   using Block  = typename Solver::Block;
   using VecB   = typename Solver::VecB;
 
@@ -924,6 +924,216 @@ void run_block_cyclic_tests()
 }
 
 // ===========================================================================
+// Test 5: Scalar Tridiagonal with Eigen::Map (Non Cyclic and Cyclic)
+// ===========================================================================
+
+template <typename Scalar>
+TestResult test_scalar_non_cyclic_map( Eigen::Index n, Eigen::Index n_rhs = 1 )
+{
+  TestResult result;
+  result.method        = "Thomas-Map";
+  result.type          = "Scalar";
+  result.configuration = fmt::format( "n={}, rhs={}", n, n_rhs );
+
+  using Solver = TridiagonalSolver<Scalar>;
+  using VecS   = typename Solver::VecS;
+
+  TicToc tm;
+  tm.tic();
+
+  try
+  {
+    // Allocate data in std::vector (simulating external data)
+    std::vector<Scalar> a_data( n - 1 );
+    std::vector<Scalar> b_data( n );
+    std::vector<Scalar> c_data( n - 1 );
+    // Fill with random values
+    for ( Eigen::Index i = 0; i < n - 1; ++i )
+    {
+      a_data[i] = random_scalar<Scalar>( 0.1, 1.0 );
+      c_data[i] = random_scalar<Scalar>( 0.1, 1.0 );
+    }
+    for ( Eigen::Index i = 0; i < n; ++i ) { b_data[i] = random_scalar<Scalar>( 2.0, 5.0 ); }
+
+    // Create Eigen::Map objects
+    Eigen::Map<const VecS> a_map( a_data.data(), n - 1 );
+    Eigen::Map<const VecS> b_map( b_data.data(), n );
+    Eigen::Map<const VecS> c_map( c_data.data(), n - 1 );
+
+    Solver solver( n );
+    solver.factorize( a_map, b_map, c_map );
+
+    double max_error = 0.0;
+    for ( Eigen::Index rhs_idx = 0; rhs_idx < n_rhs; ++rhs_idx )
+    {
+      // Generate random RHS in a vector
+      std::vector<Scalar> rhs_data( n );
+      for ( Eigen::Index i = 0; i < n; ++i ) { rhs_data[i] = random_scalar<Scalar>( -1.0, 1.0 ); }
+      Eigen::Map<const VecS> rhs_map( rhs_data.data(), n );
+
+      // Solve using Map
+      VecS x( n );
+      solver.solve( a_map, b_map, rhs_map, x );
+
+      // Verify solution
+      VecS Ax( n );
+      if ( n == 1 ) { Ax( 0 ) = b_map( 0 ) * x( 0 ); }
+      else if ( n == 2 )
+      {
+        Ax( 0 ) = b_map( 0 ) * x( 0 ) + c_map( 0 ) * x( 1 );
+        Ax( 1 ) = a_map( 0 ) * x( 0 ) + b_map( 1 ) * x( 1 );
+      }
+      else
+      {
+        Ax( 0 ) = b_map( 0 ) * x( 0 ) + c_map( 0 ) * x( 1 );
+        for ( Eigen::Index i = 1; i < n - 1; ++i )
+        {
+          Ax( i ) = a_map( i - 1 ) * x( i - 1 ) + b_map( i ) * x( i ) + c_map( i ) * x( i + 1 );
+        }
+        Ax( n - 1 ) = a_map( n - 2 ) * x( n - 2 ) + b_map( n - 1 ) * x( n - 1 );
+      }
+
+      // Compute error
+      double error = vector_norm( Ax - rhs_map );
+      max_error    = std::max( max_error, error );
+    }
+
+    result.error  = max_error;
+    result.passed = result.error < 1e-10;
+  }
+  catch ( const std::exception & e )
+  {
+    fmt::print( fg( fmt::color::red ), "Error in scalar non-cyclic map test n={}: {}\n", n, e.what() );
+    result.error  = 1.0;
+    result.passed = false;
+  }
+
+  tm.toc();
+  result.time_mus = tm.elapsed_mus();
+  return result;
+}
+
+template <typename Scalar>
+TestResult test_scalar_cyclic_map( Eigen::Index n, Eigen::Index n_rhs = 1 )
+{
+  TestResult result;
+  result.method        = "Cyclic-Map";
+  result.type          = "Scalar";
+  result.configuration = fmt::format( "n={}, rhs={}", n, n_rhs );
+
+  using Solver = TridiagonalSolver<Scalar>;
+  using VecS   = typename Solver::VecS;
+
+  TicToc tm;
+  tm.tic();
+
+  try
+  {
+    // Allocate data
+    std::vector<Scalar> a_data( n - 1 );
+    std::vector<Scalar> b_data( n );
+    std::vector<Scalar> c_data( n - 1 );
+    Scalar              alpha = random_scalar<Scalar>( 0.1, 0.5 );
+    Scalar              beta  = random_scalar<Scalar>( 0.1, 0.5 );
+
+    for ( Eigen::Index i = 0; i < n - 1; ++i )
+    {
+      a_data[i] = random_scalar<Scalar>( 0.1, 1.0 );
+      c_data[i] = random_scalar<Scalar>( 0.1, 1.0 );
+    }
+    for ( Eigen::Index i = 0; i < n; ++i ) { b_data[i] = random_scalar<Scalar>( 2.0, 5.0 ); }
+
+    Eigen::Map<const VecS> a_map( a_data.data(), n - 1 );
+    Eigen::Map<const VecS> b_map( b_data.data(), n );
+    Eigen::Map<const VecS> c_map( c_data.data(), n - 1 );
+
+    Solver solver( n );
+
+    double max_error = 0.0;
+    for ( Eigen::Index rhs_idx = 0; rhs_idx < n_rhs; ++rhs_idx )
+    {
+      std::vector<Scalar> rhs_data( n );
+      for ( Eigen::Index i = 0; i < n; ++i ) { rhs_data[i] = random_scalar<Scalar>( -1.0, 1.0 ); }
+      Eigen::Map<const VecS> rhs_map( rhs_data.data(), n );
+
+      VecS x( n );
+      solver.solve_cyclic( a_map, b_map, c_map, alpha, beta, rhs_map, x );
+
+      // Verify cyclic system
+      VecS Ax( n );
+      if ( n == 1 ) { Ax( 0 ) = ( b_map( 0 ) + alpha + beta ) * x( 0 ); }
+      else if ( n == 2 )
+      {
+        Ax( 0 ) = ( b_map( 0 ) + alpha ) * x( 0 ) + c_map( 0 ) * x( 1 );
+        Ax( 1 ) = a_map( 0 ) * x( 0 ) + ( b_map( 1 ) + beta ) * x( 1 );
+      }
+      else
+      {
+        Ax( 0 ) = b_map( 0 ) * x( 0 ) + c_map( 0 ) * x( 1 ) + alpha * x( n - 1 );
+        for ( Eigen::Index i = 1; i < n - 1; ++i )
+        {
+          Ax( i ) = a_map( i - 1 ) * x( i - 1 ) + b_map( i ) * x( i ) + c_map( i ) * x( i + 1 );
+        }
+        Ax( n - 1 ) = a_map( n - 2 ) * x( n - 2 ) + b_map( n - 1 ) * x( n - 1 ) + beta * x( 0 );
+      }
+
+      double error = vector_norm( Ax - rhs_map );
+      max_error    = std::max( max_error, error );
+    }
+
+    result.error  = max_error;
+    result.passed = result.error < 1e-10;
+  }
+  catch ( const std::exception & e )
+  {
+    fmt::print( fg( fmt::color::red ), "Error in scalar cyclic map test n={}: {}\n", n, e.what() );
+    result.error  = 1.0;
+    result.passed = false;
+  }
+
+  tm.toc();
+  result.time_mus = tm.elapsed_mus();
+  return result;
+}
+
+// ===========================================================================
+// Test suite for Eigen::Map
+// ===========================================================================
+
+void run_scalar_map_tests()
+{
+  fmt::print(
+    fg( fmt::color::yellow ) | fmt::emphasis::bold,
+    "╔══════════════════════════════╗\n"
+    "║   TEST 5: Scalar with Map    ║\n"
+    "║   (Using Eigen::Map)         ║\n"
+    "╚══════════════════════════════╝\n\n" );
+
+  std::vector<TestConfig> test_configs = {
+    // Non-cyclic with Map
+    { "n=1, rhs=1 (Map)", []() { return test_scalar_non_cyclic_map<double>( 1, 1 ); } },
+    { "n=2, rhs=1 (Map)", []() { return test_scalar_non_cyclic_map<double>( 2, 1 ); } },
+    { "n=5, rhs=5 (Map)", []() { return test_scalar_non_cyclic_map<double>( 5, 5 ); } },
+    { "n=10, rhs=10 (Map)", []() { return test_scalar_non_cyclic_map<double>( 10, 10 ); } },
+    { "n=100, rhs=1 (Map)", []() { return test_scalar_non_cyclic_map<double>( 100, 1 ); } },
+    // Cyclic with Map
+    { "n=1, rhs=1 (Cyclic Map)", []() { return test_scalar_cyclic_map<double>( 1, 1 ); } },
+    { "n=2, rhs=1 (Cyclic Map)", []() { return test_scalar_cyclic_map<double>( 2, 1 ); } },
+    { "n=5, rhs=5 (Cyclic Map)", []() { return test_scalar_cyclic_map<double>( 5, 5 ); } },
+    { "n=10, rhs=10 (Cyclic Map)", []() { return test_scalar_cyclic_map<double>( 10, 10 ); } },
+    { "n=100, rhs=1 (Cyclic Map)", []() { return test_scalar_cyclic_map<double>( 100, 1 ); } },
+  };
+
+  std::vector<TestResult> results;
+  for ( size_t i = 0; i < test_configs.size(); ++i )
+  {
+    fmt::print( fg( fmt::color::cyan ), "Running test {}/{}: {}\n", i + 1, test_configs.size(), test_configs[i].name );
+    results.push_back( test_configs[i].test_func() );
+  }
+
+  print_test_table( results, "SCALAR TRIDIAGONAL SYSTEMS WITH EIGEN::MAP" );
+}
+// ===========================================================================
 // Main Test Function
 // ===========================================================================
 
@@ -939,11 +1149,12 @@ int main()
 
   fmt::print( fg( fmt::color::cyan ), "Starting extensive testing...\n\n" );
 
-  // Run all 4 test suites separately
+  // Run all 5 test suites
   run_scalar_non_cyclic_tests();
   run_scalar_cyclic_tests();
   run_block_non_cyclic_tests();
   run_block_cyclic_tests();
+  run_scalar_map_tests();  // <-- Nuova suite aggiunta qui
 
   // Final summary
   fmt::print(
@@ -960,7 +1171,8 @@ int main()
   fmt::print( "  • Scalar cyclic: ~50 tests\n" );
   fmt::print( "  • Block non-cyclic: ~50 tests\n" );
   fmt::print( "  • Block cyclic: ~50 tests\n" );
-  fmt::print( "  • Total: ~200 tests with varying dimensions and RHS counts\n" );
+  fmt::print( "  • Scalar with Eigen::Map: 10 tests\n" );  // <-- Aggiorna il sommario
+  fmt::print( "  • Total: ~210 tests with varying dimensions and RHS counts\n" );
 
   return 0;
 }
