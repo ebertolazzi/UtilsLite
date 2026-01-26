@@ -26,11 +26,11 @@ struct TestResult
   std::string problem_name;
   std::string linesearch_name;
   bool        converged;
-  integer     iterations;
-  integer     function_evals;
+  size_t      iterations;
+  size_t      function_evals;
   Scalar      final_f;
   Vector      final_x;
-  integer     dimension;
+  size_t      dimension;
   Scalar      estimated_gradient_norm{ 0.0 };  // NUOVO: stima norma gradiente
 };
 
@@ -38,10 +38,10 @@ struct TestResult
 struct LineSearchStats
 {
   std::string name;
-  integer     total_tests{ 0 };
-  integer     successful_tests{ 0 };
-  integer     total_iterations{ 0 };
-  integer     total_function_evals{ 0 };
+  size_t      total_tests{ 0 };
+  size_t      successful_tests{ 0 };
+  size_t      total_iterations{ 0 };
+  size_t      total_function_evals{ 0 };
   Scalar      avg_gradient_norm{ 0.0 };  // NUOVO: media norma gradiente stimata
 };
 
@@ -55,10 +55,8 @@ std::map<std::string, LineSearchStats> line_search_statistics;
 // MIGLIORAMENTO: Funzione per stimare la norma del gradiente via differenza
 // finita
 // ===========================================================================
-Scalar estimate_gradient_norm(
-  std::function<Scalar( Vector const & )> const & f,
-  Vector const &                                  x,
-  Scalar                                          epsilon = 1e-6 )
+Scalar
+estimate_gradient_norm( std::function<Scalar( Vector const & )> const & f, Vector const & x, Scalar epsilon = 1e-6 )
 {
   integer n = x.size();
   Vector  grad( n );
@@ -82,7 +80,8 @@ Scalar estimate_gradient_norm(
 // ===========================================================================
 // Aggiorna statistiche con norma gradiente stimata
 // ===========================================================================
-void update_line_search_statistics( const TestResult & result )
+void
+update_line_search_statistics( const TestResult & result )
 {
   auto & stats = line_search_statistics[result.linesearch_name];
   stats.name   = result.linesearch_name;
@@ -100,7 +99,8 @@ void update_line_search_statistics( const TestResult & result )
 // ===========================================================================
 // Funzione per formattare il vettore
 // ===========================================================================
-inline std::string format_reduced_vector( Vector const & v, integer max_size = 10 )
+inline std::string
+format_reduced_vector( Vector const & v, size_t max_size = 10 )
 {
   std::string tmp{ "[" };
   integer     v_size = v.size();
@@ -123,7 +123,9 @@ inline std::string format_reduced_vector( Vector const & v, integer max_size = 1
 // ===========================================================================
 // Test runner BOBYQA con stima norma gradiente
 // ===========================================================================
-template <typename Problem> void test( Problem & prob, std::string const & problem_name )
+template <typename Problem>
+void
+test( Problem & prob, std::string const & problem_name )
 {
   fmt::print(
     fmt::fg( fmt::color::cyan ),
@@ -150,8 +152,8 @@ template <typename Problem> void test( Problem & prob, std::string const & probl
   if ( npt > npt_max ) npt = npt_max;
 
   // Wrapper per la funzione obiettivo che conta le valutazioni
-  integer nfev   = 0;
-  auto    objfun = [&prob, &nfev]( Vector const & x ) -> Scalar
+  size_t nfev   = 0;
+  auto   objfun = [&prob, &nfev]( Vector const & x ) -> Scalar
   {
     ++nfev;
     return prob( x );
@@ -185,7 +187,7 @@ template <typename Problem> void test( Problem & prob, std::string const & probl
   result.function_evals          = nfev;
   result.final_f                 = final_f;
   result.final_x                 = x0;
-  result.dimension               = static_cast<integer>( n );
+  result.dimension               = static_cast<size_t>( n );
   result.estimated_gradient_norm = estimated_grad_norm;
 
   global_test_results.push_back( result );
@@ -208,7 +210,8 @@ template <typename Problem> void test( Problem & prob, std::string const & probl
 // ===========================================================================
 // Tabella riassuntiva colorata per BOBYQA
 // ===========================================================================
-void print_summary_table()
+void
+print_summary_table()
 {
   fmt::print(
     fmt::fg( fmt::color::light_blue ),
@@ -264,7 +267,8 @@ void print_summary_table()
 // ===========================================================================
 // Statistiche delle line search (per BOBYQA c'è solo BOBYQA)
 // ===========================================================================
-void print_line_search_statistics()
+void
+print_line_search_statistics()
 {
   // Calcola medie finali
   for ( auto & [name, stats] : line_search_statistics )
@@ -308,15 +312,15 @@ void print_line_search_statistics()
     "╚═══════════════════╧══════════╧═════════════╧════════════╧══════════════╝\n" );
 
   // Statistiche globali
-  integer total_tests     = static_cast<integer>( global_test_results.size() );
-  integer converged_tests = std::count_if(
+  size_t total_tests     = global_test_results.size();
+  size_t converged_tests = std::count_if(
     global_test_results.begin(),
     global_test_results.end(),
     []( const TestResult & r ) { return r.converged; } );
 
-  integer accumulated_evals = 0;
-  Scalar  total_grad_norm   = 0;
-  integer grad_count        = 0;
+  size_t accumulated_evals{ 0 };
+  Scalar total_grad_norm{ 0.0 };
+  size_t grad_count{ 0 };
 
   for ( auto const & r : global_test_results )
   {
@@ -338,7 +342,8 @@ void print_line_search_statistics()
 // ===========================================================================
 // MAIN
 // ===========================================================================
-int main()
+int
+main()
 {
   fmt::print(
     fmt::fg( fmt::color::light_blue ),

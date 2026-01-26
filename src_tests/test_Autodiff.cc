@@ -80,28 +80,53 @@ namespace TestUtils
       fill_str );
   }
 
-  // Print success/fail message
-  template <typename T>
-  bool check_result( const string & test_name, const T & computed, const T & expected, double tolerance = 1e-10 )
-  {
-    double error   = abs( computed - expected );
-    bool   success = ( error <= tolerance );
+template <typename T>
+bool check_result( const std::string & test_name, const T & computed, const T & expected, double tolerance = 1e-10 )
+{
+    double error;
+    bool success;
+
+    // 1. Gestione speciale per gli infiniti
+    if ( std::isinf( computed ) && std::isinf( expected ) )
+    {
+        // Entrambi infiniti: successo se hanno lo stesso segno
+        // (computed > 0) == (expected > 0) verifica la concordanza di segno
+        success = ( ( computed > 0 ) == ( expected > 0 ) );
+        error   = success ? 0.0 : std::numeric_limits<double>::infinity();
+    }
+    else
+    {
+        // 2. Calcolo standard (gestisce anche Finito vs Infinito correttamente)
+        // Se uno è finito e l'altro infinito, error sarà 'inf', che è > tolerance -> FAIL
+        error   = std::abs( computed - expected );
+        
+        // Gestione del caso NaN nel calcolo dell'errore (opzionale ma consigliato)
+        if ( std::isnan( error ) ) success = false;
+        else success = ( error <= tolerance );
+    }
+
+    // --- Output (invariato o leggermente adattato) ---
 
     // Test name
     fmt::print( "  {:<45}", test_name );
 
     // Status with color
-    if ( success ) { fmt::print( fg( fmt::color::green ) | fmt::emphasis::bold, "{} PASS ", CHECKMARK ); }
+    if ( success )
+    {
+        fmt::print( fg( fmt::color::green ) | fmt::emphasis::bold, "{} PASS ", CHECKMARK );
+    }
     else
     {
-      fmt::print( fg( fmt::color::red ) | fmt::emphasis::bold, "{} FAIL ", XMARK );
+        fmt::print( fg( fmt::color::red ) | fmt::emphasis::bold, "{} FAIL ", XMARK );
     }
 
-    // Values
-    fmt::print( "computed: {:>12.6f}, expected: {:>12.6f}, error: {:>8.2e}\n", computed, expected, error );
+    // Values format
+    // Usiamo {:>12.6g} o {:>12.6f}. .6g passa automaticamente a notazione scientifica se serve.
+    fmt::print( "computed: {:>12.6g}, expected: {:>12.6g}, error: {:>8.2e}\n", 
+                computed, expected, error );
 
     return success;
-  }
+}
 
   bool check_approx( double computed, double expected, double tolerance = 1e-10 )
   {
@@ -814,17 +839,26 @@ void test_edge_cases()
     auto   complex_func = []( dual x ) -> dual { return exp( sin( x ) ) * cos( x ) / sqrt( 1 + x * x ); };
     double dcomplex_ad  = derivative( complex_func, wrt( x ), at( x ) );
 
-    // Derivata analitica: d/dx[exp(sin(x)) * cos(x) / sqrt(1+x²)]
-    // = exp(sin(x)) * [cos²(x) - sin(x)*cos(x)/sqrt(1+x²) - x*cos(x)/(1+x²)^(3/2)]
-    double sinx                = sin( x_val );
-    double cosx                = cos( x_val );
-    double denom               = sqrt( 1 + x_val * x_val );
-    double dcomplex_analytical = exp( sinx ) *
-                                 ( cosx * cosx - sinx * cosx / denom - x_val * cosx / pow( 1 + x_val * x_val, 1.5 ) );
+    // Derivata analitica corretta:
+    // f(x) = u * v * w
+    // u = exp(sin(x)), v = cos(x), w = 1/sqrt(1+x^2)
+    // f' = u'vw + uv'w + uvw'
+    
+    double sinx  = sin( x_val );
+    double cosx  = cos( x_val );
+    double sq_xp1 = 1.0 + x_val * x_val; // (1+x^2)
+    double denom = sqrt( sq_xp1 );       // sqrt(1+x^2)
+
+    double term1 = ( cosx * cosx ) / denom;             // da d(exp(sin))/dx
+    double term2 = -sinx / denom;                       // da d(cos)/dx
+    double term3 = -( x_val * cosx ) / ( denom * sq_xp1 ); // da d(1/sqrt)/dx -> o pow(..., 1.5)
+
+    double dcomplex_analytical = exp( sinx ) * ( term1 + term2 + term3 );
 
     bool ok4 = check_result( "d/dx[exp(sin(x))*cos(x)/sqrt(1+x²)]", dcomplex_ad, dcomplex_analytical, 1e-8 );
     passed += ok4;
     total += 1;
+
   }
 
   // Test su punti critici particolari
@@ -1461,6 +1495,562 @@ void test_complex_combinations()
 }
 
 // ============================================================================
+// SECTION: Test Macros for Derivatives (2 to 6 arguments)
+// ============================================================================
+
+// Instead of using macros inside structs, we'll create standalone functions
+namespace MacroTestFunctions
+{
+
+  // ========================================================================
+  // 2 ARGUMENTS
+  // ========================================================================
+
+  double test_func2( double x, double y )
+  {
+    return x * x * y + sin( x ) * cos( y );
+  }
+
+  // Analytical derivatives for test_func2
+  inline double test_func2_D_1_analytic( double x, double y )
+  {
+    return 2 * x * y + cos( x ) * cos( y );
+  }
+
+  inline double test_func2_D_2_analytic( double x, double y )
+  {
+    return x * x - sin( x ) * sin( y );
+  }
+
+  inline double test_func2_D_1_1_analytic( double x, double y )
+  {
+    return 2 * y - sin( x ) * cos( y );
+  }
+
+  inline double test_func2_D_1_2_analytic( double x, double y )
+  {
+    return 2 * x - cos( x ) * sin( y );
+  }
+
+  inline double test_func2_D_2_2_analytic( double x, double y )
+  {
+    return -sin( x ) * cos( y );
+  }
+
+  // ========================================================================
+  // 3 ARGUMENTS
+  // ========================================================================
+
+  double test_func3( double x, double y, double z )
+  {
+    return x * y * z + sin( x ) * cos( y ) * exp( z );
+  }
+
+  // Analytical derivatives for test_func3
+  inline double test_func3_D_1_analytic( double x, double y, double z )
+  {
+    return y * z + cos( x ) * cos( y ) * exp( z );
+  }
+
+  inline double test_func3_D_2_analytic( double x, double y, double z )
+  {
+    return x * z - sin( x ) * sin( y ) * exp( z );
+  }
+
+  inline double test_func3_D_3_analytic( double x, double y, double z )
+  {
+    return x * y + sin( x ) * cos( y ) * exp( z );
+  }
+
+  inline double test_func3_D_1_1_analytic( double x, double y, double z )
+  {
+    return -sin( x ) * cos( y ) * exp( z );
+  }
+
+  inline double test_func3_D_1_2_analytic( double x, double y, double z )
+  {
+    return z - cos( x ) * sin( y ) * exp( z );
+  }
+
+  inline double test_func3_D_1_3_analytic( double x, double y, double z )
+  {
+    return y + cos( x ) * cos( y ) * exp( z );
+  }
+
+  inline double test_func3_D_2_2_analytic( double x, double y, double z )
+  {
+    return -sin( x ) * cos( y ) * exp( z );
+  }
+
+  inline double test_func3_D_2_3_analytic( double x, double y, double z )
+  {
+    return x - sin( x ) * sin( y ) * exp( z );
+  }
+
+  inline double test_func3_D_3_3_analytic( double x, double y, double z )
+  {
+    return sin( x ) * cos( y ) * exp( z );
+  }
+
+  // ========================================================================
+  // 4 ARGUMENTS
+  // ========================================================================
+
+  double test_func4( double x, double y, double z, double w )
+  {
+    return x * y + z * w + sin( x * z ) * cos( y * w );
+  }
+
+  // ========================================================================
+  // 5 ARGUMENTS
+  // ========================================================================
+
+  double test_func5( double x1, double x2, double x3, double x4, double x5 )
+  {
+    return x1 * x2 + x3 * x4 * x5 + sin( x1 * x3 ) * cos( x2 * x4 ) * exp( x5 );
+  }
+
+  // ========================================================================
+  // 6 ARGUMENTS
+  // ========================================================================
+
+  double test_func6( double x1, double x2, double x3, double x4, double x5, double x6 )
+  {
+    return x1 * x2 * x3 + x4 * x5 * x6 + sin( x1 * x4 ) * cos( x2 * x5 ) * exp( x3 * x6 );
+  }
+
+}  // namespace MacroTestFunctions
+
+// Create autodiff versions of the functions
+namespace MacroTestAutodiff
+{
+
+  // ========================================================================
+  // 2 ARGUMENTS
+  // ========================================================================
+
+  dual test_func2_ad( dual x, dual y )
+  {
+    return x * x * y + sin( x ) * cos( y );
+  }
+
+  dual2nd test_func2_ad2( dual2nd x, dual2nd y )
+  {
+    return x * x * y + sin( x ) * cos( y );
+  }
+
+  // ========================================================================
+  // 3 ARGUMENTS
+  // ========================================================================
+
+  dual test_func3_ad( dual x, dual y, dual z )
+  {
+    return x * y * z + sin( x ) * cos( y ) * exp( z );
+  }
+
+  dual2nd test_func3_ad2( dual2nd x, dual2nd y, dual2nd z )
+  {
+    return x * y * z + sin( x ) * cos( y ) * exp( z );
+  }
+
+  // ========================================================================
+  // 4 ARGUMENTS
+  // ========================================================================
+
+  dual test_func4_ad( dual x, dual y, dual z, dual w )
+  {
+    return x * y + z * w + sin( x * z ) * cos( y * w );
+  }
+
+  // ========================================================================
+  // 5 ARGUMENTS
+  // ========================================================================
+
+  dual test_func5_ad( dual x1, dual x2, dual x3, dual x4, dual x5 )
+  {
+    return x1 * x2 + x3 * x4 * x5 + sin( x1 * x3 ) * cos( x2 * x4 ) * exp( x5 );
+  }
+
+  // ========================================================================
+  // 6 ARGUMENTS
+  // ========================================================================
+
+  dual test_func6_ad( dual x1, dual x2, dual x3, dual x4, dual x5, dual x6 )
+  {
+    return x1 * x2 * x3 + x4 * x5 * x6 + sin( x1 * x4 ) * cos( x2 * x5 ) * exp( x3 * x6 );
+  }
+
+}  // namespace MacroTestAutodiff
+
+void test_macro_derivatives()
+{
+  using namespace TestUtils;
+
+  print_header( "DERIVATIVE TESTS (2-6 ARGUMENTS)" );
+
+  int passed = 0, total = 0;
+  double h = 1e-7; // for finite differences
+
+  // ========================================================================
+  // 2 ARGUMENTS - COMPLETE TESTS
+  // ========================================================================
+  print_subheader( "2 ARGUMENTS TESTS" );
+
+  vector<array<double, 2>> points2 = { { 0.5, 0.3 }, { 1.0, 0.5 }, { 2.0, 1.0 }, { M_PI / 4, M_PI / 3 } };
+
+  for ( const auto & point : points2 )
+  {
+    double x = point[0], y = point[1];
+    fmt::print( fg( fmt::color::yellow ), "\nTest point: (x,y) = ({:.4f}, {:.4f})\n", x, y );
+
+    // Test first derivatives using autodiff
+    {
+      dual x_ad = x, y_ad = y;
+      double deriv_ad = derivative( MacroTestAutodiff::test_func2_ad, wrt( x_ad ), at( x_ad, y_ad ) );
+      double deriv_anal  = MacroTestFunctions::test_func2_D_1_analytic( x, y );
+      bool   ok          = check_result( "∂f/∂x (2 args)", deriv_ad, deriv_anal, 1e-9 );
+      passed += ok;
+      total += 1;
+    }
+
+    {
+      dual x_ad = x, y_ad = y;
+      double deriv_ad = derivative( MacroTestAutodiff::test_func2_ad, wrt( y_ad ), at( x_ad, y_ad ) );
+      double deriv_anal  = MacroTestFunctions::test_func2_D_2_analytic( x, y );
+      bool   ok          = check_result( "∂f/∂y (2 args)", deriv_ad, deriv_anal, 1e-9 );
+      passed += ok;
+      total += 1;
+    }
+
+    // Test second derivatives using dual2nd
+    {
+      dual2nd x_ad = x, y_ad = y;
+      auto result = derivatives( MacroTestAutodiff::test_func2_ad2, wrt( x_ad, x_ad ), at( x_ad, y_ad ) );
+      double deriv_ad = result[2];  // Second derivative
+      double deriv_anal  = MacroTestFunctions::test_func2_D_1_1_analytic( x, y );
+      bool   ok          = check_result( "∂²f/∂x² (2 args)", deriv_ad, deriv_anal, 1e-9 );
+      passed += ok;
+      total += 1;
+    }
+
+    {
+      dual2nd x_ad = x, y_ad = y;
+      auto result = derivatives( MacroTestAutodiff::test_func2_ad2, wrt( x_ad, y_ad ), at( x_ad, y_ad ) );
+      double deriv_ad = result[2];  // Mixed second derivative
+      double deriv_anal  = MacroTestFunctions::test_func2_D_1_2_analytic( x, y );
+      bool   ok          = check_result( "∂²f/∂x∂y (2 args)", deriv_ad, deriv_anal, 1e-9 );
+      passed += ok;
+      total += 1;
+    }
+
+    {
+      dual2nd x_ad = x, y_ad = y;
+      auto result = derivatives( MacroTestAutodiff::test_func2_ad2, wrt( y_ad, y_ad ), at( x_ad, y_ad ) );
+      double deriv_ad = result[2];  // Second derivative
+      double deriv_anal  = MacroTestFunctions::test_func2_D_2_2_analytic( x, y );
+      bool   ok          = check_result( "∂²f/∂y² (2 args)", deriv_ad, deriv_anal, 1e-9 );
+      passed += ok;
+      total += 1;
+    }
+  }
+
+  // ========================================================================
+  // 3 ARGUMENTS - COMPLETE TESTS
+  // ========================================================================
+  print_subheader( "3 ARGUMENTS TESTS" );
+
+  vector<array<double, 3>> points3 = {
+    { 0.5, 0.3, 0.2 }, { 1.0, 0.5, 0.3 }, { 2.0, 1.0, 0.5 }, { M_PI / 4, M_PI / 3, 0.5 }
+  };
+
+  for ( const auto & point : points3 )
+  {
+    double x = point[0], y = point[1], z = point[2];
+    fmt::print( fg( fmt::color::yellow ), "\nTest point: (x,y,z) = ({:.4f}, {:.4f}, {:.4f})\n", x, y, z );
+
+    // First derivatives
+    {
+      dual x_ad = x, y_ad = y, z_ad = z;
+      double deriv_ad = derivative( MacroTestAutodiff::test_func3_ad, wrt( x_ad ), at( x_ad, y_ad, z_ad ) );
+      double deriv_anal  = MacroTestFunctions::test_func3_D_1_analytic( x, y, z );
+      bool   ok          = check_result( "∂f/∂x (3 args)", deriv_ad, deriv_anal, 1e-9 );
+      passed += ok;
+      total += 1;
+    }
+
+    {
+      dual x_ad = x, y_ad = y, z_ad = z;
+      double deriv_ad = derivative( MacroTestAutodiff::test_func3_ad, wrt( y_ad ), at( x_ad, y_ad, z_ad ) );
+      double deriv_anal  = MacroTestFunctions::test_func3_D_2_analytic( x, y, z );
+      bool   ok          = check_result( "∂f/∂y (3 args)", deriv_ad, deriv_anal, 1e-9 );
+      passed += ok;
+      total += 1;
+    }
+
+    {
+      dual x_ad = x, y_ad = y, z_ad = z;
+      double deriv_ad = derivative( MacroTestAutodiff::test_func3_ad, wrt( z_ad ), at( x_ad, y_ad, z_ad ) );
+      double deriv_anal  = MacroTestFunctions::test_func3_D_3_analytic( x, y, z );
+      bool   ok          = check_result( "∂f/∂z (3 args)", deriv_ad, deriv_anal, 1e-9 );
+      passed += ok;
+      total += 1;
+    }
+
+    // Second derivatives
+    {
+      dual2nd x_ad = x, y_ad = y, z_ad = z;
+      auto result = derivatives( MacroTestAutodiff::test_func3_ad2, wrt( x_ad, x_ad ), at( x_ad, y_ad, z_ad ) );
+      double deriv_ad = result[2];
+      double deriv_anal  = MacroTestFunctions::test_func3_D_1_1_analytic( x, y, z );
+      bool   ok          = check_result( "∂²f/∂x² (3 args)", deriv_ad, deriv_anal, 1e-9 );
+      passed += ok;
+      total += 1;
+    }
+
+    {
+      dual2nd x_ad = x, y_ad = y, z_ad = z;
+      auto result = derivatives( MacroTestAutodiff::test_func3_ad2, wrt( x_ad, y_ad ), at( x_ad, y_ad, z_ad ) );
+      double deriv_ad = result[2];
+      double deriv_anal  = MacroTestFunctions::test_func3_D_1_2_analytic( x, y, z );
+      bool   ok          = check_result( "∂²f/∂x∂y (3 args)", deriv_ad, deriv_anal, 1e-9 );
+      passed += ok;
+      total += 1;
+    }
+
+    {
+      dual2nd x_ad = x, y_ad = y, z_ad = z;
+      auto result = derivatives( MacroTestAutodiff::test_func3_ad2, wrt( x_ad, z_ad ), at( x_ad, y_ad, z_ad ) );
+      double deriv_ad = result[2];
+      double deriv_anal  = MacroTestFunctions::test_func3_D_1_3_analytic( x, y, z );
+      bool   ok          = check_result( "∂²f/∂x∂z (3 args)", deriv_ad, deriv_anal, 1e-9 );
+      passed += ok;
+      total += 1;
+    }
+
+    {
+      dual2nd x_ad = x, y_ad = y, z_ad = z;
+      auto result = derivatives( MacroTestAutodiff::test_func3_ad2, wrt( y_ad, y_ad ), at( x_ad, y_ad, z_ad ) );
+      double deriv_ad = result[2];
+      double deriv_anal  = MacroTestFunctions::test_func3_D_2_2_analytic( x, y, z );
+      bool   ok          = check_result( "∂²f/∂y² (3 args)", deriv_ad, deriv_anal, 1e-9 );
+      passed += ok;
+      total += 1;
+    }
+
+    {
+      dual2nd x_ad = x, y_ad = y, z_ad = z;
+      auto result = derivatives( MacroTestAutodiff::test_func3_ad2, wrt( y_ad, z_ad ), at( x_ad, y_ad, z_ad ) );
+      double deriv_ad = result[2];
+      double deriv_anal  = MacroTestFunctions::test_func3_D_2_3_analytic( x, y, z );
+      bool   ok          = check_result( "∂²f/∂y∂z (3 args)", deriv_ad, deriv_anal, 1e-9 );
+      passed += ok;
+      total += 1;
+    }
+
+    {
+      dual2nd x_ad = x, y_ad = y, z_ad = z;
+      auto result = derivatives( MacroTestAutodiff::test_func3_ad2, wrt( z_ad, z_ad ), at( x_ad, y_ad, z_ad ) );
+      double deriv_ad = result[2];
+      double deriv_anal  = MacroTestFunctions::test_func3_D_3_3_analytic( x, y, z );
+      bool   ok          = check_result( "∂²f/∂z² (3 args)", deriv_ad, deriv_anal, 1e-9 );
+      passed += ok;
+      total += 1;
+    }
+  }
+
+  // ========================================================================
+  // 4 ARGUMENTS - COMPLETE TESTS WITH FINITE DIFFERENCES
+  // ========================================================================
+  print_subheader( "4 ARGUMENTS TESTS (finite difference verification)" );
+
+  vector<array<double, 4>> points4 = {
+    { 0.5, 0.3, 0.2, 0.1 },
+    { 1.0, 0.5, 0.3, 0.2 },
+  };
+
+  for ( const auto & point : points4 )
+  {
+    double x = point[0], y = point[1], z = point[2], w = point[3];
+    fmt::print( fg( fmt::color::yellow ), "\nTest point: (x,y,z,w) = ({:.4f}, {:.4f}, {:.4f}, {:.4f})\n", x, y, z, w );
+
+    // Test first derivatives with autodiff
+    {
+      dual x_ad = x, y_ad = y, z_ad = z, w_ad = w;
+      double deriv_ad = derivative( MacroTestAutodiff::test_func4_ad, wrt( x_ad ), at( x_ad, y_ad, z_ad, w_ad ) );
+      // Finite difference
+      double f_plus = MacroTestFunctions::test_func4( x + h, y, z, w );
+      double f_minus = MacroTestFunctions::test_func4( x - h, y, z, w );
+      double deriv_fd = ( f_plus - f_minus ) / ( 2 * h );
+      bool ok = check_result( "∂f/∂x (4 args)", deriv_ad, deriv_fd, 1e-6 );
+      passed += ok;
+      total += 1;
+    }
+
+    {
+      dual x_ad = x, y_ad = y, z_ad = z, w_ad = w;
+      double deriv_ad = derivative( MacroTestAutodiff::test_func4_ad, wrt( y_ad ), at( x_ad, y_ad, z_ad, w_ad ) );
+      double f_plus = MacroTestFunctions::test_func4( x, y + h, z, w );
+      double f_minus = MacroTestFunctions::test_func4( x, y - h, z, w );
+      double deriv_fd = ( f_plus - f_minus ) / ( 2 * h );
+      bool ok = check_result( "∂f/∂y (4 args)", deriv_ad, deriv_fd, 1e-6 );
+      passed += ok;
+      total += 1;
+    }
+
+    {
+      dual x_ad = x, y_ad = y, z_ad = z, w_ad = w;
+      double deriv_ad = derivative( MacroTestAutodiff::test_func4_ad, wrt( z_ad ), at( x_ad, y_ad, z_ad, w_ad ) );
+      double f_plus = MacroTestFunctions::test_func4( x, y, z + h, w );
+      double f_minus = MacroTestFunctions::test_func4( x, y, z - h, w );
+      double deriv_fd = ( f_plus - f_minus ) / ( 2 * h );
+      bool ok = check_result( "∂f/∂z (4 args)", deriv_ad, deriv_fd, 1e-6 );
+      passed += ok;
+      total += 1;
+    }
+
+    {
+      dual x_ad = x, y_ad = y, z_ad = z, w_ad = w;
+      double deriv_ad = derivative( MacroTestAutodiff::test_func4_ad, wrt( w_ad ), at( x_ad, y_ad, z_ad, w_ad ) );
+      double f_plus = MacroTestFunctions::test_func4( x, y, z, w + h );
+      double f_minus = MacroTestFunctions::test_func4( x, y, z, w - h );
+      double deriv_fd = ( f_plus - f_minus ) / ( 2 * h );
+      bool ok = check_result( "∂f/∂w (4 args)", deriv_ad, deriv_fd, 1e-6 );
+      passed += ok;
+      total += 1;
+    }
+  }
+
+  // ========================================================================
+  // 5 ARGUMENTS - COMPLETE TESTS WITH FINITE DIFFERENCES
+  // ========================================================================
+  print_subheader( "5 ARGUMENTS TESTS (finite difference verification)" );
+
+  vector<array<double, 5>> points5 = {
+    { 0.5, 0.3, 0.2, 0.1, 0.4 },
+  };
+
+  for ( const auto & point : points5 )
+  {
+    double x1 = point[0], x2 = point[1], x3 = point[2], x4 = point[3], x5 = point[4];
+    fmt::print(
+      fg( fmt::color::yellow ),
+      "\nTest point: (x1..x5) = ({:.4f}, {:.4f}, {:.4f}, {:.4f}, {:.4f})\n",
+      x1, x2, x3, x4, x5 );
+
+    // Test all first derivatives (5)
+    vector<tuple<string, int>> first_derivs = {
+      { "∂f/∂x1 (5 args)", 1 },
+      { "∂f/∂x2 (5 args)", 2 },
+      { "∂f/∂x3 (5 args)", 3 },
+      { "∂f/∂x4 (5 args)", 4 },
+      { "∂f/∂x5 (5 args)", 5 },
+    };
+
+    for ( const auto& t : first_derivs )
+    {
+      string name = std::get<0>(t);
+      int    idx  = std::get<1>(t);
+      dual x1_ad = x1, x2_ad = x2, x3_ad = x3, x4_ad = x4, x5_ad = x5;
+      double deriv_ad = 0.0;
+      
+      if (idx == 1) deriv_ad = derivative( MacroTestAutodiff::test_func5_ad, wrt( x1_ad ), at( x1_ad, x2_ad, x3_ad, x4_ad, x5_ad ) );
+      else if (idx == 2) deriv_ad = derivative( MacroTestAutodiff::test_func5_ad, wrt( x2_ad ), at( x1_ad, x2_ad, x3_ad, x4_ad, x5_ad ) );
+      else if (idx == 3) deriv_ad = derivative( MacroTestAutodiff::test_func5_ad, wrt( x3_ad ), at( x1_ad, x2_ad, x3_ad, x4_ad, x5_ad ) );
+      else if (idx == 4) deriv_ad = derivative( MacroTestAutodiff::test_func5_ad, wrt( x4_ad ), at( x1_ad, x2_ad, x3_ad, x4_ad, x5_ad ) );
+      else if (idx == 5) deriv_ad = derivative( MacroTestAutodiff::test_func5_ad, wrt( x5_ad ), at( x1_ad, x2_ad, x3_ad, x4_ad, x5_ad ) );
+      
+      // Finite difference
+      auto shift = [&](double h) -> double {
+        double p1 = x1, p2 = x2, p3 = x3, p4 = x4, p5 = x5;
+        if (idx == 1) p1 += h; else if (idx == 2) p2 += h; else if (idx == 3) p3 += h; 
+        else if (idx == 4) p4 += h; else if (idx == 5) p5 += h;
+        return MacroTestFunctions::test_func5(p1, p2, p3, p4, p5);
+      };
+      double deriv_fd = (shift(h) - shift(-h)) / (2 * h);
+      bool ok = check_result( name, deriv_ad, deriv_fd, 1e-6 );
+      passed += ok;
+      total += 1;
+    }
+  }
+
+  // ========================================================================
+  // 6 ARGUMENTS - COMPLETE TESTS WITH FINITE DIFFERENCES
+  // ========================================================================
+  print_subheader( "6 ARGUMENTS TESTS (finite difference verification)" );
+
+  vector<array<double, 6>> points6 = {
+    { 0.5, 0.3, 0.2, 0.1, 0.4, 0.6 },
+  };
+
+  for ( const auto & point : points6 )
+  {
+    double x1 = point[0], x2 = point[1], x3 = point[2], x4 = point[3], x5 = point[4], x6 = point[5];
+    fmt::print(
+      fg( fmt::color::yellow ),
+      "\nTest point: (x1..x6) = ({:.4f}, {:.4f}, {:.4f}, {:.4f}, {:.4f}, {:.4f})\n",
+      x1, x2, x3, x4, x5, x6 );
+
+    // Test all first derivatives (6)
+    vector<tuple<string, int>> first_derivs = {
+      { "∂f/∂x1 (6 args)", 1 },
+      { "∂f/∂x2 (6 args)", 2 },
+      { "∂f/∂x3 (6 args)", 3 },
+      { "∂f/∂x4 (6 args)", 4 },
+      { "∂f/∂x5 (6 args)", 5 },
+      { "∂f/∂x6 (6 args)", 6 },
+    };
+
+    for ( const auto& t : first_derivs )
+    {
+      string name = std::get<0>(t);
+      int    idx  = std::get<1>(t);
+
+      dual x1_ad = x1, x2_ad = x2, x3_ad = x3, x4_ad = x4, x5_ad = x5, x6_ad = x6;
+      double deriv_ad = 0.0;
+      
+      if (idx == 1) deriv_ad = derivative( MacroTestAutodiff::test_func6_ad, wrt( x1_ad ), at( x1_ad, x2_ad, x3_ad, x4_ad, x5_ad, x6_ad ) );
+      else if (idx == 2) deriv_ad = derivative( MacroTestAutodiff::test_func6_ad, wrt( x2_ad ), at( x1_ad, x2_ad, x3_ad, x4_ad, x5_ad, x6_ad ) );
+      else if (idx == 3) deriv_ad = derivative( MacroTestAutodiff::test_func6_ad, wrt( x3_ad ), at( x1_ad, x2_ad, x3_ad, x4_ad, x5_ad, x6_ad ) );
+      else if (idx == 4) deriv_ad = derivative( MacroTestAutodiff::test_func6_ad, wrt( x4_ad ), at( x1_ad, x2_ad, x3_ad, x4_ad, x5_ad, x6_ad ) );
+      else if (idx == 5) deriv_ad = derivative( MacroTestAutodiff::test_func6_ad, wrt( x5_ad ), at( x1_ad, x2_ad, x3_ad, x4_ad, x5_ad, x6_ad ) );
+      else if (idx == 6) deriv_ad = derivative( MacroTestAutodiff::test_func6_ad, wrt( x6_ad ), at( x1_ad, x2_ad, x3_ad, x4_ad, x5_ad, x6_ad ) );
+      
+      // Finite difference
+      auto shift = [&](double h) -> double {
+        double p1 = x1, p2 = x2, p3 = x3, p4 = x4, p5 = x5, p6 = x6;
+        if (idx == 1) p1 += h; else if (idx == 2) p2 += h; else if (idx == 3) p3 += h; 
+        else if (idx == 4) p4 += h; else if (idx == 5) p5 += h; else if (idx == 6) p6 += h;
+        return MacroTestFunctions::test_func6(p1, p2, p3, p4, p5, p6);
+      };
+      double deriv_fd = (shift(h) - shift(-h)) / (2 * h);
+      bool ok = check_result( name, deriv_ad, deriv_fd, 1e-6 );
+      passed += ok;
+      total += 1;
+    }
+  }
+
+  // Print summary
+  fmt::print( "\n" );
+  fmt::print( "{}\n", string( 80, '-' ) );
+  if ( passed == total )
+  {
+    fmt::print(
+      fg( fmt::color::green ) | fmt::emphasis::bold,
+      "Derivatives (2-6 args): {}/{} tests passed ✓\n",
+      passed,
+      total );
+  }
+  else
+  {
+    fmt::print(
+      fg( fmt::color::orange ) | fmt::emphasis::bold,
+      "Derivatives (2-6 args): {}/{} tests passed\n",
+      passed,
+      total );
+  }
+  fmt::print( "{}\n", string( 80, '-' ) );
+}
+// ============================================================================
 // SECTION: Main Function
 // ============================================================================
 
@@ -1477,8 +2067,9 @@ int main()
   {
     // Run all test suites
     test_all_math_functions();    // Comprehensive math tests
-    test_utils_functions();       // NEW: Test functions from Utils_autodiff.hh
-    test_complex_combinations();  // NEW: Test complex combinations and conditionals
+    test_utils_functions();       // Test functions from Utils_autodiff.hh
+    test_complex_combinations();  // Test complex combinations and conditionals
+    test_macro_derivatives();     // Test derivatives (2-6 args) - using direct autodiff calls
     test_basic_functions();
     test_multi_variable();
     test_higher_order();

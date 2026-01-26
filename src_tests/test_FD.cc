@@ -17,6 +17,11 @@
  |                                                                          |
 \*--------------------------------------------------------------------------*/
 
+#if defined( __llvm__ ) || defined( __clang__ )
+#pragma clang diagnostic ignored "-Wsign-compare"
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#endif
+
 #include "Utils_FD.hh"
 #include "Utils_fmt.hh"
 
