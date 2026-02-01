@@ -321,8 +321,7 @@ namespace Utils
           std::filesystem::path( file ).parent_path().string(),
           line,
           v_name,
-          i
-        );
+          i );
       }
       if ( is_NaN( pv[i] ) )
       {
@@ -333,8 +332,7 @@ namespace Utils
           std::filesystem::path( file ).parent_path().string(),
           line,
           v_name,
-          i
-        );
+          i );
       }
     }
   }
@@ -357,8 +355,7 @@ namespace Utils
           std::filesystem::path( file ).parent_path().string(),
           line,
           v_name,
-          i
-        );
+          i );
       }
       if ( is_NaN( pv[i] ) )
       {
@@ -369,8 +366,7 @@ namespace Utils
           std::filesystem::path( file ).parent_path().string(),
           line,
           v_name,
-          i
-        );
+          i );
       }
     }
   }

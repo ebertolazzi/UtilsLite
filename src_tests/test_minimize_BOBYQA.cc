@@ -55,8 +55,10 @@ std::map<std::string, LineSearchStats> line_search_statistics;
 // MIGLIORAMENTO: Funzione per stimare la norma del gradiente via differenza
 // finita
 // ===========================================================================
-Scalar
-estimate_gradient_norm( std::function<Scalar( Vector const & )> const & f, Vector const & x, Scalar epsilon = 1e-6 )
+Scalar estimate_gradient_norm(
+  std::function<Scalar( Vector const & )> const & f,
+  Vector const &                                  x,
+  Scalar                                          epsilon = 1e-6 )
 {
   integer n = x.size();
   Vector  grad( n );
@@ -80,8 +82,7 @@ estimate_gradient_norm( std::function<Scalar( Vector const & )> const & f, Vecto
 // ===========================================================================
 // Aggiorna statistiche con norma gradiente stimata
 // ===========================================================================
-void
-update_line_search_statistics( const TestResult & result )
+void update_line_search_statistics( const TestResult & result )
 {
   auto & stats = line_search_statistics[result.linesearch_name];
   stats.name   = result.linesearch_name;
@@ -99,8 +100,7 @@ update_line_search_statistics( const TestResult & result )
 // ===========================================================================
 // Funzione per formattare il vettore
 // ===========================================================================
-inline std::string
-format_reduced_vector( Vector const & v, size_t max_size = 10 )
+inline std::string format_reduced_vector( Vector const & v, size_t max_size = 10 )
 {
   std::string tmp{ "[" };
   integer     v_size = v.size();
@@ -123,9 +123,7 @@ format_reduced_vector( Vector const & v, size_t max_size = 10 )
 // ===========================================================================
 // Test runner BOBYQA con stima norma gradiente
 // ===========================================================================
-template <typename Problem>
-void
-test( Problem & prob, std::string const & problem_name )
+template <typename Problem> void test( Problem & prob, std::string const & problem_name )
 {
   fmt::print(
     fmt::fg( fmt::color::cyan ),
@@ -210,8 +208,7 @@ test( Problem & prob, std::string const & problem_name )
 // ===========================================================================
 // Tabella riassuntiva colorata per BOBYQA
 // ===========================================================================
-void
-print_summary_table()
+void print_summary_table()
 {
   fmt::print(
     fmt::fg( fmt::color::light_blue ),
@@ -267,8 +264,7 @@ print_summary_table()
 // ===========================================================================
 // Statistiche delle line search (per BOBYQA c'è solo BOBYQA)
 // ===========================================================================
-void
-print_line_search_statistics()
+void print_line_search_statistics()
 {
   // Calcola medie finali
   for ( auto & [name, stats] : line_search_statistics )
@@ -342,8 +338,7 @@ print_line_search_statistics()
 // ===========================================================================
 // MAIN
 // ===========================================================================
-int
-main()
+int main()
 {
   fmt::print(
     fmt::fg( fmt::color::light_blue ),
