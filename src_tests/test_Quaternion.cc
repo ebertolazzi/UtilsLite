@@ -988,7 +988,7 @@ private:
 
   static void print_summary( const vector<TestResult> & results )
   {
-    int       total         = results.size();
+    int       total         = static_cast<int>( results.size() );
     int       passed        = 0;
     real_type total_error   = 0;
     real_type total_time_ms = 0;

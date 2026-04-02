@@ -214,7 +214,7 @@ void print_summary_table( const vector<TestResult> & results )
 void print_statistics( const vector<TestResult> & results )
 {
   Statistics stats;
-  stats.total_tests = results.size();
+  stats.total_tests = static_cast<int>( results.size() );
 
   double total_iterations     = 0.0;
   double total_function_evals = 0.0;
@@ -677,7 +677,7 @@ int main( int argc, char * argv[] )
   // Loop su tutti i test
   for ( size_t test_idx = 0; test_idx < nonlinear_system_tests.size(); ++test_idx )
   {
-    print_progress( test_idx, nonlinear_system_tests.size() );
+    print_progress( static_cast<int>( test_idx ), static_cast<int>( nonlinear_system_tests.size() ) );
 
     NonlinearSystem * system = nonlinear_system_tests[test_idx];
 
@@ -690,7 +690,7 @@ int main( int argc, char * argv[] )
     {
       TestResult result;
       result.test_name     = system->title();
-      result.num_equations = system->num_equations();
+      result.num_equations = static_cast<int>( system->num_equations() );
       result.converged     = false;
       all_results.push_back( result );
       continue;
@@ -710,7 +710,7 @@ int main( int argc, char * argv[] )
       solver.set_verbose_level( verbose_level );
       if ( random_seed != 0 )
       {
-        solver.set_random_seed( random_seed + test_idx );  // diverso per ogni test
+        solver.set_random_seed( random_seed + static_cast<unsigned>( test_idx ) );  // diverso per ogni test
       }
 
       NonlinearKaczmarz::Vector x = initial_points[ip_idx];
@@ -733,21 +733,21 @@ int main( int argc, char * argv[] )
       // Salva risultati
       TestResult result;
       result.test_name           = system->title();
-      result.num_equations       = system->num_equations();
+      result.num_equations       = static_cast<int>( system->num_equations() );
       result.converged           = converged;
-      result.iterations          = solver.get_num_iterations();
-      result.function_evals      = solver.get_num_function_evals();
-      result.jacobian_evals      = solver.get_num_jacobian_evals();
-      result.line_searches       = solver.get_num_line_searches();
+      result.iterations          = static_cast<int>( solver.get_num_iterations() );
+      result.function_evals      = static_cast<int>( solver.get_num_function_evals() );
+      result.jacobian_evals      = static_cast<int>( solver.get_num_jacobian_evals() );
+      result.line_searches       = static_cast<int>( solver.get_num_line_searches() );
       result.final_residual      = solver.get_final_residual();
       result.elapsed_time_ms     = elapsed.count();
-      result.initial_point_index = ip_idx;
+      result.initial_point_index = static_cast<int>( ip_idx );
 
       all_results.push_back( result );
     }
   }
 
-  print_progress( nonlinear_system_tests.size(), nonlinear_system_tests.size() );
+  print_progress( static_cast<int>( nonlinear_system_tests.size() ), static_cast<int>( nonlinear_system_tests.size() ) );
   fmt::print( fg( fmt::color::green ) | fmt::emphasis::bold, "\n\nAll tests completed!\n" );
 
   // Stampa tabella riassuntiva

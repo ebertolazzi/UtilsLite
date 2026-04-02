@@ -133,7 +133,7 @@ dvec_t generate_spike_signal( integer N, real_type noise_std = 0.05 )
   std::vector<integer>   spike_positions  = { N / 5, 2 * N / 5, 3 * N / 5, 4 * N / 5 };
   std::vector<real_type> spike_amplitudes = { 2.0, -1.5, 1.8, -2.2 };
 
-  integer NS = spike_positions.size();
+  integer NS = static_cast<integer>( spike_positions.size() );
   for ( integer i = 0; i < NS; ++i ) { y( spike_positions[i] ) = spike_amplitudes[i]; }
 
   // Add background noise
@@ -239,7 +239,7 @@ void print_table_header( std::vector<std::string> const & headers, std::vector<i
 {
   // Top border
   fmt::print( "┌" );
-  integer NH = headers.size();
+  integer NH = static_cast<integer>( headers.size() );
   for ( integer i = 0; i < NH; ++i )
   {
     fmt::print( "{:─^{}}", "", widths[i] + 2 );
@@ -269,7 +269,7 @@ void print_table_header( std::vector<std::string> const & headers, std::vector<i
 void print_table_footer( std::vector<int> const & widths )
 {
   fmt::print( "└" );
-  integer WS = widths.size();
+  integer WS = static_cast<integer>( widths.size() );
   for ( integer i = 0; i < WS; ++i )
   {
     fmt::print( "{:─^{}}", "", widths[i] + 2 );
@@ -525,7 +525,8 @@ private:
     }
 
     // Summary
-    integer passed_count = count_if( results.begin(), results.end(), []( const auto & p ) { return p.second; } );
+    integer passed_count =
+      static_cast<integer>( count_if( results.begin(), results.end(), []( const auto & p ) { return p.second; } ) );
 
     print( colors::header, "\nEdge Cases: {}/{} passed\n", passed_count, results.size() );
   }

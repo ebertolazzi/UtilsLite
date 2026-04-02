@@ -333,7 +333,7 @@ ConvergenceAnalysis analyze_convergence( vector<real_type> const & trace_values 
       if ( e_prev > 1e-15 ) { analysis.asymptotic_constant = e_last / pow( e_prev, analysis.average_order ); }
     }
 
-    analysis.effective_iterations = analysis.estimated_order.size();
+    analysis.effective_iterations = static_cast<int>( analysis.estimated_order.size() );
   }
 
   return analysis;

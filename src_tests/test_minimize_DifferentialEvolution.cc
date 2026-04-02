@@ -226,7 +226,7 @@ void print_summary_table( const vector<DETestResult> & results )
 void print_statistics( const vector<DETestResult> & results )
 {
   DEStatistics stats;
-  stats.total_tests = results.size();
+  stats.total_tests = static_cast<integer>( results.size() );
 
   real_type total_iterations     = 0.0;
   real_type total_function_evals = 0.0;
@@ -352,7 +352,7 @@ void print_statistics( const vector<DETestResult> & results )
 // Funzione per determinare i bound basati sui punti iniziali
 void determine_bounds( NonlinearSystem * system, Vector & lower, Vector & upper )
 {
-  integer n = system->num_equations();
+  integer n = static_cast<integer>( system->num_equations() );
   lower.resize( n );
   upper.resize( n );
 
@@ -601,10 +601,10 @@ int main( int argc, char * argv[] )
   // Loop su tutti i test
   for ( size_t test_idx = 0; test_idx < nonlinear_system_tests.size(); ++test_idx )
   {
-    if ( !verbose_mode ) print_progress( test_idx, nonlinear_system_tests.size() );
+    if ( !verbose_mode ) print_progress( static_cast<integer>( test_idx ), static_cast<integer>( nonlinear_system_tests.size() ) );
 
     NonlinearSystem * system = nonlinear_system_tests[test_idx];
-    integer           n      = system->num_equations();
+    integer           n      = static_cast<integer>( system->num_equations() );
 
     // Determina i bounds
     Eigen::VectorXd lower, upper;
@@ -680,9 +680,9 @@ int main( int argc, char * argv[] )
     result.test_name           = system->title();
     result.num_equations       = n;
     result.converged           = converged;
-    result.iterations          = de.get_iteration();
-    result.function_evals      = de.get_function_evaluations();
-    result.population_size     = de.get_population_size();
+    result.iterations          = static_cast<integer>( de.get_iteration() );
+    result.function_evals      = static_cast<integer>( de.get_function_evaluations() );
+    result.population_size     = static_cast<integer>( de.get_population_size() );
     result.best_fitness        = de.get_best_fitness();
     result.final_residual      = final_norm;
     result.elapsed_time_ms     = tm.elapsed_ms();
@@ -703,7 +703,12 @@ int main( int argc, char * argv[] )
     }
   }
 
-  if ( !verbose_mode ) print_progress( nonlinear_system_tests.size(), nonlinear_system_tests.size() );
+  if ( !verbose_mode ) {
+    print_progress(
+      static_cast<integer>( nonlinear_system_tests.size() ),
+      static_cast<integer>( nonlinear_system_tests.size() )
+    );
+  }
   fmt::print( fg( fmt::color::green ) | fmt::emphasis::bold, "\n\nAll tests completed!\n" );
 
   // Stampa tabella riassuntiva
@@ -726,9 +731,11 @@ int main( int argc, char * argv[] )
       all_results.begin(),
       all_results.end(),
       []( const DETestResult & a, const DETestResult & b )
-      { return a.converged            ? a.best_fitness
-               : -1e100 < b.converged ? b.best_fitness
-                                      : -1e100; } );
+      {
+        real_type a_score = a.converged ? a.best_fitness : -1e100;
+        real_type b_score = b.converged ? b.best_fitness : -1e100;
+        return a_score < b_score;
+      } );
 
     // Trova il test più veloce
     auto fastest_it = min_element(

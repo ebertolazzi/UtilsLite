@@ -649,7 +649,7 @@ public:
     {
       std::vector<double> times  = { res.time_dynamic, res.time_map_dynamic, res.time_fixed, res.time_fixed_map };
       auto                min_it = std::min_element( times.begin(), times.end() );
-      int                 idx    = std::distance( times.begin(), min_it );
+      int                 idx    = static_cast<int>( std::distance( times.begin(), min_it ) );
       wins[idx]++;
     }
 

@@ -573,8 +573,8 @@ namespace Utils
     }
 
     // set m_x_opt from m_xpt row m_kopt (0-based)
-    m_x_opt               = m_xpt.col( m_kopt );
-    Scalar m_x_opt_square = m_x_opt.squaredNorm();
+    m_x_opt        = m_xpt.col( m_kopt );
+    m_x_opt_square = m_x_opt.squaredNorm();
 
     Scalar  fsave  = m_f_val( 0 );
     integer kbase  = 0;
@@ -3284,10 +3284,10 @@ namespace Utils
 
       // Calculate update coefficients based on Powell's formula
       // These mix the Lagrange vector (vlag) and the work vector
-      Scalar const tempa = ( alpha * m_v_lag( jp ) - tau * work( jp ) ) / m_denom;
-      Scalar const tempb = ( -m_beta * work( jp ) - tau * m_v_lag( jp ) ) / m_denom;
+      Scalar const update_tempa = ( alpha * m_v_lag( jp ) - tau * work( jp ) ) / m_denom;
+      Scalar const update_tempb = ( -m_beta * work( jp ) - tau * m_v_lag( jp ) ) / m_denom;
 
-      m_B.row( j ).head( jp + 1 ) += tempa * m_v_lag.head( jp + 1 ) + tempb * work.head( jp + 1 );
+      m_B.row( j ).head( jp + 1 ) += update_tempa * m_v_lag.head( jp + 1 ) + update_tempb * work.head( jp + 1 );
 
       // Enforce symmetry in the Hessian block of BMAT.
       // If we are within the Hessian block (jp >= npt), copy the row segment

@@ -362,7 +362,7 @@ void run_benchmark_for_size( int N, int P, int M, int n_runs = 5 )
     if ( results[i].mean_time < fastest_time )
     {
       fastest_time  = results[i].mean_time;
-      fastest_index = i;
+      fastest_index = static_cast<int>( i );
     }
   }
 
@@ -375,7 +375,7 @@ void run_benchmark_for_size( int N, int P, int M, int n_runs = 5 )
     if ( results[i].flop_rate > highest_flop_rate )
     {
       highest_flop_rate    = results[i].flop_rate;
-      most_efficient_index = i;
+      most_efficient_index = static_cast<int>( i );
     }
   }
 

@@ -2502,6 +2502,12 @@ void test_declaration_macros()
     autodiff::dual1st myFunc2_dual( autodiff::dual1st const & x, autodiff::dual1st const & y ) const { return x * y; }
     autodiff::dual2nd myFunc2_dual( autodiff::dual2nd const & x, autodiff::dual2nd const & y ) const { return x * y; }
 
+    // MSVC warns here because this local class has internal linkage.
+    // This test only checks that the declaration macros compile.
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 5046 )
+#endif
     // Use macros to generate derivative declarations
     UTILS_AUTODIFF_FUN_1_VARS_DECL( myFunc, )
     UTILS_AUTODIFF_FUN_2_VARS_DECL( myFunc2, )
@@ -2509,6 +2515,9 @@ void test_declaration_macros()
     UTILS_AUTODIFF_FUN_4_VARS_DECL( myFunc4, )
     UTILS_AUTODIFF_FUN_5_VARS_DECL( myFunc5, )
     UTILS_AUTODIFF_FUN_6_VARS_DECL( myFunc6, )
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif
   };
 
   fmt::print( fg( fmt::color::green ), "  ✓ Declaration macros compile successfully\n" );

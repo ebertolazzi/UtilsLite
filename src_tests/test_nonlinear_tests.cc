@@ -281,7 +281,7 @@ namespace Utils
       if ( !sys ) continue;
 
       // Skip systems with dimension > max_dimension
-      integer n_eq = sys->num_equations();
+      integer n_eq = static_cast<integer>( sys->num_equations() );
       if ( n_eq > max_dimension )
       {
         skipped_tests++;
@@ -394,7 +394,7 @@ namespace Utils
             passed_tests++;
           }
         }
-        catch ( const std::exception & e )
+        catch ( const std::exception & )
         {
           total_tests++;
           error_tests++;

@@ -433,7 +433,7 @@ bool testDenseSolverComprehensive()
         Eigen::MatrixXd                     A( 3, 4 );  // Non-square
         Utils::DenseSymmetricSolver<Scalar> solver( A, 1.0 );
       }
-      catch ( const std::exception & e )
+      catch ( const std::exception & )
       {
         caught_exception = true;
       }
@@ -454,7 +454,7 @@ bool testDenseSolverComprehensive()
         A << 1, 2, 3, 4, 5, 6, 7, 8, 9;  // Non-symmetric
         Utils::DenseSymmetricSolver<Scalar> solver( A, 1.0 );
       }
-      catch ( const std::exception & e )
+      catch ( const std::exception & )
       {
         caught_exception = true;
       }
@@ -476,7 +476,7 @@ bool testDenseSolverComprehensive()
         Eigen::VectorXd                     b( 5 );  // Wrong dimension
         Eigen::VectorXd                     x = solver.solve( b );
       }
-      catch ( const std::exception & e )
+      catch ( const std::exception & )
       {
         caught_exception = true;
       }
@@ -724,7 +724,7 @@ bool testSparseSolverComprehensive()
       {
         Utils::SparseSymmetricSolver<Scalar> solver( A, 0.0 );
       }
-      catch ( const std::exception & e )
+      catch ( const std::exception & )
       {
         caught_exception = true;
       }
@@ -761,7 +761,7 @@ bool testSparseSolverComprehensive()
         Scalar                               rel_residual = computeRelativeResidual( A, lambda, x, b );
         success                                           = rel_residual < 1e-10;
       }
-      catch ( const std::exception & e )
+      catch ( const std::exception & )
       {
         success = false;
       }

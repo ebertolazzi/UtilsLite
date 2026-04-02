@@ -1375,7 +1375,7 @@ public:
       auto avg_reduction = std::accumulate( stats.reductions.begin(), stats.reductions.end(), 0.0 ) /
                            static_cast<double>( stats.reductions.size() );
       auto min_reduction = *std::min_element( stats.reductions.begin(), stats.reductions.end() );
-      auto max_reduction = *std::max_element( stats.reductions.begin(), stats.reductions.end() );
+      auto max_reduction_value = *std::max_element( stats.reductions.begin(), stats.reductions.end() );
       auto avg_evals     = std::accumulate( stats.function_evals.begin(), stats.function_evals.end(), 0.0 ) /
                        static_cast<double>( stats.function_evals.size() );
 
@@ -1426,7 +1426,7 @@ public:
         "min:{:.1f}% avg:{:.1f}% max:{:.1f}%",
         100 * min_reduction,
         100 * avg_reduction,
-        100 * max_reduction );
+        100 * max_reduction_value );
 
       func_table.print_row(
         { func, reduction_str, fmt::format( "{:.1f}", avg_evals ), difficulty },

@@ -98,6 +98,10 @@ struct TestResults
     // Imposta handler per assertion
     auto old_handler = signal( SIGABRT, assertion_handler );
 
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4611 )
+#endif
     if ( setjmp( assertion_jmp_buf ) == 0 )
     {
       // Prima esecuzione
@@ -119,6 +123,9 @@ struct TestResults
       fmt::print( fg( fmt::color::red ), "  {} {} (assertion failed)\n", CROSS_MARK, message );
     }
 
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif
     // Ripristina handler
     signal( SIGABRT, old_handler );
   }

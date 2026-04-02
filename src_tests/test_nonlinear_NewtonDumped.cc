@@ -372,7 +372,7 @@ void print_summary_table( const vector<TestResult> & results )
 void print_statistics( const vector<TestResult> & results )
 {
   OverallStatistics stats;
-  stats.total_tests = results.size();
+  stats.total_tests = static_cast<int>( results.size() );
 
   double total_iterations     = 0.0;
   double total_function_evals = 0.0;
@@ -573,7 +573,7 @@ void print_strategy_comparison_table( const vector<StrategyStatistics> & strateg
 
   // Assegna rank
   vector<int> ranks( strategy_stats.size(), 0 );
-  for ( size_t i = 0; i < rankings.size(); ++i ) { ranks[rankings[i].second] = i + 1; }
+  for ( size_t i = 0; i < rankings.size(); ++i ) { ranks[rankings[i].second] = static_cast<int>( i + 1 ); }
 
   // Dati delle strategie
   for ( size_t i = 0; i < strategy_stats.size(); ++i )
@@ -826,7 +826,7 @@ StrategyStatistics run_tests_for_strategy(
     {
       TestResult result;
       result.test_name     = system->title();
-      result.num_equations = system->num_equations();
+      result.num_equations = static_cast<int>( system->num_equations() );
       result.converged     = false;
       stats.detailed_results.push_back( result );
       stats.total_tests++;
@@ -867,11 +867,11 @@ StrategyStatistics run_tests_for_strategy(
       // Salva risultati
       TestResult result;
       result.test_name           = system->title();
-      result.num_equations       = system->num_equations();
+      result.num_equations       = static_cast<int>( system->num_equations() );
       result.converged           = converged;
-      result.iterations          = solver.get_num_iterations();
-      result.function_evals      = solver.get_num_function_evals();
-      result.jacobian_evals      = solver.get_num_jacobian_evals();
+      result.iterations          = static_cast<int>( solver.get_num_iterations() );
+      result.function_evals      = static_cast<int>( solver.get_num_function_evals() );
+      result.jacobian_evals      = static_cast<int>( solver.get_num_jacobian_evals() );
       result.final_residual      = solver.get_final_residual();
       result.elapsed_time_ms     = tm.elapsed_ms();
       result.initial_point_index = static_cast<int>( ip_idx );

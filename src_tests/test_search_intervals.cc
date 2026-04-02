@@ -521,7 +521,7 @@ public:
         x_mod_func    = x_copy;
         func_ok       = true;
       }
-      catch ( const exception & e )
+      catch ( const exception & )
       {
         result.func_failures++;
         func_ok = false;
@@ -536,7 +536,7 @@ public:
         x_mod_class    = query.second;
         class_ok       = true;
       }
-      catch ( const exception & e )
+      catch ( const exception & )
       {
         result.class_failures++;
         class_ok = false;

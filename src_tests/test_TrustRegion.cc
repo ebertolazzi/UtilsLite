@@ -630,8 +630,8 @@ bool testMethodComparison()
 
     for ( integer n : sizes )
     {
-      Eigen::SparseMatrix<Scalar> H     = generateRandomPositiveDefiniteHessian( n, 300 + n, 0.1, 1.0 );
-      Eigen::VectorXd             g     = generateRandomGradient( n, 400 + n );
+      Eigen::SparseMatrix<Scalar> H = generateRandomPositiveDefiniteHessian( n, static_cast<unsigned>( 300 + n ), 0.1, 1.0 );
+      Eigen::VectorXd             g = generateRandomGradient( n, static_cast<unsigned>( 400 + n ) );
       Scalar                      delta = 1.0;
 
       std::vector<Scalar> times_ms( methods.size(), 0.0 );

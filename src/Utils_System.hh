@@ -653,9 +653,9 @@ namespace Utils
      */
     static std::string get_cpu_vendor()
     {
+#if defined( UTILS_CPU_X86 )
       switch ( get_architecture() )
       {
-#ifdef UTILS_CPU_X86
         case ArchType::X86:
         case ArchType::X64:
         {
@@ -667,7 +667,6 @@ namespace Utils
           memcpy( vendor + 8, &cpuid0.ecx, 4 );
           return vendor;
         }
-#endif
         default:
         {
 #if defined( __linux__ )
@@ -698,6 +697,9 @@ namespace Utils
           return "Unknown";
         }
       }
+#else
+      return "Unknown";
+#endif
     }
 
     /**
@@ -1886,7 +1888,7 @@ namespace Utils
     {
       if ( drives & ( 1 << i ) )
       {
-        drive[0] = 'A' + i;
+        drive[0] = static_cast<char>( 'A' + i );
 
         // Check drive type
         UINT type = GetDriveTypeA( drive );

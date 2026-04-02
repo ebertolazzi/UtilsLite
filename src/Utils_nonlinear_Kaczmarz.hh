@@ -102,7 +102,8 @@ namespace Utils
   public:
     NonlinearKaczmarz()
     {
-      unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+      auto     ticks = std::chrono::system_clock::now().time_since_epoch().count();
+      unsigned seed  = static_cast<unsigned>( ticks );
       m_random_engine.seed( seed );
     }
 

@@ -476,7 +476,7 @@ void run_comparative_test( const TestFunction & tf, bool detailed = false )
           conv_data_1e8.f_values[i] );
       }
       fmt::print( "    ...\n" );
-      int n = conv_data_1e8.intervals.size();
+      int n = static_cast<int>( conv_data_1e8.intervals.size() );
       for ( int i = max( 3, n - 3 ); i < n; i++ )
       {
         fmt::print(
@@ -645,7 +645,7 @@ void run_benchmark()
     // Calculate averages
     int       avg_iter       = accumulate( iterations.begin(), iterations.end(), 0 ) / runs;
     int       avg_eval       = accumulate( evaluations.begin(), evaluations.end(), 0 ) / runs;
-    int       conv_count     = count( converged.begin(), converged.end(), true );
+    int       conv_count     = static_cast<int>( count( converged.begin(), converged.end(), true ) );
     real_type avg_efficiency = accumulate( efficiencies.begin(), efficiencies.end(), 0.0 ) / runs;
 
     fmt::print(
@@ -764,7 +764,7 @@ void analyze_results( const vector<TestFunction> & tests )
 {
   fmt::print( fg( fmt::color::magenta ) | fmt::emphasis::bold, "\n{:═^80}\n", " Statistical Analysis of Results " );
 
-  int total_tests    = tests.size();
+  int total_tests    = static_cast<int>( tests.size() );
   int success_global = 0;
   int success_local  = 0;
   int failures       = 0;

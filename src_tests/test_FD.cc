@@ -97,7 +97,7 @@ std::vector<Real> generate_grid( Real x0, int n, Real h, GridType type = UNIFORM
 // Convergence rate calculation
 Real compute_convergence_rate( const std::vector<Real> & errors, const std::vector<Real> & steps )
 {
-  int n = std::min( errors.size(), steps.size() );
+  int n = static_cast<int>( std::min( errors.size(), steps.size() ) );
   if ( n < 2 ) return 0.0;
 
   Real sum_log = 0.0;
@@ -332,7 +332,7 @@ void test_consistency()
   // Test with 2nd degree polynomial: formulas should be exact
   auto poly2              = []( Real x ) { return 3.0 * x * x + 2.0 * x + 1.0; };
   auto poly2_prime        = []( Real x ) { return 6.0 * x + 2.0; };
-  auto poly2_double_prime = []( Real x ) { return 6.0; };
+  auto poly2_double_prime = []( Real /*x*/ ) { return 6.0; };
 
   Real x0 = 2.0;
   Real h  = 0.5;

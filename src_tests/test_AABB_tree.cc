@@ -316,7 +316,7 @@ void test_point_intersection_comprehensive()
 
   integer passed_basic   = 0;
   integer passed_refined = 0;
-  integer total          = test_points.size();
+  integer total          = static_cast<integer>( test_points.size() );
 
   TicToc timer;
 
@@ -413,7 +413,7 @@ void test_bbox_intersection_comprehensive()
 
   integer passed_basic   = 0;
   integer passed_refined = 0;
-  integer total          = test_bboxes.size();
+  integer total          = static_cast<integer>( test_bboxes.size() );
 
   TicToc timer;
 
@@ -524,7 +524,7 @@ void test_tree_intersection_comprehensive()
   timer.toc();
 
   integer total_candidate_pairs = 0;
-  for ( auto const & [k, v] : candidate_results ) total_candidate_pairs += v.size();
+  for ( auto const & [k, v] : candidate_results ) total_candidate_pairs += static_cast<integer>( v.size() );
 
   fmt::print( "  │ Found {} candidate pairs\n", total_candidate_pairs );
   fmt::print( "  │ Time: {:.2f} ms\n", timer.elapsed_ms() );
@@ -538,7 +538,7 @@ void test_tree_intersection_comprehensive()
   timer.toc();
 
   integer total_exact_pairs = 0;
-  for ( auto const & [k, v] : refined_results ) total_exact_pairs += v.size();
+  for ( auto const & [k, v] : refined_results ) total_exact_pairs += static_cast<integer>( v.size() );
 
   fmt::print( "  │ Found {} exact intersecting pairs\n", total_exact_pairs );
   fmt::print( "  │ Time: {:.2f} ms\n", timer.elapsed_ms() );
@@ -842,7 +842,7 @@ void test_min_distance()
   fmt::print( "  Testing minimum distance candidates...\n" );
 
   integer passed = 0;
-  integer total  = test_points.size();
+  integer total  = static_cast<integer>( test_points.size() );
 
   for ( auto const & pnt : test_points )
   {

@@ -435,7 +435,7 @@ class CutlipsSteadyStateForReactionRateEquations : public NonlinearSystem
 public:
   CutlipsSteadyStateForReactionRateEquations( integer k_set_in )
     : NonlinearSystem(
-        ini_msg_CutlipsSteadyStateForReactionRateEquations( k_set_in ),
+        ini_msg_CutlipsSteadyStateForReactionRateEquations( static_cast<int>( k_set_in ) ),
         "@inbook{eden2014proceedings,\n"
         "  author    = {M. Shacham},\n"
         "  title     = {Recent developments in solution techniques for\n"

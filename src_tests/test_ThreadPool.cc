@@ -878,7 +878,7 @@ void test_scaling( int max_threads, int task_count, int task_size, int num_runs 
         efficiency_str,
         throughput );
     }
-    catch ( const std::exception & e )
+    catch ( const std::exception & )
     {
       fmt::print( fg( fmt::color::red ), "│ {:8d} │ {:>22} │\n", nt, "FAILED" );
     }
@@ -1018,7 +1018,12 @@ int main( int const argc, char * argv[] )
         NN );
     }
 
-    print_test_header( NN, config.num_threads, config.task_size, i + 1, config.task_counts.size() );
+    print_test_header(
+      NN,
+      config.num_threads,
+      config.task_size,
+      static_cast<int>( i + 1 ),
+      static_cast<int>( config.task_counts.size() ) );
 
     auto results = test_all_pools( NN, config.num_threads, config.task_size, config.num_runs );
     all_results.push_back( results );
