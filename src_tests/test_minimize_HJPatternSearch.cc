@@ -479,8 +479,10 @@ void print_function_statistics()
   {
     if ( stats.successful_tests > 0 )
     {
-      stats.average_iterations = static_cast<real_type>( stats.total_iterations ) / stats.successful_tests;
-      stats.success_rate       = ( 100.0 * stats.successful_tests ) / stats.total_tests;
+      stats.average_iterations =
+        static_cast<real_type>( stats.total_iterations ) / static_cast<real_type>( stats.successful_tests );
+      stats.success_rate =
+        ( 100.0 * static_cast<double>( stats.successful_tests ) ) / static_cast<double>( stats.total_tests );
     }
   }
 
@@ -634,7 +636,9 @@ int main()
 
     fmt::print( "║ Total tests run:            {:>48} ║\n", total_tests );
     fmt::print( "║ Successful tests:           {:>48} ║\n", successful_tests );
-    fmt::print( "║ Success rate:               {:>47.1f}% ║\n", ( 100.0 * successful_tests ) / total_tests );
+    fmt::print(
+      "║ Success rate:               {:>47.1f}% ║\n",
+      ( 100.0 * static_cast<double>( successful_tests ) ) / static_cast<double>( total_tests ) );
 
     size_t total_iterations  = 0;
     size_t total_evaluations = 0;

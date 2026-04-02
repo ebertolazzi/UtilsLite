@@ -106,7 +106,7 @@ Eigen::MatrixXd generateRandomSymmetricDense( integer n, unsigned seed = 42, Sca
       A( j, i )  = val;  // Ensure symmetry
     }
     // Make diagonally dominant for better conditioning
-    A( i, i ) += diag_dominance * n;
+    A( i, i ) += diag_dominance * static_cast<Scalar>( n );
   }
   return A;
 }
@@ -501,7 +501,7 @@ bool testDenseSolverComprehensive()
     {
       for ( integer j = 0; j < n; ++j )
       {
-        A( i, j ) = 1.0 / ( i + j + 1.0 );  // Hilbert matrix is ill-conditioned
+        A( i, j ) = 1.0 / ( static_cast<double>( i + j ) + 1.0 );  // Hilbert matrix is ill-conditioned
       }
       A( i, i ) += 1.0;  // Add to diagonal for better conditioning
     }
@@ -828,7 +828,10 @@ bool testSparseSolverComprehensive()
 
     fmt::print( TestColors::INFO, "  Factorization + first solve: {:.2f} ms\n", first_solve_time );
     fmt::print( TestColors::INFO, "  {} subsequent solves: {:.2f} ms\n", num_solves - 1, subsequent_solves_time );
-    fmt::print( TestColors::INFO, "  Average per solve: {:.2f} ms\n", subsequent_solves_time / ( num_solves - 1 ) );
+    fmt::print(
+      TestColors::INFO,
+      "  Average per solve: {:.2f} ms\n",
+      subsequent_solves_time / static_cast<Scalar>( num_solves - 1 ) );
 
     printTestResult( "Multiple RHS solves", passed, fmt::format( "max residual={:.2e}", max_residual ) );
   }
@@ -1023,7 +1026,7 @@ bool testSparsityPatternAnalysis()
     // Calculate theoretical vs actual sparsity
     integer total_elements  = n * n;
     integer nnz             = A.nonZeros();
-    Scalar  actual_sparsity = static_cast<Scalar>( nnz ) / total_elements;
+    Scalar  actual_sparsity = static_cast<Scalar>( nnz ) / static_cast<Scalar>( total_elements );
 
     fmt::print( TestColors::INFO, "  Matrix {}x{}:\n", n, n );
     fmt::print( TestColors::INFO, "  - Total elements: {}\n", total_elements );
@@ -1033,7 +1036,7 @@ bool testSparsityPatternAnalysis()
     fmt::print(
       TestColors::INFO,
       "  - Storage efficiency: {:.2f}%\n",
-      ( 1.0 - static_cast<Scalar>( nnz ) / total_elements ) * 100 );
+      ( 1.0 - static_cast<Scalar>( nnz ) / static_cast<Scalar>( total_elements ) ) * 100 );
 
     bool passed = std::abs( actual_sparsity - sparsity ) < 0.02;  // Within 2%
     tests_passed += passed ? 1 : 0;
@@ -1232,7 +1235,9 @@ bool testSparsityPatternAnalysis()
     {
       for ( integer j = std::max<integer>( 0, i - bandwidth ); j <= std::min<integer>( n - 1, i + bandwidth ); ++j )
       {
-        if ( std::abs( i - j ) <= bandwidth ) { banded.insert( i, j ) = 1.0 / ( std::abs( i - j ) + 1.0 ); }
+        if ( std::abs( i - j ) <= bandwidth ) {
+          banded.insert( i, j ) = 1.0 / ( static_cast<double>( std::abs( i - j ) ) + 1.0 );
+        }
       }
     }
     banded.makeCompressed();
@@ -1243,7 +1248,7 @@ bool testSparsityPatternAnalysis()
     for ( const auto & [name, matrix] : test_matrices )
     {
       integer nnz     = matrix.nonZeros();
-      Scalar  density = static_cast<Scalar>( nnz ) / ( n * n );
+      Scalar  density = static_cast<Scalar>( nnz ) / static_cast<Scalar>( n * n );
 
       // Check for special structure
       bool    is_diagonal      = true;
@@ -1310,7 +1315,7 @@ bool testSparsityPatternAnalysis()
 
         // Compare with dense storage
         size_t dense_bytes       = n * n * sizeof( Scalar );
-        Scalar compression_ratio = static_cast<Scalar>( estimated_bytes ) / dense_bytes;
+        Scalar compression_ratio = static_cast<Scalar>( estimated_bytes ) / static_cast<Scalar>( dense_bytes );
 
         fmt::print( TestColors::INFO, "  n={}, sparsity={:.0f}%:\n", n, sparsity * 100 );
         fmt::print(

@@ -181,7 +181,7 @@ void test_first_derivatives( Real x0, const std::vector<Real> & steps, GridType 
     // Characteristic step (average of differences)
     Real h_char = 0.0;
     for ( size_t i = 1; i < grid.size(); ++i ) { h_char += grid[i] - grid[i - 1]; }
-    h_char /= ( grid.size() - 1 );
+    h_char /= static_cast<Real>( grid.size() - 1 );
 
     // Print results
     fmt::print( "{:10.3e} │ ", h_char );
@@ -281,7 +281,7 @@ void test_second_derivatives( Real x0, const std::vector<Real> & steps, GridType
     // Characteristic step
     Real h_char = 0.0;
     for ( size_t i = 1; i < grid.size(); ++i ) { h_char += grid[i] - grid[i - 1]; }
-    h_char /= ( grid.size() - 1 );
+    h_char /= static_cast<Real>( grid.size() - 1 );
 
     // Print results
     fmt::print( "{:10.3e} │ ", h_char );

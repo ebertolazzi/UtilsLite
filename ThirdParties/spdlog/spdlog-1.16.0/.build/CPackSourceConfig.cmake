@@ -10,6 +10,8 @@
 # usually begin with CPACK_<GENNAME>_xxxx.
 
 
+set(CPACK_ARCHIVE_GID "-1")
+set(CPACK_ARCHIVE_UID "-1")
 set(CPACK_BUILD_SOURCE_DIRS "/Users/enricobertolazzi/Ricerca/PINS/PINS-submodules/UtilsLite/ThirdParties/spdlog/spdlog-1.16.0;/Users/enricobertolazzi/Ricerca/PINS/PINS-submodules/UtilsLite/ThirdParties/spdlog/spdlog-1.16.0/.build")
 set(CPACK_CMAKE_GENERATOR "Ninja")
 set(CPACK_COMPONENT_UNSPECIFIED_HIDDEN "TRUE")

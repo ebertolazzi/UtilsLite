@@ -21,10 +21,12 @@
 #include "Utils_fmt.hh"
 #include "Utils_TicToc.hh"
 
-// #include <sys/resource.h>
-// #include <future>
-// #include <chrono>
-// #include <cassert>
+#if defined( _WIN32 ) || defined( _WIN64 )
+#include <windows.h>
+#include <psapi.h>
+#else
+#include <sys/resource.h>
+#endif
 
 using std::cout;
 
@@ -152,9 +154,10 @@ struct TestResult
     {
       if ( samples.empty() ) return { 0.0, 0.0 };
       double sum    = std::accumulate( samples.begin(), samples.end(), 0.0 );
-      double mean   = sum / samples.size();
+      double count  = static_cast<double>( samples.size() );
+      double mean   = sum / count;
       double sq_sum = std::inner_product( samples.begin(), samples.end(), samples.begin(), 0.0 );
-      double stddev = std::sqrt( sq_sum / samples.size() - mean * mean );
+      double stddev = std::sqrt( sq_sum / count - mean * mean );
       return { mean, stddev };
     };
 
@@ -182,19 +185,52 @@ struct ResourceUsage
 
   static ResourceUsage get_current()
   {
+#if defined( _WIN32 ) || defined( _WIN64 )
+    PROCESS_MEMORY_COUNTERS_EX mem_counters{};
+    FILETIME                   creation_time{};
+    FILETIME                   exit_time{};
+    FILETIME                   kernel_time{};
+    FILETIME                   user_time{};
+
+    GetProcessMemoryInfo(
+      GetCurrentProcess(),
+      reinterpret_cast<PROCESS_MEMORY_COUNTERS *>( &mem_counters ),
+      sizeof( mem_counters ) );
+
+    GetProcessTimes( GetCurrentProcess(), &creation_time, &exit_time, &kernel_time, &user_time );
+
+    ULARGE_INTEGER kernel_ticks{};
+    kernel_ticks.LowPart  = kernel_time.dwLowDateTime;
+    kernel_ticks.HighPart = kernel_time.dwHighDateTime;
+
+    ULARGE_INTEGER user_ticks{};
+    user_ticks.LowPart  = user_time.dwLowDateTime;
+    user_ticks.HighPart = user_time.dwHighDateTime;
+
+    return ResourceUsage{
+      static_cast<long>( mem_counters.PeakWorkingSetSize / 1024ULL ),
+      static_cast<long>( user_ticks.QuadPart / 10000ULL ),
+      static_cast<long>( kernel_ticks.QuadPart / 10000ULL )
+    };
+#else
     struct rusage usage;
     getrusage( RUSAGE_SELF, &usage );
 
-    return ResourceUsage{ .max_rss_kb     = usage.ru_maxrss,
-                          .user_time_ms   = usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000,
-                          .system_time_ms = usage.ru_stime.tv_sec * 1000 + usage.ru_stime.tv_usec / 1000 };
+    return ResourceUsage{
+      usage.ru_maxrss,
+      usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000,
+      usage.ru_stime.tv_sec * 1000 + usage.ru_stime.tv_usec / 1000
+    };
+#endif
   }
 
   ResourceUsage operator-( const ResourceUsage & other ) const
   {
-    return ResourceUsage{ .max_rss_kb     = std::max( max_rss_kb, other.max_rss_kb ),
-                          .user_time_ms   = user_time_ms - other.user_time_ms,
-                          .system_time_ms = system_time_ms - other.system_time_ms };
+    return ResourceUsage{
+      std::max( max_rss_kb, other.max_rss_kb ),
+      user_time_ms - other.user_time_ms,
+      system_time_ms - other.system_time_ms
+    };
   }
 };
 
@@ -597,7 +633,7 @@ void print_summary_statistics( const std::vector<TestResult> & results, int NN, 
   long max_memory_kb = 0;
   for ( const auto & res : mutable_results ) { max_memory_kb = std::max( max_memory_kb, res.max_rss_kb ); }
   fmt::print( fg( fmt::color::cyan ) | fmt::emphasis::bold, "  💾 Peak Memory Usage:  " );
-  fmt::print( "{:.1f} MB\n", max_memory_kb / 1024.0 );
+  fmt::print( "{:.1f} MB\n", static_cast<double>( max_memory_kb ) / 1024.0 );
 }
 
 // ===========================================================================

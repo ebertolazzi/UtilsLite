@@ -262,8 +262,9 @@ public:
     }
 
     double avg_speedup       = total_time_function / total_time_class;
-    double accuracy_function = 100.0 * correct_function / test_results.size();
-    double accuracy_class    = 100.0 * correct_class / test_results.size();
+    double result_count      = static_cast<double>( test_results.size() );
+    double accuracy_function = 100.0 * correct_function / result_count;
+    double accuracy_class    = 100.0 * correct_class / result_count;
 
     fmt::print( "  Total time function implementation: {:>10.2f} μs\n", total_time_function );
     fmt::print( "  Total time class implementation: {:>10.2f} μs\n", total_time_class );
@@ -960,8 +961,8 @@ private:
   vector<real_type> generate_uniform_intervals( size_t num_intervals, real_type start = 0.0, real_type end = 100.0 )
   {
     vector<real_type> X( num_intervals + 1 );
-    real_type         step = ( end - start ) / num_intervals;
-    for ( size_t i = 0; i <= num_intervals; ++i ) { X[i] = start + i * step; }
+    real_type         step = ( end - start ) / static_cast<real_type>( num_intervals );
+    for ( size_t i = 0; i <= num_intervals; ++i ) { X[i] = start + static_cast<real_type>( i ) * step; }
     return X;
   }
 
@@ -971,9 +972,9 @@ private:
     vector<real_type> X( num_intervals + 1 );
     real_type         log_start = log10( start );
     real_type         log_end   = log10( end );
-    real_type         log_step  = ( log_end - log_start ) / num_intervals;
+    real_type         log_step  = ( log_end - log_start ) / static_cast<real_type>( num_intervals );
 
-    for ( size_t i = 0; i <= num_intervals; ++i ) { X[i] = pow( 10.0, log_start + i * log_step ); }
+    for ( size_t i = 0; i <= num_intervals; ++i ) { X[i] = pow( 10.0, log_start + static_cast<real_type>( i ) * log_step ); }
     // Add some randomness to make it truly non-uniform
     random_device                        rd;
     mt19937                              gen( rd() );
@@ -1000,13 +1001,13 @@ private:
       // Forward
       for ( size_t i = 0; i < num_queries / 2; ++i )
       {
-        real_type t = static_cast<real_type>( i ) / ( num_queries / 2 - 1 );
+        real_type t = static_cast<real_type>( i ) / static_cast<real_type>( num_queries / 2 - 1 );
         queries.push_back( x_min - range * 0.1 + t * ( range * 1.2 ) );
       }
       // Backward
       for ( size_t i = 0; i < num_queries / 2; ++i )
       {
-        real_type t = static_cast<real_type>( i ) / ( num_queries / 2 - 1 );
+        real_type t = static_cast<real_type>( i ) / static_cast<real_type>( num_queries / 2 - 1 );
         queries.push_back( x_max + range * 0.1 - t * ( range * 1.2 ) );
       }
     }
@@ -1015,7 +1016,7 @@ private:
       // Forward only
       for ( size_t i = 0; i < num_queries; ++i )
       {
-        real_type t = static_cast<real_type>( i ) / ( num_queries - 1 );
+        real_type t = static_cast<real_type>( i ) / static_cast<real_type>( num_queries - 1 );
         queries.push_back( x_min - range * 0.1 + t * ( range * 1.2 ) );
       }
     }
@@ -1123,7 +1124,7 @@ private:
 
       timer.toc();
       result.function_time_us       = timer.elapsed_mus();
-      result.time_per_query_func_ns = timer.elapsed_ns() / queries.size();
+      result.time_per_query_func_ns = timer.elapsed_ns() / static_cast<real_type>( queries.size() );
     }
 
     // Benchmark class implementation
@@ -1139,7 +1140,7 @@ private:
 
       timer.toc();
       result.class_time_us           = timer.elapsed_mus();
-      result.time_per_query_class_ns = timer.elapsed_ns() / queries.size();
+      result.time_per_query_class_ns = timer.elapsed_ns() / static_cast<real_type>( queries.size() );
     }
 
     // Calculate speedup
@@ -1151,7 +1152,7 @@ private:
 
     // Estimate memory overhead (for class implementation)
     size_t table_size         = static_cast<size_t>( sqrt( result.num_intervals ) ) + 2;
-    result.memory_overhead_kb = ( table_size * 2 * sizeof( integer ) ) / 1024.0;
+    result.memory_overhead_kb = static_cast<real_type>( table_size * 2 * sizeof( integer ) ) / 1024.0;
 
     // Store detailed metrics
     result.detailed_metrics["function_total_us"]  = result.function_time_us;
@@ -1171,7 +1172,7 @@ private:
     double mean_y = 0;
 
     for ( const auto & [x, y] : data ) { mean_y += y; }
-    mean_y /= data.size();
+    mean_y /= static_cast<double>( data.size() );
 
     for ( const auto & [x, y] : data )
     {
@@ -1311,9 +1312,9 @@ public:
       if ( res->correctness_passed ) correctness_count++;
     }
 
-    avg_speedup /= scenario_results.size();
-    avg_func_time /= scenario_results.size();
-    avg_class_time /= scenario_results.size();
+    avg_speedup /= static_cast<double>( scenario_results.size() );
+    avg_func_time /= static_cast<double>( scenario_results.size() );
+    avg_class_time /= static_cast<double>( scenario_results.size() );
 
     // Print summary
     fmt::print( "\n📊 {} Summary ({}):\n", scenario_name, is_closed ? "Closed" : "Non-Closed" );
@@ -1373,20 +1374,20 @@ public:
       {
         if ( key.second == n )
         {
-          double avg     = accumulate( speedups.begin(), speedups.end(), 0.0 ) / speedups.size();
+          double avg     = accumulate( speedups.begin(), speedups.end(), 0.0 ) / static_cast<double>( speedups.size() );
           double min_val = *min_element( speedups.begin(), speedups.end() );
 
           if ( key.first == false )
           {  // non-closed
             non_closed_avg   = avg;
             non_closed_min   = min_val;
-            non_closed_count = speedups.size();
+            non_closed_count = static_cast<int>( speedups.size() );
           }
           else
           {  // closed
             closed_avg   = avg;
             closed_min   = min_val;
-            closed_count = speedups.size();
+            closed_count = static_cast<int>( speedups.size() );
           }
         }
       }
@@ -1436,12 +1437,12 @@ public:
 
     for ( const auto & [num_intvls, speedups] : speedups_by_size )
     {
-      double avg_speedup = accumulate( speedups.begin(), speedups.end(), 0.0 ) / speedups.size();
+      double avg_speedup = accumulate( speedups.begin(), speedups.end(), 0.0 ) / static_cast<double>( speedups.size() );
       double min_speedup = *min_element( speedups.begin(), speedups.end() );
       double max_speedup = *max_element( speedups.begin(), speedups.end() );
 
       const vector<double> & times    = times_by_size[num_intvls];
-      double                 avg_time = accumulate( times.begin(), times.end(), 0.0 ) / times.size();
+      double                 avg_time = accumulate( times.begin(), times.end(), 0.0 ) / static_cast<double>( times.size() );
 
       // Theoretical complexities
       // double log_n = log2(num_intvls); // Variable non usata, commentata
@@ -1488,8 +1489,9 @@ public:
       sum_x2 += x * x;
     }
 
-    double slope     = ( n * sum_xy - sum_x * sum_y ) / ( n * sum_x2 - sum_x * sum_x );
-    double intercept = ( sum_y - slope * sum_x ) / n;
+    double n_points  = static_cast<double>( n );
+    double slope     = ( n_points * sum_xy - sum_x * sum_y ) / ( n_points * sum_x2 - sum_x * sum_x );
+    double intercept = ( sum_y - slope * sum_x ) / n_points;
 
     fmt::print( "\nMemory-Performance Correlation:\n" );
     fmt::print( "   Regression: Speedup = {:.4f} * Memory(KB) + {:.4f}\n", slope, intercept );
@@ -1642,7 +1644,7 @@ public:
       // Calculate average speedup
       if ( !speedups.empty() )
       {
-        stats.avg_speedup = accumulate( speedups.begin(), speedups.end(), 0.0 ) / speedups.size();
+        stats.avg_speedup = accumulate( speedups.begin(), speedups.end(), 0.0 ) / static_cast<double>( speedups.size() );
       }
 
       enh_runner.printPerformanceComparison();
@@ -1663,7 +1665,7 @@ public:
       {
         size_t table_entries = static_cast<size_t>( sqrt( n ) ) + 2;
         size_t memory_bytes  = table_entries * 2 * sizeof( integer );
-        fmt::print( "   {:<10} {:<15} {:<15.2f}\n", n, table_entries, memory_bytes / 1024.0 );
+        fmt::print( "   {:<10} {:<15} {:<15.2f}\n", n, table_entries, static_cast<double>( memory_bytes ) / 1024.0 );
       }
 
       // Performance prediction

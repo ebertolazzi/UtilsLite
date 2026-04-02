@@ -34,7 +34,7 @@ task :build => [:targz] do
     FileUtils.rm_rf '.build'
     FileUtils.mkdir '.build'
     FileUtils.cd '.build'
-      sh "cmake -G Ninja .. -DAUTODIFF_BUILD_TESTS=OFF -DAUTODIFF_BUILD_PYTHON=OFF -DCMAKE_INSTALL_PREFIX=../../lib"
+      sh "cmake -G Ninja .. -DCMAKE_INSTALL_PREFIX=../../lib"
       sh "cmake --build . --target install "+PARALLEL+QUIET
     FileUtils.cd '..'
   FileUtils.cd '..'
@@ -93,7 +93,7 @@ desc "install AUTODIFF for MINGW"
 task :install_mingw do Rake::Task[:install].invoke("os_mingw","_mingw"); end
 
 desc "install AUTODIFF for WINDOWS"
-task :install_mingw do Rake::Task[:install].invoke("os_win","_win"); end
+task :install_win do Rake::Task[:install].invoke("os_win","_win"); end
 
 task :clean do
   FileUtils.rm_rf 'autodiff'
@@ -103,4 +103,3 @@ task :clean_osx   => [:clean] do end
 task :clean_linux => [:clean] do end
 task :clean_mingw => [:clean] do end
 task :clean_win   => [:clean] do end
-

@@ -202,7 +202,10 @@ void print_summary_table()
 
   fmt::print( "\n📊 Global Statistics:\n" );
   fmt::print( "   • Total problems: {}\n", global_results.size() );
-  fmt::print( "   • Converged: {} ({:.1f}%)\n", converged_count, ( 100.0 * converged_count / global_results.size() ) );
+  fmt::print(
+    "   • Converged: {} ({:.1f}%)\n",
+    converged_count,
+    ( 100.0 * static_cast<double>( converged_count ) / static_cast<double>( global_results.size() ) ) );
   fmt::print( "   • Total evaluations: {}\n", total_evals );
 }
 

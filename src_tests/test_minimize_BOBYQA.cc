@@ -104,13 +104,13 @@ inline std::string format_reduced_vector( Vector const & v, size_t max_size = 10
 {
   std::string tmp{ "[" };
   integer     v_size = v.size();
-  if ( v_size <= max_size )
+  if ( static_cast<size_t>( v_size ) <= max_size )
   {
     for ( integer i = 0; i < v_size; ++i ) tmp += fmt::format( "{:.4f}, ", v( i ) );
   }
   else
   {
-    for ( integer i{ 0 }; i < max_size - 3; ++i ) tmp += fmt::format( "{:.4f}, ", v( i ) );
+    for ( size_t i{ 0 }; i < max_size - 3; ++i ) tmp += fmt::format( "{:.4f}, ", v( static_cast<integer>( i ) ) );
     tmp += "..., ";
     for ( integer i{ v_size - 3 }; i < v_size; ++i ) tmp += fmt::format( "{:.4f}, ", v( i ) );
   }
@@ -269,7 +269,10 @@ void print_line_search_statistics()
   // Calcola medie finali
   for ( auto & [name, stats] : line_search_statistics )
   {
-    if ( stats.successful_tests > 0 ) { stats.avg_gradient_norm /= stats.successful_tests; }
+    if ( stats.successful_tests > 0 )
+    {
+      stats.avg_gradient_norm /= static_cast<Scalar>( stats.successful_tests );
+    }
   }
 
   fmt::print(
@@ -283,9 +286,12 @@ void print_line_search_statistics()
 
   for ( auto const & [_, s] : line_search_statistics )
   {
-    Scalar success_rate = ( s.total_tests > 0 ) ? 100.0 * s.successful_tests / s.total_tests : 0.0;
+    Scalar success_rate = ( s.total_tests > 0 )
+                            ? 100.0 * static_cast<Scalar>( s.successful_tests ) / static_cast<Scalar>( s.total_tests )
+                            : 0.0;
 
-    Scalar avg_eval = ( s.successful_tests > 0 ) ? static_cast<Scalar>( s.total_function_evals ) / s.successful_tests
+    Scalar avg_eval = ( s.successful_tests > 0 )
+                        ? static_cast<Scalar>( s.total_function_evals ) / static_cast<Scalar>( s.successful_tests )
                                                  : 0.0;
 
     auto color = ( success_rate >= 80.0 )   ? fmt::fg( fmt::color::green )
@@ -309,10 +315,10 @@ void print_line_search_statistics()
 
   // Statistiche globali
   size_t total_tests     = global_test_results.size();
-  size_t converged_tests = std::count_if(
+  size_t converged_tests = static_cast<size_t>( std::count_if(
     global_test_results.begin(),
     global_test_results.end(),
-    []( const TestResult & r ) { return r.converged; } );
+    []( const TestResult & r ) { return r.converged; } ) );
 
   size_t accumulated_evals{ 0 };
   Scalar total_grad_norm{ 0.0 };
@@ -330,9 +336,15 @@ void print_line_search_statistics()
 
   fmt::print( fmt::fg( fmt::color::light_blue ), "\n📊 Global Statistics:\n" );
   fmt::print( "   • Total problems: {}\n", total_tests );
-  fmt::print( "   • Converged: {} ({:.1f}%)\n", converged_tests, ( 100.0 * converged_tests / total_tests ) );
+  fmt::print(
+    "   • Converged: {} ({:.1f}%)\n",
+    converged_tests,
+    ( 100.0 * static_cast<Scalar>( converged_tests ) / static_cast<Scalar>( total_tests ) ) );
   fmt::print( "   • Total function evaluations: {}\n", accumulated_evals );
-  if ( grad_count > 0 ) { fmt::print( "   • Average estimated ‖g‖: {:.2g}\n", total_grad_norm / grad_count ); }
+  if ( grad_count > 0 )
+  {
+    fmt::print( "   • Average estimated ‖g‖: {:.2g}\n", total_grad_norm / static_cast<Scalar>( grad_count ) );
+  }
 }
 
 // ===========================================================================

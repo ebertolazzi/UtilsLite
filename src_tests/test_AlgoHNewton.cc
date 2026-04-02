@@ -211,7 +211,10 @@ static void print_results_table()
   fmt::print( "║" );
   fmt::print( " {:<{}} ", "Passed", w_lbl - 2 );
   fmt::print( "│" );
-  string passed_str = fmt::format( "{} ({:.1f}%)", converged_count, 100.0 * converged_count / test_results.size() );
+  string passed_str = fmt::format(
+    "{} ({:.1f}%)",
+    converged_count,
+    100.0 * converged_count / static_cast<double>( test_results.size() ) );
   fmt::print( Utils::PrintColors::SUCCESS, " {:<{}} ", passed_str, w_val - 2 );
   fmt::print( "║\n" );
 
@@ -227,7 +230,7 @@ static void print_results_table()
   fmt::print( "║" );
   fmt::print( " {:<{}} ", "Avg Iterations", w_lbl - 2 );
   fmt::print( "│" );
-  fmt::print( " {:<{}.2f} ", (double) tot_iter / test_results.size(), w_val - 2 );
+  fmt::print( " {:<{}.2f} ", static_cast<double>( tot_iter ) / static_cast<double>( test_results.size() ), w_val - 2 );
   fmt::print( "║\n" );
 
   fmt::print( "╚{:═^{}}╧{:═^{}}╝\n", "", w_lbl, "", w_val );

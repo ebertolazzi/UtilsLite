@@ -96,7 +96,7 @@ Eigen::SparseMatrix<Scalar> generateRandomPositiveDefiniteHessian(
   for ( integer i = 0; i < n; ++i )
   {
     // Diagonal dominance for positive definiteness
-    triplets.emplace_back( i, i, min_eigenval + ( n * 0.5 ) );
+    triplets.emplace_back( i, i, min_eigenval + ( static_cast<double>( n ) * 0.5 ) );
 
     for ( integer j = i + 1; j < n; ++j )
     {

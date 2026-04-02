@@ -266,11 +266,13 @@ void print_line_search_statistics()
   {
     if ( stats.successful_tests > 0 )
     {
-      stats.average_iterations = static_cast<Scalar>( stats.total_iterations ) / stats.successful_tests;
+      stats.average_iterations =
+        static_cast<Scalar>( stats.total_iterations ) / static_cast<Scalar>( stats.successful_tests );
 
-      stats.avg_gradient_norm = stats.total_gradient_norm / stats.successful_tests;
+      stats.avg_gradient_norm = stats.total_gradient_norm / static_cast<Scalar>( stats.successful_tests );
 
-      stats.success_rate = ( 100.0 * stats.successful_tests ) / stats.total_tests;
+      stats.success_rate =
+        ( 100.0 * static_cast<double>( stats.successful_tests ) ) / static_cast<double>( stats.total_tests );
     }
     else
     {
@@ -304,7 +306,7 @@ void print_line_search_statistics()
     fmt::print(
       "│ {:>10.1f} │ {:>12.1f} │ ",
       s.average_iterations,
-      Scalar( s.total_evaluations ) / std::max<integer>( s.successful_tests, 1 ) );
+      Scalar( s.total_evaluations ) / static_cast<Scalar>( std::max<integer>( s.successful_tests, 1 ) ) );
     fmt::print( grad_color, "{:>20.2e}", s.avg_gradient_norm );
     fmt::print( fmt::fg( fmt::color::light_blue ), " ║\n" );
   }
@@ -390,10 +392,15 @@ void print_summary_table()
 
   fmt::print( fmt::fg( fmt::color::light_blue ), "\n📊 Global Statistics:\n" );
   fmt::print( "   • Total problems: {}\n", total_tests );
-  fmt::print( "   • Converged: {} ({:.1f}%)\n", converged_tests, ( 100.0 * converged_tests / total_tests ) );
+  fmt::print(
+    "   • Converged: {} ({:.1f}%)\n",
+    converged_tests,
+    ( 100.0 * static_cast<double>( converged_tests ) / static_cast<double>( total_tests ) ) );
   fmt::print( "   • Total iterations: {}\n", accumulated_iter );
   fmt::print( "   • Total function evaluations: {}\n", accumulated_evals );
-  if ( grad_count > 0 ) { fmt::print( "   • Average final ‖g‖: {:.2e}\n", total_grad_norm / grad_count ); }
+  if ( grad_count > 0 ) {
+    fmt::print( "   • Average final ‖g‖: {:.2e}\n", total_grad_norm / static_cast<Scalar>( grad_count ) );
+  }
 }
 // ===========================================================================
 // MAIN

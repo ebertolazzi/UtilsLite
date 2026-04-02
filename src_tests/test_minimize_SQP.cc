@@ -221,7 +221,7 @@ void print_summary_table()
     accumulated_active += r.active_constraints;
   }
 
-  auto perc = 100.0 * converged_tests / std::max<integer>( total_tests, 1 );
+  auto perc = 100.0 * static_cast<double>( converged_tests ) / static_cast<double>( std::max<integer>( total_tests, 1 ) );
 
   fmt::print( fmt::fg( fmt::color::light_blue ), "\n📊 Global Statistics:\n" );
   fmt::print( "   • Total problems: {}\n", total_tests );

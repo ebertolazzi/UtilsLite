@@ -322,7 +322,7 @@ ConvergenceAnalysis analyze_convergence( vector<real_type> const & trace_values 
     // Calcola media e deviazione standard
     real_type sum = 0.0;
     for ( auto p : analysis.estimated_order ) sum += p;
-    analysis.average_order = sum / analysis.estimated_order.size();
+    analysis.average_order = sum / static_cast<real_type>( analysis.estimated_order.size() );
 
     // Stima della costante asintotica: C ≈ |e_{k+1}| / |e_k|^p
     if ( trace_values.size() >= 3 )
@@ -403,7 +403,7 @@ void print_convergence_table( const string & method_name, const ConvergenceAnaly
     {
       variance += ( p - analysis.average_order ) * ( p - analysis.average_order );
     }
-    variance /= analysis.estimated_order.size();
+    variance /= static_cast<real_type>( analysis.estimated_order.size() );
     real_type std_dev = sqrt( variance );
 
     fmt::print( "    - Standard deviation:        {:.3g}\n", std_dev );

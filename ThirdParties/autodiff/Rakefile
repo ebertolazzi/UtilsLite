@@ -32,12 +32,14 @@ end
 desc "build AUTODIFF"
 task :build => [:targz] do
   FileUtils.cd 'autodiff'
-    FileUtils.rm_rf '.build'
-    FileUtils.mkdir '.build'
-    FileUtils.cd '.build'
-      sh "cmake -G Ninja -DAUTODIFF_BUILD_TESTS=OFF -DAUTODIFF_BUILD_EXAMPLES=OFF -DAUTODIFF_BUILD_PYTHON=OFF -DCMAKE_INSTALL_PREFIX=../../lib .."
-      sh "cmake --build . --target install "+PARALLEL+QUIET
-    FileUtils.cd '..'
+    ##FileUtils.rm_rf '.build'
+    ##FileUtils.mkdir '.build'
+    ##FileUtils.cd '.build'
+    ##  sh "cmake -G Ninja -DAUTODIFF_BUILD_TESTS=OFF -DAUTODIFF_BUILD_EXAMPLES=OFF -DAUTODIFF_BUILD_PYTHON=OFF -DCMAKE_INSTALL_PREFIX=../../lib .."
+    ##  sh "cmake --build . --target install "+PARALLEL+QUIET
+    ##FileUtils.cd '..'
+    FileUtils.mkdir_p '../lib/include'
+    FileUtils.cp_r "autodiff", '../lib/include'
   FileUtils.cd '..'
 end
 
@@ -55,9 +57,9 @@ task :build_win => [:build] do end
 
 task :install => [:build] do
   hdrdir = Dir.pwd+"/../../src/Utils/3rd"
-  FileUtils.cd 'autodiff/.build'
-    sh "cmake --build . --target install "+PARALLEL+QUIET
-  FileUtils.cd '../..'
+  #FileUtils.cd 'autodiff/.build'
+  #  sh "cmake --build . --target install "+PARALLEL+QUIET
+  #FileUtils.cd '../..'
   Dir.glob("lib/include/autodiff/*/*").each do |file|
     next unless File.file?(file)
   
@@ -84,21 +86,45 @@ task :install => [:build] do
       puts "Updated: #{file}"
     end
   end
-  
-sed_cmd = if RbConfig::CONFIG['host_os'] =~ /darwin/
-  "sed -i ''"
-else
-  "sed -i"
-end
+  dual_hpp = "lib/include/autodiff/forward/dual/dual.hpp"
+  lines = File.readlines(dual_hpp, chomp: false)
 
-cmd = <<~EOS
-  #{sed_cmd} '/apply(Dual<.*TanhOp)/,/^}/ {
-    s|const T aux = One<T>() / cosh(self.val);||;
-    s|self\\.grad \\*= aux \\* aux;|self.grad *=  1 - self.val * self.val;|;
-  }' lib/include/autodiff/forward/dual/dual.hpp
-EOS
+  inside_tanh_apply = false
+  found_tanh_apply  = false
+  changed_tanh_apply = false
 
-sh cmd
+  patched_lines = lines.filter_map do |line|
+    if line.match?(/apply\(Dual<.*TanhOp\)/)
+      inside_tanh_apply = true
+      found_tanh_apply  = true
+    end
+
+    if inside_tanh_apply
+      if line.match?(/^\s*const T aux = One<T>\(\) \/ cosh\(self\.val\);\s*$/)
+        changed_tanh_apply = true
+        next
+      end
+
+      updated_line = line.gsub(
+        'self.grad *= aux * aux;',
+        'self.grad *=  1 - self.val * self.val;'
+      )
+
+      changed_tanh_apply ||= (updated_line != line)
+      line = updated_line
+
+      if line.match?(/^}/)
+        inside_tanh_apply = false
+      end
+    end
+
+    line
+  end
+
+  raise "Unable to locate TanhOp block in #{dual_hpp}" unless found_tanh_apply
+  raise "Unable to patch tanh derivative implementation in #{dual_hpp}" unless changed_tanh_apply
+
+  File.write(dual_hpp, patched_lines.join)
 
   FileUtils.cp_r "lib/include/autodiff", hdrdir
 end
@@ -113,7 +139,7 @@ desc "install AUTODIFF for MINGW"
 task :install_mingw do Rake::Task[:install].invoke("os_mingw","_mingw"); end
 
 desc "install AUTODIFF for WINDOWS"
-task :install_mingw do Rake::Task[:install].invoke("os_win","_win"); end
+task :install_win do Rake::Task[:install].invoke("os_win","_win"); end
 
 task :clean do
   FileUtils.rm_rf 'autodiff'

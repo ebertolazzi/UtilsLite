@@ -1216,11 +1216,11 @@ public:
     {
       if ( stats.reductions.empty() ) continue;
       algo_avg_reductions[algo] = std::accumulate( stats.reductions.begin(), stats.reductions.end(), 0.0 ) /
-                                  stats.reductions.size();
+                                  static_cast<double>( stats.reductions.size() );
       algo_avg_evals[algo] = std::accumulate( stats.function_evals.begin(), stats.function_evals.end(), 0.0 ) /
-                             stats.function_evals.size();
+                             static_cast<double>( stats.function_evals.size() );
       algo_avg_times[algo] = std::accumulate( stats.execution_times.begin(), stats.execution_times.end(), 0.0 ) /
-                             stats.execution_times.size();
+                             static_cast<double>( stats.execution_times.size() );
     }
 
     // Trova i migliori (massimo per riduzione, minimo per eval e time)
@@ -1258,7 +1258,7 @@ public:
       if ( stats.step_lengths.empty() ) continue;
 
       auto avg_step = std::accumulate( stats.step_lengths.begin(), stats.step_lengths.end(), 0.0 ) /
-                      stats.step_lengths.size();
+                      static_cast<double>( stats.step_lengths.size() );
       auto min_step = *std::min_element( stats.step_lengths.begin(), stats.step_lengths.end() );
       auto max_step = *std::max_element( stats.step_lengths.begin(), stats.step_lengths.end() );
 
@@ -1344,9 +1344,9 @@ public:
     {
       if ( stats.reductions.empty() ) continue;
       auto avg_reduction = std::accumulate( stats.reductions.begin(), stats.reductions.end(), 0.0 ) /
-                           stats.reductions.size();
+                           static_cast<double>( stats.reductions.size() );
       auto avg_eval = std::accumulate( stats.function_evals.begin(), stats.function_evals.end(), 0.0 ) /
-                      stats.function_evals.size();
+                      static_cast<double>( stats.function_evals.size() );
       func_reductions.emplace_back( func, avg_reduction );
       func_evals.emplace_back( func, avg_eval );
     }
@@ -1373,11 +1373,11 @@ public:
       if ( stats.reductions.empty() ) continue;
 
       auto avg_reduction = std::accumulate( stats.reductions.begin(), stats.reductions.end(), 0.0 ) /
-                           stats.reductions.size();
+                           static_cast<double>( stats.reductions.size() );
       auto min_reduction = *std::min_element( stats.reductions.begin(), stats.reductions.end() );
       auto max_reduction = *std::max_element( stats.reductions.begin(), stats.reductions.end() );
       auto avg_evals     = std::accumulate( stats.function_evals.begin(), stats.function_evals.end(), 0.0 ) /
-                       stats.function_evals.size();
+                       static_cast<double>( stats.function_evals.size() );
 
       // Determina difficoltà
       std::string     difficulty;
@@ -1598,7 +1598,7 @@ public:
     {
       if ( reds.empty() ) continue;
 
-      Scalar avg = std::accumulate( reds.begin(), reds.end(), 0.0 ) / reds.size();
+      Scalar avg = std::accumulate( reds.begin(), reds.end(), 0.0 ) / static_cast<Scalar>( reds.size() );
       Scalar min = *std::min_element( reds.begin(), reds.end() );
       Scalar max = *std::max_element( reds.begin(), reds.end() );
 
@@ -1631,7 +1631,8 @@ public:
 
     for ( const auto & stat : stats )
     {
-      Scalar success_rate = 100.0 * stat.success_count / stat.total_count;
+      Scalar success_rate =
+        100.0 * static_cast<Scalar>( stat.success_count ) / static_cast<Scalar>( stat.total_count );
 
       fmt::text_style reduction_style = Style::NONE;
       if ( stat.avg_reduction > 0.8 )
@@ -1669,7 +1670,7 @@ public:
     std::vector<std::pair<std::string, Scalar>> avg_by_algo;
     for ( const auto & [algo, reds] : algo_reductions )
     {
-      Scalar avg = std::accumulate( reds.begin(), reds.end(), 0.0 ) / reds.size();
+      Scalar avg = std::accumulate( reds.begin(), reds.end(), 0.0 ) / static_cast<Scalar>( reds.size() );
       avg_by_algo.emplace_back( algo, avg );
     }
 
@@ -1974,17 +1975,17 @@ private:
       Style::SUCCESS,
       "  Successful tests:     {} ({:.1f}%)\n",
       stats.successful,
-      100.0 * stats.successful / stats.total_tests );
+      100.0 * static_cast<double>( stats.successful ) / static_cast<double>( stats.total_tests ) );
     fmt::print(
       Style::WARNING,
       "  Warning tests:        {} ({:.1f}%)\n",
       stats.warnings,
-      100.0 * stats.warnings / stats.total_tests );
+      100.0 * static_cast<double>( stats.warnings ) / static_cast<double>( stats.total_tests ) );
     fmt::print(
       Style::ERROR,
       "  Failed tests:         {} ({:.1f}%)\n",
       stats.failures,
-      100.0 * stats.failures / stats.total_tests );
+      100.0 * static_cast<double>( stats.failures ) / static_cast<double>( stats.total_tests ) );
     fmt::print( "  Total execution time: {:.3f} seconds\n\n", total_time );
 
     fmt::print( Style::BOLD, "Algorithm Performance:\n" );
@@ -2017,13 +2018,16 @@ private:
         }
       }
 
+      double total_count = static_cast<double>( total );
       double avg_evals = std::accumulate( algo_stats.function_evals.begin(), algo_stats.function_evals.end(), 0.0 ) /
-                         total;
+                         total_count;
       double avg_time = std::accumulate( algo_stats.execution_times.begin(), algo_stats.execution_times.end(), 0.0 ) /
-                        total;
-      double avg_reduction = std::accumulate( algo_stats.reductions.begin(), algo_stats.reductions.end(), 0.0 ) / total;
+                        total_count;
+      double avg_reduction =
+        std::accumulate( algo_stats.reductions.begin(), algo_stats.reductions.end(), 0.0 ) / total_count;
 
-      double success_rate = 100.0 * ( success + 0.5 * warning ) / total;
+      double success_rate =
+        100.0 * ( static_cast<double>( success ) + 0.5 * static_cast<double>( warning ) ) / total_count;
 
       std::string success_str = fmt::format( "{}{}", success, Unicode::CHECK );
       if ( warning > 0 ) success_str += fmt::format( " {}{}", warning, Unicode::WARNING );
@@ -2107,19 +2111,20 @@ private:
           algo_res.end(),
           []( const TestResult & r ) { return r.status == "SUCCESS"; } );
         size_t total = algo_res.size();
+        double total_count = static_cast<double>( total );
 
         double avg_step = 0.0, avg_reduction = 0.0, avg_evals = 0.0, avg_time = 0.0;
         for ( const auto & res : algo_res )
         {
           avg_step += res.step_length;
           avg_reduction += res.reduction();
-          avg_evals += res.function_evals + res.gradient_evals;
+          avg_evals += static_cast<double>( res.function_evals ) + static_cast<double>( res.gradient_evals );
           avg_time += res.cpu_time_mus;
         }
-        avg_step /= total;
-        avg_reduction /= total;
-        avg_evals /= total;
-        avg_time /= total;
+        avg_step /= total_count;
+        avg_reduction /= total_count;
+        avg_evals /= total_count;
+        avg_time /= total_count;
 
         std::string     status_str;
         fmt::text_style status_style;

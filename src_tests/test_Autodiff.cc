@@ -2560,8 +2560,6 @@ void test_macro_generated_functions()
   print_header( "MACRO-GENERATED FUNCTIONS TESTS" );
 
   int    passed = 0, total = 0;
-  double h = 1e-7;
-
   // ========================================================================
   // TEST: 1-argument macro-generated functions
   // ========================================================================

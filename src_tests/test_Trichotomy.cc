@@ -799,10 +799,10 @@ void analyze_results( const vector<TestFunction> & tests )
   {
     if ( v.empty() ) return { 0.0, 0.0, 0.0 };
 
-    real_type mean     = accumulate( v.begin(), v.end(), 0.0 ) / v.size();
+    real_type mean     = accumulate( v.begin(), v.end(), 0.0 ) / static_cast<real_type>( v.size() );
     real_type variance = 0.0;
     for ( auto x : v ) variance += ( x - mean ) * ( x - mean );
-    variance /= v.size();
+    variance /= static_cast<real_type>( v.size() );
     real_type stddev = sqrt( variance );
 
     return { mean, stddev, *min_element( v.begin(), v.end() ) };

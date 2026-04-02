@@ -505,7 +505,7 @@ namespace Utils
         // Criterio di arresto per progresso insufficiente
         if ( m_num_iterations > 100 && m_num_iterations % 100 == 0 )
         {
-          real_type avg_reduction = std::pow( norm_f / initial_norm, 1.0 / m_num_iterations );
+          real_type avg_reduction = std::pow( norm_f / initial_norm, 1.0 / static_cast<real_type>( m_num_iterations ) );
           if ( avg_reduction > 0.9995 )
           {
             if ( m_verbose_level > 0 )

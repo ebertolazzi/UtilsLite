@@ -94,9 +94,10 @@ template <class TP> std::pair<double, double> test_pool_simple( int NN, int nt, 
   if ( times.empty() ) return { 0.0, 0.0 };
 
   double sum    = std::accumulate( times.begin(), times.end(), 0.0 );
-  double avg    = sum / times.size();
+  double count  = static_cast<double>( times.size() );
+  double avg    = sum / count;
   double sq_sum = std::inner_product( times.begin(), times.end(), times.begin(), 0.0 );
-  double stddev = std::sqrt( sq_sum / times.size() - avg * avg );
+  double stddev = std::sqrt( sq_sum / count - avg * avg );
 
   return { avg, stddev };
 }

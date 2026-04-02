@@ -83,9 +83,11 @@ void print_line_search_statistics()
 
   for ( const auto & [name, stats] : line_search_statistics )
   {
-    Scalar success_rate   = ( stats.total_tests > 0 ) ? 100.0 * stats.successful_tests / stats.total_tests : 0.0;
+    Scalar success_rate   = ( stats.total_tests > 0 )
+                              ? 100.0 * static_cast<Scalar>( stats.successful_tests ) / static_cast<Scalar>( stats.total_tests )
+                              : 0.0;
     Scalar avg_iterations = ( stats.successful_tests > 0 )
-                              ? static_cast<Scalar>( stats.total_iterations ) / stats.successful_tests
+                              ? static_cast<Scalar>( stats.total_iterations ) / static_cast<Scalar>( stats.successful_tests )
                               : 0.0;
     auto   color          = ( success_rate >= 80.0 )   ? fmt::fg( fmt::color::green )
                             : ( success_rate >= 60.0 ) ? fmt::fg( fmt::color::yellow )

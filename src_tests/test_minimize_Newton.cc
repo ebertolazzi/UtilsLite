@@ -231,7 +231,7 @@ void print_summary_table()
   fmt::print(
     "   • Converged: {} ({:.1f}%)\n",
     converged_tests,
-    ( 100.0 * converged_tests / std::max<size_t>( total_tests, 1 ) ) );
+    ( 100.0 * static_cast<double>( converged_tests ) / static_cast<double>( std::max<size_t>( total_tests, 1 ) ) ) );
   fmt::print( "   • Total iterations: {}\n", accumulated_iter );
   fmt::print( "   • Total function evaluations: {}\n", accumulated_evals );
   fmt::print( "   • Total hessian evaluations: {}\n", accumulated_hess_evals );

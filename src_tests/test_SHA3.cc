@@ -62,7 +62,9 @@ void benchmark_performance()
     auto duration = chrono::duration_cast<chrono::milliseconds>( end - start );
 
     fmt::print( "SHA3-256 processed {} bytes in {} ms\n", TEST_SIZE, duration.count() );
-    fmt::print( "Throughput: {:.2f} MB/s\n", ( TEST_SIZE / ( duration.count() / 1000.0 ) ) / ( 1024 * 1024 ) );
+    fmt::print(
+      "Throughput: {:.2f} MB/s\n",
+      ( TEST_SIZE / ( static_cast<double>( duration.count() ) / 1000.0 ) ) / ( 1024 * 1024 ) );
   }
 
   // Test SHA3-512
@@ -77,7 +79,9 @@ void benchmark_performance()
     auto duration = chrono::duration_cast<chrono::milliseconds>( end - start );
 
     fmt::print( "\nSHA3-512 processed {} bytes in {} ms\n", TEST_SIZE, duration.count() );
-    fmt::print( "Throughput: {:.2f} MB/s\n", ( TEST_SIZE / ( duration.count() / 1000.0 ) ) / ( 1024 * 1024 ) );
+    fmt::print(
+      "Throughput: {:.2f} MB/s\n",
+      ( TEST_SIZE / ( static_cast<double>( duration.count() ) / 1000.0 ) ) / ( 1024 * 1024 ) );
   }
 }
 
