@@ -179,11 +179,11 @@ namespace Utils
 }  // namespace Utils
 
 #include "3rd/spdlog/spdlog.h"
-#include "3rd/spdlog/fmt/bundled/std.h"
-#include "3rd/spdlog/fmt/bundled/chrono.h"
-#include "3rd/spdlog/fmt/bundled/color.h"
-#include "3rd/spdlog/fmt/bundled/ostream.h"
-#include "3rd/spdlog/fmt/bundled/printf.h"
+#include "3rd/spdlog/fmt/std.h"
+#include "3rd/spdlog/fmt/chrono.h"
+#include "3rd/fmt/color.h"
+#include "3rd/spdlog/fmt/ostr.h"
+#include "3rd/fmt/printf.h"
 
 namespace Utils
 {

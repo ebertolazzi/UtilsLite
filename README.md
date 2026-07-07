@@ -1,73 +1,108 @@
 # UTILS
 
-A collection of useful code for C++ applications:
+UtilsLite is a collection of C++ utilities for numerical and systems code.
+It includes containers, timing helpers, memory helpers, formatting helpers,
+and thread-pool abstractions built on top of vendored third-party headers.
 
-- Terminal coloring use code from [here](https://github.com/agauniyal/rang) by Abhinav Gauniyal ([license](http://unlicense.org))
+Third-party components currently used by the project include:
 
-- Stream compression use code from [here](https://github.com/geromueller/zstream-cpp) by Jonathan de Halleux and Gero Müller
+- [rang](https://github.com/agauniyal/rang) for terminal coloring
+- [fmt](https://fmt.dev) for formatting
+- [terminal-table](https://github.com/Bornageek/terminal-table) for table output
+- [Eigen](https://eigen.tuxfamily.org) for linear algebra
+- [CLI11](https://github.com/CLIUtils/CLI11) for command-line parsing
+- [spdlog](https://github.com/gabime/spdlog) for logging
+- [BS::thread_pool](https://github.com/bshoshany/thread-pool) for thread-pool support
+- [autodiff](https://github.com/ebertolazzi/autodiff) for automatic differentiation
 
-- Stream formatting use code from [here](https://fmt.dev) by Victor Zverovich (MIT license)
+Online documentation is available [here](https://ebertolazzi.github.io/UtilsLite).
 
-- Table formatting use code from [here](https://github.com/Bornageek/terminal-table) by Andreas Wilhelm (Apache License, Version 2.0) partially rewritten.
+## BUILD, TEST, INSTALL
 
-- [Eigen3](https://eigen.tuxfamily.org) a C++ template library for linear algebra.
+The project is built with plain CMake. Ninja is recommended, but any generator
+works.
 
-in addition a TreadPool class, TicToc class for timing, Malloc
-class for easy allocation with traking of allocated memory.
-
-- Online doc [here](https://ebertolazzi.github.io/UtilsLite)
-
-## COMPILE AND TEST
-
-The build system is pure CMake (Ninja recommended). No Ruby/rake is needed:
-the third-party headers are vendored under `src/Utils/3rd` and committed to the
-repository.
-
-```
+```sh
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
 
-To also build and run the tests:
+To build the tests:
 
-```
+```sh
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUTILS_ENABLE_TESTS=ON
 cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-To compile with MinGW, open an MSYS2 shell and build as in a unix environment.
-Any CMake generator (Make, Xcode, Visual Studio, ...) works too.
+When configured as the top-level project, the default install prefix is the
+repository root and artifacts are installed under:
 
-## USE AS A DEPENDENCY (FetchContent)
+- headers: `lib/include`
+- libraries: `lib/lib`
+- executables: `lib/bin`
 
-UtilsLite can be consumed directly by another CMake project. No external tools
-or network downloads are required for the third-party dependencies since they
-are vendored in the repository.
+Install with:
+
+```sh
+cmake --install build
+```
+
+On Unix-like systems the build also creates platform-specific library aliases
+as symbolic links. For example, the static library is installed as both
+`libUtilsLite.a` and `libUtilsLite_osx_static.a` on macOS.
+
+## THIRD-PARTY DEPENDENCIES
+
+At configure time, UtilsLite first looks for sibling checkouts and only falls
+back to `FetchContent` if they are missing:
+
+- `../eigen`
+- `../CLI11`
+- `../fmt`
+- `../spdlog`
+- `../BS_thread_pool`
+- `../autodiff` for a sibling checkout, otherwise `FetchContent` from the `main` branch of `ebertolazzi/autodiff`
+
+Resolved headers are synchronized into `src/Utils/3rd`, which is the include
+tree used by the library and installed under `lib/include/Utils/3rd`.
+`spdlog` is normalized to use the vendored `fmt` headers shipped by UtilsLite
+instead of its bundled copy.
+
+## USE AS A DEPENDENCY
+
+UtilsLite exports the following CMake targets:
+
+- `utils::UtilsLite_Static`
+- `utils::UtilsLite` when `UTILS_BUILD_SHARED=ON`
+
+Example with `FetchContent`:
 
 ```cmake
 include(FetchContent)
+
 FetchContent_Declare(
   UtilsLite
   GIT_REPOSITORY https://github.com/ebertolazzi/UtilsLite.git
   GIT_TAG        main
 )
+
 FetchContent_MakeAvailable(UtilsLite)
 
-target_link_libraries(my_target PRIVATE Utils::UtilsLite_Static)
+target_link_libraries(my_target PRIVATE utils::UtilsLite_Static)
 ```
 
-## UPDATING THE VENDORED THIRD-PARTY HEADERS (maintainers)
+## MAINTAINER NOTES
 
-The headers under `src/Utils/3rd` (Eigen, spdlog, autodiff, BS::thread_pool,
-task-thread-pool) are regenerated from upstream by CMake via `FetchContent`.
-This replaces the old `ThirdParties/*` rake tasks. To refresh them:
+To regenerate the vendored third-party headers:
 
-```
-cmake -B build -DUTILS_UPDATE_3RDPARTY=ON
+```sh
+cmake -B build -G Ninja -DUTILS_UPDATE_3RDPARTY=ON
 ```
 
-This downloads each pinned release, rewrites its `#include` directives so the
-headers work flattened under `3rd/`, applies the local autodiff patches, and
-copies the result into `src/Utils/3rd`. Review the result with `git diff` and
-commit it. Versions are pinned in `cmake/Update3rdParties.cmake`.
+This refreshes `src/Utils/3rd` from the pinned upstream versions, rewrites
+include paths where needed, removes spdlog's bundled fmt copy, applies the
+local autodiff patching, and updates the committed vendor tree. Review the
+result with `git diff` before committing.
+
+Third-party license files are collected under `licenses3rd/`.

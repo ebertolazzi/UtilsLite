@@ -1,88 +1,165 @@
-if File.exist?(File.expand_path('./cmake_utils/Rakefile_common.rb', File.dirname(__FILE__))) then
-  require_relative "./cmake_utils/Rakefile_common.rb"
+# frozen_string_literal: true
+
+require 'etc'
+require 'fileutils'
+require 'rake/clean'
+
+begin
+  require 'colorize'
+rescue LoadError
+  warn 'Install the colorize gem: gem install colorize'
+  exit 1
+end
+
+# Avoid removing files named "core" from included libraries such as Eigen.
+CLEAN.clear_exclude.exclude { |fn| fn.pathmap('%f').downcase == 'core' }
+
+# Optional shared configuration, searched in parent directories.
+config_files = [
+  File.expand_path('../Rakefile_configure.rb', __dir__),
+  File.expand_path('../../Rakefile_configure.rb', __dir__)
+]
+
+if (config = config_files.find { |path| File.exist?(path) })
+  require config
 else
-  require_relative "../Rakefile_common.rb"
+  COMPILE_DEBUG      = false unless defined?(COMPILE_DEBUG)
+  COMPILE_DYNAMIC    = false unless defined?(COMPILE_DYNAMIC)
+  COMPILE_EXECUTABLE = true  unless defined?(COMPILE_EXECUTABLE)
 end
 
-desc "setup Eigen3, FMT and ZSTR"
-task :install_3rd do
-  FileUtils.cd "ThirdParties"
-    sh "rake install"
-  FileUtils.cd ".."
+OS = case RUBY_PLATFORM
+     when /darwin/       then :mac
+     when /linux|cygwin/ then :linux
+     when /msys/         then :mingw
+     else                     :win
+     end
+
+BUILD_TYPE = COMPILE_DEBUG ? 'Debug' : 'Release'
+
+BUILD_OPTIONS = [
+  "-DCMAKE_BUILD_TYPE=#{BUILD_TYPE}",
+  "-DUTILS_ENABLE_TESTS=#{COMPILE_EXECUTABLE ? 'ON' : 'OFF'}",
+  "-DUTILS_BUILD_SHARED=#{COMPILE_DYNAMIC ? 'ON' : 'OFF'}"
+].join(' ')
+
+PARALLEL = if OS == :win
+             ''
+           else
+             "--parallel #{Etc.nprocessors}"
+           end
+
+def in_dir(path)
+  FileUtils.mkdir_p(path)
+  Dir.chdir(path) { yield }
 end
 
-task :build_common, [:bits] => :install_3rd do |t, args|
-  args.with_defaults( :bits => "" )
+def visual_studio_arch
+  cl = `where cl.exe 2>NUL`.lines.first.to_s.strip
 
-  puts "UTILS build (osx/linux/mingw/windows)".green
-
-  FileUtils.rm_rf   'lib'
-  FileUtils.rm_rf   'build'
-  FileUtils.mkdir_p 'build'
-  FileUtils.cd      'build'
-
-  puts "run CMAKE for UTILS".yellow
-  if args.bits == "" then
-    sh "cmake -G Ninja " + cmd_cmake_build() + ' ..'
+  case cl
+  when /(x64|amd64)\\cl\.exe/i then 'x64'
+  when /(bin|x86|amd32)\\cl\.exe/i then 'x86'
   else
-    sh "cmake -G Ninja -DBITS:VAR=#{args.bits} " + cmd_cmake_build() + ' ..'
+    raise 'Cannot determine Visual Studio architecture. Run from a Visual Studio Developer Prompt.'
   end
-  puts "compile with CMAKE for UTILS".yellow
-  if COMPILE_DEBUG then
-    sh 'cmake --build . --config Debug --target install '+PARALLEL
-  else
-    sh 'cmake --build . --config Release --target install '+PARALLEL
-  end
-
-  FileUtils.cd '..'
 end
 
-task :mingw_pacman do
-  sh 'pacman -S development'
-  sh 'pacman -S mingw-w64-x86_64-toolchain'
-  sh 'pacman -S mingw-w64-x86_64-cmake'
-  sh 'pacman -S mingw-w64-x86_64-ninja'
-end
+def configure_and_build(bits: nil)
+  FileUtils.rm_rf('lib')
+  FileUtils.rm_rf('build')
 
-task :build_osx   => :build_common do end
-task :build_linux => :build_common do end
-task :build_mingw => :build_common do end
-task :build_win do
-  # check architecture
-  case `where cl.exe`.chop
-  when /(x64|amd64)\\cl\.exe/
-    VS_ARCH = 'x64'
-  when /(bin|x86|amd32)\\cl\.exe/
-    VS_ARCH = 'x86'
-  else
-    raise RuntimeError, "Cannot determine architecture for Visual Studio".red
+  in_dir('build') do
+    bits_opt = bits ? "-DBITS=#{bits}" : ''
+    sh "cmake -G Ninja #{bits_opt} #{BUILD_OPTIONS} .."
+    sh "cmake --build . --config #{BUILD_TYPE} --target install #{PARALLEL}"
   end
-  Rake::Task[:build_common].invoke(VS_ARCH)
 end
 
+desc 'Default task: build'
+task default: :build
+
+desc 'Build with CMake/Ninja'
+task :build do
+  puts "Build (#{OS})".green
+
+  bits = OS == :win ? visual_studio_arch : nil
+  configure_and_build(bits: bits)
+end
+
+desc 'Run CTest from build/'
+task :test do
+  Dir.chdir('build') { sh 'ctest --output-on-failure' }
+end
+
+desc 'Run executables from bin/'
+task :run do
+  exes = if OS == :win || OS == :mingw
+           Dir.glob('bin/*.exe')
+         else
+           Dir.glob('bin/*').select { |path| File.file?(path) && File.executable?(path) }
+         end
+
+  raise 'No executables found in bin/' if exes.empty?
+
+  exes.sort.each do |exe|
+    puts "execute #{exe}".yellow
+    sh exe
+  end
+end
+
+desc 'Clean build artifacts'
 task :clean do
-  FileUtils.rm_rf 'lib'
+  FileUtils.rm_rf(%w[build lib])
 end
 
-task :clean_osx   => :clean do end
-task :clean_linux => :clean do end
-task :clean_mingw => :clean do end
-task :clean_win   => :clean do end
+desc 'Hard reset repository and submodules'
+task :git_submodules do
+  sh 'git reset --hard'
+  sh 'git submodule sync --recursive'
+  sh 'git submodule update --init --checkout --recursive'
+  sh 'git submodule foreach --recursive git reset --hard'
+  sh 'git submodule foreach --recursive git clean -d -x -f'
+end
 
+desc 'Hard clean repository'
+task :git_clean do
+  sh 'git reset --hard'
+  sh 'git clean -d -x -f'
+end
+
+desc 'Install optional ThirdParties, if present'
+task :install_3rd do
+  if Dir.exist?('ThirdParties')
+    Dir.chdir('ThirdParties') { sh 'rake install' }
+  else
+    puts 'ThirdParties directory not found; skipping'.yellow
+  end
+end
+
+desc 'Generate compile_commands.json and run cppcheck'
 task :cppcheck do
-  FileUtils.rm_rf   'lib'
-  FileUtils.rm_rf   'build'
-  FileUtils.mkdir_p 'build'
-  FileUtils.cd      'build'
-  sh 'cmake -DCMAKE_EXPORT_COMPILE_COMMAND=ON ..'
-  sh 'cppcheck --project=compile_commands.json'
+  FileUtils.rm_rf('build')
+  in_dir('build') do
+    sh 'cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..'
+    sh 'cppcheck --project=compile_commands.json'
+  end
 end
 
-desc 'pack for OSX/LINUX/MINGW/WINDOWS'
+desc 'Run CPack from build/'
 task :cpack do
-  FileUtils.cd "build"
-  puts "run CPACK for ROOTS".yellow
-  sh 'cpack -C CPackConfig.cmake'
-  sh 'cpack -C CPackSourceConfig.cmake'
-  FileUtils.cd ".."
+  Dir.chdir('build') do
+    sh 'cpack -C CPackConfig.cmake'
+    sh 'cpack -C CPackSourceConfig.cmake'
+  end
 end
+
+# Compatibility aliases.
+task build_osx: :build
+task build_linux: :build
+task build_mingw: :build
+task build_win: :build
+task clean_osx: :clean
+task clean_linux: :clean
+task clean_mingw: :clean
+task clean_win: :clean

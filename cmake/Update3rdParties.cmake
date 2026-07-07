@@ -26,8 +26,10 @@ include(FetchContent)
 set(UTILS_3RD_EIGEN_VERSION            "5.0.0"  CACHE STRING "Eigen version to vendor")
 set(UTILS_3RD_SPDLOG_VERSION           "1.16.0" CACHE STRING "spdlog version to vendor")
 set(UTILS_3RD_BS_THREAD_POOL_VERSION   "5.0.0"  CACHE STRING "BS::thread_pool version to vendor")
-set(UTILS_3RD_AUTODIFF_VERSION         "1.1.2"  CACHE STRING "autodiff version to vendor")
-set(UTILS_3RD_TASK_THREAD_POOL_VERSION "1.0.10" CACHE STRING "task-thread-pool version to vendor")
+set(UTILS_3RD_AUTODIFF_VERSION         "main"  CACHE STRING "autodiff branch or tag to vendor")
+if(UTILS_3RD_AUTODIFF_VERSION STREQUAL "1.1.2")
+  set(UTILS_3RD_AUTODIFF_VERSION "main" CACHE STRING "autodiff branch or tag to vendor" FORCE)
+endif()
 
 # ----------------------------------------------------------------------------
 # Helper: rewrite #include directives in a single file.
@@ -106,14 +108,11 @@ function(utils_update_3rdparties)
     URL "https://github.com/bshoshany/thread-pool/archive/refs/tags/v${UTILS_3RD_BS_THREAD_POOL_VERSION}.tar.gz"
     SOURCE_SUBDIR _do_not_configure )
   FetchContent_Declare( autodiff_src
-    URL "https://github.com/autodiff/autodiff/archive/refs/tags/v${UTILS_3RD_AUTODIFF_VERSION}.tar.gz"
-    SOURCE_SUBDIR _do_not_configure )
-  FetchContent_Declare( task_thread_pool_src
-    URL "https://github.com/alugowski/task-thread-pool/archive/refs/tags/v${UTILS_3RD_TASK_THREAD_POOL_VERSION}.tar.gz"
+    URL "https://github.com/ebertolazzi/autodiff/archive/refs/heads/${UTILS_3RD_AUTODIFF_VERSION}.tar.gz"
     SOURCE_SUBDIR _do_not_configure )
 
   FetchContent_MakeAvailable(
-    eigen_src spdlog_src bs_thread_pool_src autodiff_src task_thread_pool_src )
+    eigen_src spdlog_src bs_thread_pool_src autodiff_src )
 
   # --- Eigen ----------------------------------------------------------------
   # Copy the Eigen/ header tree verbatim (no include rewriting needed).
@@ -161,18 +160,13 @@ function(utils_update_3rdparties)
   _utils_patch_autodiff("${_autodiff_stage}")
   _utils_replace_dir("${_autodiff_stage}" "${_dst}/autodiff")
 
-  # --- task-thread-pool (single header) -------------------------------------
-  message(STATUS "Vendoring task-thread-pool ${UTILS_3RD_TASK_THREAD_POOL_VERSION}")
-  file(COPY "${task_thread_pool_src_SOURCE_DIR}/include/task_thread_pool.hpp"
-       DESTINATION "${_dst}")
-
   message(STATUS "==============================================================")
   message(STATUS "Third-party headers regenerated. Review with `git diff`.")
   message(STATUS "==============================================================")
 endfunction()
 
 # ----------------------------------------------------------------------------
-# Local source patches applied on top of upstream autodiff to reproduce the
+# Local source patches applied on top of the autodiff source tree to reproduce the
 # committed src/Utils/3rd/autodiff tree exactly. These are edits the project
 # carries that are NOT plain include rewrites:
 #
@@ -198,23 +192,30 @@ function(_utils_patch_autodiff STAGE_DIR)
   endif()
   file(READ "${_dual}" _c)
   set(_orig "${_c}")
+  string(REGEX MATCH
+    "self\\.val = tanh\\(self\\.val\\);[ \t\r\n]+self\\.grad \\*=  *1 - self\\.val \\* self\\.val;"
+    _tanh_already_patched "${_c}")
+  if(_tanh_already_patched)
+    message(STATUS "  autodiff tanh patch not needed in ${_dual}")
+  else()
   # drop the `const T aux = ... cosh(self.val);` line (cosh is unique to TanhOp)
-  string(REGEX REPLACE
-    "[ \t]*const T aux = One<T>\\(\\) / cosh\\(self\\.val\\);[ \t]*\r?\n"
-    ""
-    _c "${_c}")
-  # replace the gradient update, anchored to the preceding `tanh(...)` line so
-  # the visually identical TanOp block (which uses `tan`) is not affected. The
-  # captured whitespace (\1) preserves the original newline + indentation.
-  string(REGEX REPLACE
-    "(self\\.val = tanh\\(self\\.val\\);[ \t\r\n]+)self\\.grad \\*= aux \\* aux;"
-    "\\1self.grad *=  1 - self.val * self.val;"
-    _c "${_c}")
-  if(_c STREQUAL _orig)
-    message(FATAL_ERROR "autodiff tanh patch: pattern not found in ${_dual}")
+    string(REGEX REPLACE
+      "[ \t]*const T aux = One<T>\\(\\) / cosh\\(self\\.val\\);[ \t]*\r?\n"
+      ""
+      _c "${_c}")
+    # replace the gradient update, anchored to the preceding `tanh(...)` line so
+    # the visually identical TanOp block (which uses `tan`) is not affected. The
+    # captured whitespace (\1) preserves the original newline + indentation.
+    string(REGEX REPLACE
+      "(self\\.val = tanh\\(self\\.val\\);[ \t\r\n]+)self\\.grad \\*= aux \\* aux;"
+      "\\1self.grad *=  1 - self.val * self.val;"
+      _c "${_c}")
+    if(_c STREQUAL _orig)
+      message(FATAL_ERROR "autodiff tanh patch: pattern not found in ${_dual}")
+    endif()
+    file(WRITE "${_dual}" "${_c}")
+    message(STATUS "  patched tanh derivative in ${_dual}")
   endif()
-  file(WRITE "${_dual}" "${_c}")
-  message(STATUS "  patched tanh derivative in ${_dual}")
 
   # --- 2. size_t loop index in derivative() ---
   set(_deriv "${STAGE_DIR}/forward/utils/derivative.hpp")
@@ -228,7 +229,8 @@ function(_utils_patch_autodiff STAGE_DIR)
     "for(size_t i = 0; i < len; ++i)"
     _c "${_c}")
   if(_c STREQUAL _orig)
-    message(FATAL_ERROR "autodiff derivative patch: pattern not found in ${_deriv}")
+    message(STATUS "  autodiff derivative patch not needed in ${_deriv}")
+    return()
   endif()
   file(WRITE "${_deriv}" "${_c}")
   message(STATUS "  patched size_t loop index in ${_deriv}")

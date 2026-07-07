@@ -21,8 +21,11 @@
 #include "Utils.hh"
 #include "Utils_System.hh"
 
+#include <filesystem>
+
 using namespace Utils;
 using namespace std;
+namespace fs = std::filesystem;
 
 // Funzioni di utilità per la formattazione
 void print_section( const string & title )
@@ -338,8 +341,15 @@ void test_filesystem_functions()
         fmt::print( fg( fmt::color::lime_green ), "    ✓ Directory verified\n" );
       }
 
-      // Cleanup (solo a scopo dimostrativo, in produzione usare rmdir)
-      print_warning( "Test directory created at: " + test_dir + " (not removed)" );
+      std::error_code ec;
+      if ( fs::remove( test_dir, ec ) )
+      {
+        fmt::print( fg( fmt::color::lime_green ), "    ✓ Removed directory: {}\n", test_dir );
+      }
+      else
+      {
+        print_warning( "Test directory created at: " + test_dir + " (cleanup failed: " + ec.message() + ")" );
+      }
     }
     else
     {
