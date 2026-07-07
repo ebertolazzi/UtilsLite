@@ -12,15 +12,14 @@ endif()
 
 project( UtilsLite )
 
-if (IS_DIRECTORY "${PROJECT_SOURCE_DIR}/cmake_utils")
-  set( HOME "${PROJECT_SOURCE_DIR}/cmake_utils/" )
-else()
-  if (IS_DIRECTORY "${PROJECT_SOURCE_DIR}/../cmake_utils")
-    set( HOME "${PROJECT_SOURCE_DIR}/../cmake_utils/" )
-  else()
-    set( HOME "${PROJECT_SOURCE_DIR}/../../cmake_utils/" )
-  endif()
-endif()
+include(FetchContent)
+FetchContent_Declare(
+  cmake_utils
+  GIT_REPOSITORY https://github.com/ebertolazzi/cmake_utils.git
+  GIT_TAG        e8c50a2eda739e569dde5d2851ac713e28ddc9f3
+)
+FetchContent_MakeAvailable( cmake_utils )
+set( HOME "${cmake_utils_SOURCE_DIR}/" )
 
 include( "${HOME}/CMakeLists-common.txt" )
 
@@ -36,6 +35,16 @@ set( CMAKE_CXX_STANDARD_REQUIRED ON )
 set( CMAKE_CXX_STANDARD          17 )
 
 include( "${HOME}/CMakeLists-cflags.txt" )
+
+if( CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang" )
+  string(REPLACE "-Wreturn-local-addr" "-Wreturn-stack-address" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
+  if( CMAKE_SYSTEM_NAME STREQUAL "Linux" )
+    string(REPLACE "-stdlib=libc++ " "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    string(REPLACE " -stdlib=libc++" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  endif()
+endif()
+
 include( "${HOME}/CMakeLists-utilities.txt" )
 
 if( CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang" )
@@ -57,20 +66,25 @@ endif()
 message( STATUS "Compiler used: ${CMAKE_CXX_COMPILER_ID}" )
 message( STATUS "BASE SUFFIXES = ${ARTIFACTS_STATIC_SUFFIX} ${ARTIFACTS_DYNAMIC_SUFFIX}" )
 
-# Run rake
-message( STATUS "Execute rake install for ThirdParties" )
-if (UNIX)
-  execute_process(
-    COMMAND bash "-c" "rake install_3rd"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    COMMAND_ECHO STDOUT
-  )
+# Third-party headers are vendored under src/Utils/3rd and committed to the
+# repository, so the normal build (including consumption via FetchContent)
+# needs no downloads and no external tools. Maintainers can regenerate them
+# from upstream with:  cmake -B build -DUTILS_UPDATE_3RDPARTY=ON
+option( UTILS_UPDATE_3RDPARTY "Download and regenerate vendored 3rd-party headers in src/Utils/3rd" OFF )
+
+if( CMAKE_VERSION VERSION_GREATER_EQUAL 3.21 )
+  set( _utils_is_top_level ${PROJECT_IS_TOP_LEVEL} )
 else()
-  execute_process(
-    COMMAND cmd /c "rake install_3rd"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    COMMAND_ECHO STDOUT
-  )
+  if( CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR )
+    set( _utils_is_top_level TRUE )
+  else()
+    set( _utils_is_top_level FALSE )
+  endif()
+endif()
+
+if( UTILS_UPDATE_3RDPARTY AND _utils_is_top_level )
+  include( "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Update3rdParties.cmake" )
+  utils_update_3rdparties()
 endif()
 
 # Source dir
@@ -297,7 +311,6 @@ foreach(target IN LISTS all_targets)
        type STREQUAL "MODULE_LIBRARY" OR
        type STREQUAL "OBJECT_LIBRARY")
       target_include_directories(${target} SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/src/Utils/3rd)
-      target_include_directories(${target} SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/lib/include/Utils/3rd)
     endif()
   endif()
 endforeach()

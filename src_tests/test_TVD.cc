@@ -171,8 +171,8 @@ struct TVDMetrics
     {
       real_type err = original( i ) - denoised( i );
       sum_sq += err * err;
-      sum_abs += abs( err );
-      max_err = std::max( max_err, abs( err ) );
+      sum_abs += std::abs( err );
+      max_err = std::max( max_err, std::abs( err ) );
 
       noisy_power += noisy( i ) * noisy( i );
       denoised_power += denoised( i ) * denoised( i );
@@ -195,8 +195,8 @@ struct TVDMetrics
     real_type tv_noisy = 0, tv_denoised = 0;
     for ( integer i = 0; i < N - 1; ++i )
     {
-      tv_noisy += abs( noisy( i + 1 ) - noisy( i ) );
-      tv_denoised += abs( denoised( i + 1 ) - denoised( i ) );
+      tv_noisy += std::abs( noisy( i + 1 ) - noisy( i ) );
+      tv_denoised += std::abs( denoised( i + 1 ) - denoised( i ) );
     }
     tv_reduction = 100.0 * ( tv_noisy - tv_denoised ) / tv_noisy;
 
@@ -205,7 +205,7 @@ struct TVDMetrics
     real_type threshold = ( denoised.maxCoeff() - denoised.minCoeff() ) * 1e-3;
     for ( integer i = 0; i < N - 1; ++i )
     {
-      if ( abs( denoised( i + 1 ) - denoised( i ) ) > threshold ) { segments++; }
+      if ( std::abs( denoised( i + 1 ) - denoised( i ) ) > threshold ) { segments++; }
     }
 
     execution_ms = exec_time;

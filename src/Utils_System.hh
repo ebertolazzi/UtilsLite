@@ -28,9 +28,14 @@
 #if defined( __APPLE__ )
 #include <mach/mach.h>
 #include <mach/mach_host.h>
-#include <sys/sysctl.h>
 #include <sys/mount.h>
+#include <sys/sysctl.h>
 #include <sys/statvfs.h>
+#endif
+
+#if defined( __linux__ )
+#include <set>
+#include <sys/sysinfo.h>
 #endif
 
 #if defined( _WIN32 ) || defined( _WIN64 )
@@ -1144,7 +1149,7 @@ namespace Utils
   inline void get_MAC_address( std::map<std::string, std::string> & mac_addr )
   {
     char           buf[8192] = { 0 };
-    struct ifconf  ifc       = { 0 };
+    struct ifconf  ifc{};
     struct ifreq * ifr       = nullptr;
 
     int sck = socket( PF_INET, SOCK_DGRAM, 0 );
@@ -1665,7 +1670,8 @@ namespace Utils
       info.total_physical     = sysInfo.totalram * sysInfo.mem_unit;
       info.available_physical = sysInfo.freeram * sysInfo.mem_unit;
       info.used_physical      = info.total_physical - info.available_physical;
-      info.usage_percentage   = ( info.used_physical * 100.0 ) / info.total_physical;
+      info.usage_percentage =
+        ( static_cast<double>( info.used_physical ) * 100.0 ) / static_cast<double>( info.total_physical );
 
       info.total_virtual     = ( sysInfo.totalram + sysInfo.totalswap ) * sysInfo.mem_unit;
       info.available_virtual = ( sysInfo.freeram + sysInfo.freeswap ) * sysInfo.mem_unit;
@@ -1694,7 +1700,8 @@ namespace Utils
         // More accurate available memory calculation for Linux
         info.available_physical = ( mem_free + buffers + cached ) * 1024;
         info.used_physical      = info.total_physical - info.available_physical;
-        info.usage_percentage   = ( info.used_physical * 100.0 ) / info.total_physical;
+        info.usage_percentage =
+          ( static_cast<double>( info.used_physical ) * 100.0 ) / static_cast<double>( info.total_physical );
       }
     }
 
