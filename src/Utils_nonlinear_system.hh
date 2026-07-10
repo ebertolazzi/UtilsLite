@@ -73,22 +73,22 @@ namespace Utils
 
     void check_even( integer i, integer i_min ) const
     {
-      UTILS_ASSERT( ( i % 2 ) == 0 && i >= i_min, "check_even:: odd index i = {}" );
+      UTILS_ASSERT( ( i % 2 ) == 0 && i >= i_min, "check_even:: odd index i = {}", i );
     }
 
     void check_odd( integer i, integer i_min ) const
     {
-      UTILS_ASSERT( ( i % 2 ) != 0 && i >= i_min, "check_odd:: odd index i = {}" );
+      UTILS_ASSERT( ( i % 2 ) != 0 && i >= i_min, "check_odd:: odd index i = {}", i );
     }
 
     void check_three( integer i, integer i_min ) const
     {
-      UTILS_ASSERT( ( i % 3 ) == 0 && i >= i_min, "check_three:: index i = {}" );
+      UTILS_ASSERT( ( i % 3 ) == 0 && i >= i_min, "check_three:: index i = {}", i );
     }
 
     void check_four( integer i, integer i_min ) const
     {
-      UTILS_ASSERT( ( i % 4 ) == 0 && i >= i_min, "check_four:: index i = {}" );
+      UTILS_ASSERT( ( i % 4 ) == 0 && i >= i_min, "check_four:: index i = {}", i );
     }
 
     real_type real_max{ std::numeric_limits<real_type>::max() };

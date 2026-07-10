@@ -11,7 +11,6 @@ Third-party components currently used by the project include:
 - [terminal-table](https://github.com/Bornageek/terminal-table) for table output
 - [Eigen](https://eigen.tuxfamily.org) for linear algebra
 - [CLI11](https://github.com/CLIUtils/CLI11) for command-line parsing
-- [spdlog](https://github.com/gabime/spdlog) for logging
 - [BS::thread_pool](https://github.com/bshoshany/thread-pool) for thread-pool support
 - [autodiff](https://github.com/ebertolazzi/autodiff) for automatic differentiation
 
@@ -60,14 +59,11 @@ back to `FetchContent` if they are missing:
 - `../eigen`
 - `../CLI11`
 - `../fmt`
-- `../spdlog`
 - `../BS_thread_pool`
 - `../autodiff` for a sibling checkout, otherwise `FetchContent` from the `main` branch of `ebertolazzi/autodiff`
 
 Resolved headers are synchronized into `src/Utils/3rd`, which is the include
 tree used by the library and installed under `lib/include/Utils/3rd`.
-`spdlog` is normalized to use the vendored `fmt` headers shipped by UtilsLite
-instead of its bundled copy.
 
 ## USE AS A DEPENDENCY
 
@@ -101,8 +97,7 @@ cmake -B build -G Ninja -DUTILS_UPDATE_3RDPARTY=ON
 ```
 
 This refreshes `src/Utils/3rd` from the pinned upstream versions, rewrites
-include paths where needed, removes spdlog's bundled fmt copy, applies the
-local autodiff patching, and updates the committed vendor tree. Review the
-result with `git diff` before committing.
+include paths where needed, applies the local autodiff patching, and updates
+the committed vendor tree. Review the result with `git diff` before committing.
 
 Third-party license files are collected under `licenses3rd/`.

@@ -56,7 +56,6 @@ option(UTILS_UPDATE_3RDPARTY "Download and regenerate vendored 3rd-party headers
 set(UTILS_EIGEN_VERSION "5.0.0" CACHE STRING "Eigen version to fetch")
 set(UTILS_CLI11_VERSION "2.6.2" CACHE STRING "CLI11 version to fetch")
 set(UTILS_FMT_VERSION "12.2.0" CACHE STRING "fmt version to fetch")
-set(UTILS_SPDLOG_VERSION "1.16.0" CACHE STRING "spdlog version to fetch")
 set(UTILS_BS_THREAD_POOL_VERSION "5.0.0" CACHE STRING "BS::thread_pool version to fetch")
 set(UTILS_AUTODIFF_VERSION "main" CACHE STRING "autodiff branch or tag to fetch")
 if(UTILS_AUTODIFF_VERSION STREQUAL "1.1.2")
@@ -74,10 +73,6 @@ set(
 set(
   UTILS_FMT_LOCAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../fmt"
   CACHE PATH "Path to a local fmt checkout to use before FetchContent"
-)
-set(
-  UTILS_SPDLOG_LOCAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../spdlog"
-  CACHE PATH "Path to a local spdlog checkout to use before FetchContent"
 )
 set(
   UTILS_BS_THREAD_POOL_LOCAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../BS_thread_pool"
@@ -147,7 +142,7 @@ else()
   string(TOLOWER "${CMAKE_SYSTEM_NAME}" UTILS_PLATFORM_SUFFIX)
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -222,26 +217,19 @@ function(utils_sync_resolved_3rdparty)
   endif()
 
   file(REMOVE_RECURSE "${_third_party_dir}/CLI")
-  file(COPY "${UTILS_CLI11_INCLUDE_DIR}/CLI" DESTINATION "${_third_party_dir}")
+  set(_cli_stage "${_stage_dir}/CLI")
+  file(REMOVE_RECURSE "${_cli_stage}")
+  file(COPY "${UTILS_CLI11_INCLUDE_DIR}/CLI/" DESTINATION "${_cli_stage}")
+  _utils_rewrite_prefixed_includes_recursive("${_cli_stage}" "CLI")
+  _utils_replace_dir("${_cli_stage}" "${_third_party_dir}/CLI")
   utils_write_file_if_different(
     "${_third_party_dir}/CLI11.hpp"
-    "#pragma once\n#include <CLI/CLI.hpp>\n"
+    "#pragma once\n#include \"CLI/CLI.hpp\"\n"
   )
 
   file(REMOVE_RECURSE "${_third_party_dir}/fmt")
   file(COPY "${UTILS_FMT_INCLUDE_DIR}/fmt" DESTINATION "${_third_party_dir}")
 
-  file(REMOVE_RECURSE "${_third_party_dir}/spdlog")
-  file(COPY "${UTILS_SPDLOG_INCLUDE_DIR}/spdlog" DESTINATION "${_third_party_dir}")
-
-  set(_tweakme "${_third_party_dir}/spdlog/tweakme.h")
-  if(EXISTS "${_tweakme}")
-    file(READ "${_tweakme}" _tweakme_contents)
-    string(REPLACE "// #define SPDLOG_FMT_EXTERNAL" "#define SPDLOG_FMT_EXTERNAL" _tweakme_contents "${_tweakme_contents}")
-    utils_write_file_if_different("${_tweakme}" "${_tweakme_contents}")
-  endif()
-
-  file(REMOVE_RECURSE "${_third_party_dir}/spdlog/fmt/bundled")
   file(REMOVE "${_third_party_dir}/task_thread_pool.hpp")
 
   file(COPY "${UTILS_BS_THREAD_POOL_ROOT}/include/BS_thread_pool.hpp" DESTINATION "${_third_party_dir}")
@@ -291,16 +279,6 @@ utils_resolve_dependency(
   UTILS_FMT_SOURCE
 )
 set(UTILS_FMT_INCLUDE_DIR "${UTILS_FMT_ROOT}/include")
-
-utils_resolve_dependency(
-  utils_spdlog
-  "${UTILS_SPDLOG_LOCAL_DIR}"
-  "include/spdlog/spdlog.h"
-  "https://github.com/gabime/spdlog/archive/refs/tags/v${UTILS_SPDLOG_VERSION}.tar.gz"
-  UTILS_SPDLOG_ROOT
-  UTILS_SPDLOG_SOURCE
-)
-set(UTILS_SPDLOG_INCLUDE_DIR "${UTILS_SPDLOG_ROOT}/include")
 
 utils_resolve_dependency(
   utils_bs_thread_pool
@@ -360,7 +338,7 @@ endforeach()
 list(REMOVE_DUPLICATES INCLUDE_DIRS)
 
 function(utils_configure_target target_name)
-  target_compile_features(${target_name} PUBLIC cxx_std_17)
+  target_compile_features(${target_name} PUBLIC cxx_std_20)
   target_include_directories(
     ${target_name}
     PUBLIC
@@ -420,16 +398,11 @@ function(utils_add_platform_library_alias target_name base_name library_kind)
 
     if(UTILS_INSTALL_LOCAL)
       install(CODE
-        "file(MAKE_DIRECTORY \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\")
-"
-        "execute_process(
-"
-        "  COMMAND \"${CMAKE_COMMAND}\" -E copy_if_different
-"
-        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${target_filename}\"
-"
-        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${alias_filename}\"
-"
+        "file(MAKE_DIRECTORY \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\")"
+        "execute_process("
+        "  COMMAND \"${CMAKE_COMMAND}\" -E copy_if_different"
+        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${target_filename}\""
+        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${alias_filename}\""
         ")"
       )
     endif()
@@ -446,24 +419,15 @@ function(utils_add_platform_library_alias target_name base_name library_kind)
 
     if(UTILS_INSTALL_LOCAL)
       install(CODE
-        "file(MAKE_DIRECTORY \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\")
-"
-        "execute_process(
-"
-        "  COMMAND \"${CMAKE_COMMAND}\" -E rm -f
-"
-        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${alias_filename}\"
-"
-        ")
-"
-        "execute_process(
-"
-        "  COMMAND \"${CMAKE_COMMAND}\" -E create_symlink
-"
-        "          \"${target_filename}\"
-"
-        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${alias_filename}\"
-"
+        "file(MAKE_DIRECTORY \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\")"
+        "execute_process("
+        "  COMMAND \"${CMAKE_COMMAND}\" -E rm -f"
+        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${alias_filename}\""
+        ")"
+        "execute_process("
+        "  COMMAND \"${CMAKE_COMMAND}\" -E create_symlink"
+        "          \"${target_filename}\""
+        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${alias_filename}\""
         ")"
       )
     endif()
@@ -595,7 +559,6 @@ message(STATUS "  3rd-party include: ${CMAKE_INSTALL_INCLUDEDIR}/Utils/3rd")
 message(STATUS "  Eigen            : ${UTILS_EIGEN_SOURCE}")
 message(STATUS "  CLI11            : ${UTILS_CLI11_SOURCE}")
 message(STATUS "  fmt              : ${UTILS_FMT_SOURCE}")
-message(STATUS "  spdlog           : ${UTILS_SPDLOG_SOURCE}")
 message(STATUS "  BS thread pool   : ${UTILS_BS_THREAD_POOL_SOURCE}")
 message(STATUS "  autodiff         : ${UTILS_AUTODIFF_SOURCE}")
 message(STATUS "")

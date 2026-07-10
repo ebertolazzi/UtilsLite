@@ -82,7 +82,7 @@ static void print_line(
   for ( size_t i = 0; i < widths.size(); ++i )
   {
     string fmt = fmt::format( "{{:{}^{{}}}}", mid );
-    fmt::print( fmt, "", widths[i] );
+    fmt::print( fmt::runtime( fmt ), "", widths[i] );
     if ( i < widths.size() - 1 ) fmt::print( "{}", cross );
   }
   fmt::print( "{}\n", right );

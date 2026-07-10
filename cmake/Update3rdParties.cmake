@@ -24,7 +24,6 @@ include(FetchContent)
 # Pinned versions (match the previous ThirdParties/*/Rakefile values)
 # ----------------------------------------------------------------------------
 set(UTILS_3RD_EIGEN_VERSION            "5.0.0"  CACHE STRING "Eigen version to vendor")
-set(UTILS_3RD_SPDLOG_VERSION           "1.16.0" CACHE STRING "spdlog version to vendor")
 set(UTILS_3RD_BS_THREAD_POOL_VERSION   "5.0.0"  CACHE STRING "BS::thread_pool version to vendor")
 set(UTILS_3RD_AUTODIFF_VERSION         "main"  CACHE STRING "autodiff branch or tag to vendor")
 if(UTILS_3RD_AUTODIFF_VERSION STREQUAL "1.1.2")
@@ -72,6 +71,46 @@ function(_utils_rewrite_glob PATTERN)
   endforeach()
 endfunction()
 
+function(_utils_rewrite_glob_recursive PATTERN)
+  file(GLOB_RECURSE _files "${PATTERN}")
+  foreach(_f ${_files})
+    if(NOT IS_DIRECTORY "${_f}")
+      _utils_rewrite_file("${_f}" ${ARGN})
+    endif()
+  endforeach()
+endfunction()
+
+function(_utils_rewrite_prefixed_includes_file FILE ROOT PREFIX)
+  if(NOT EXISTS "${FILE}")
+    return()
+  endif()
+
+  file(READ "${FILE}" _content)
+  set(_orig "${_content}")
+  get_filename_component(_file_dir "${FILE}" DIRECTORY)
+
+  string(REGEX MATCHALL "#[ \t]*include[ \t]*[<\"]${PREFIX}/[^>\"]+[>\"]" _matches "${_content}")
+  foreach(_match ${_matches})
+    string(REGEX REPLACE ".*[<\"]${PREFIX}/([^>\"]+)[>\"]" "\\1" _suffix "${_match}")
+    file(RELATIVE_PATH _relative "${_file_dir}" "${ROOT}/${_suffix}")
+    string(REPLACE "${_match}" "#include \"${_relative}\"" _content "${_content}")
+  endforeach()
+
+  if(NOT _content STREQUAL _orig)
+    file(WRITE "${FILE}" "${_content}")
+    message(STATUS "  updated: ${FILE}")
+  endif()
+endfunction()
+
+function(_utils_rewrite_prefixed_includes_recursive ROOT PREFIX)
+  file(GLOB_RECURSE _files "${ROOT}/*")
+  foreach(_f ${_files})
+    if(NOT IS_DIRECTORY "${_f}")
+      _utils_rewrite_prefixed_includes_file("${_f}" "${ROOT}" "${PREFIX}")
+    endif()
+  endforeach()
+endfunction()
+
 # Replace destination directory with a fresh copy of a source directory.
 function(_utils_replace_dir SRC DST)
   file(REMOVE_RECURSE "${DST}")
@@ -101,9 +140,6 @@ function(utils_update_3rdparties)
   FetchContent_Declare( eigen_src
     URL "https://gitlab.com/libeigen/eigen/-/archive/${UTILS_3RD_EIGEN_VERSION}/eigen-${UTILS_3RD_EIGEN_VERSION}.zip"
     SOURCE_SUBDIR _do_not_configure )
-  FetchContent_Declare( spdlog_src
-    URL "https://github.com/gabime/spdlog/archive/refs/tags/v${UTILS_3RD_SPDLOG_VERSION}.tar.gz"
-    SOURCE_SUBDIR _do_not_configure )
   FetchContent_Declare( bs_thread_pool_src
     URL "https://github.com/bshoshany/thread-pool/archive/refs/tags/v${UTILS_3RD_BS_THREAD_POOL_VERSION}.tar.gz"
     SOURCE_SUBDIR _do_not_configure )
@@ -112,27 +148,21 @@ function(utils_update_3rdparties)
     SOURCE_SUBDIR _do_not_configure )
 
   FetchContent_MakeAvailable(
-    eigen_src spdlog_src bs_thread_pool_src autodiff_src )
+    eigen_src bs_thread_pool_src autodiff_src )
 
   # --- Eigen ----------------------------------------------------------------
   # Copy the Eigen/ header tree verbatim (no include rewriting needed).
   message(STATUS "Vendoring Eigen ${UTILS_3RD_EIGEN_VERSION}")
   _utils_replace_dir("${eigen_src_SOURCE_DIR}/Eigen" "${_dst}/Eigen")
 
-  # --- spdlog ---------------------------------------------------------------
-  # Flatten <spdlog/...> includes to path-relative ones.
-  message(STATUS "Vendoring spdlog ${UTILS_3RD_SPDLOG_VERSION}")
-  set(_spdlog_stage "${_stage}/spdlog")
-  file(COPY "${spdlog_src_SOURCE_DIR}/include/spdlog/" DESTINATION "${_spdlog_stage}")
-  # top-level headers:  #include <spdlog/foo> -> #include "foo"
-  _utils_rewrite_glob("${_spdlog_stage}/*"
-    "#include <spdlog/([^>]*)>" "#include \"\\1\"")
-  # one level deep:     #include "spdlog/foo" / <spdlog/foo> -> #include "../foo"
-  _utils_rewrite_glob("${_spdlog_stage}/*/*"
-    "#include \"spdlog/([^\"]*)\"" "#include \"../\\1\""
-    "#include <spdlog/([^>]*)>"    "#include \"../\\1\"")
-  _utils_replace_dir("${_spdlog_stage}" "${_dst}/spdlog")
-
+  # --- CLI11 ----------------------------------------------------------------
+  # Rewrite vendored CLI headers to use file-relative quoted includes.
+  message(STATUS "Vendoring CLI11")
+  set(_cli_stage "${_stage}/CLI")
+  file(COPY "${cli11_src_SOURCE_DIR}/include/CLI/" DESTINATION "${_cli_stage}")
+  _utils_rewrite_prefixed_includes_recursive("${_cli_stage}" "CLI")
+  _utils_replace_dir("${_cli_stage}" "${_dst}/CLI")
+  file(WRITE "${_dst}/CLI11.hpp" "#pragma once\n#include \"CLI/CLI.hpp\"\n")
   # --- BS::thread_pool (single header) --------------------------------------
   message(STATUS "Vendoring BS::thread_pool ${UTILS_3RD_BS_THREAD_POOL_VERSION}")
   file(COPY "${bs_thread_pool_src_SOURCE_DIR}/include/BS_thread_pool.hpp"

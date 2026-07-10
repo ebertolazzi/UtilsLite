@@ -31,11 +31,13 @@
 #include <sys/mount.h>
 #include <sys/sysctl.h>
 #include <sys/statvfs.h>
+#include <unistd.h>
 #endif
 
 #if defined( __linux__ )
 #include <set>
 #include <sys/sysinfo.h>
+#include <unistd.h>
 #endif
 
 #if defined( _WIN32 ) || defined( _WIN64 )
