@@ -371,21 +371,31 @@ function(utils_configure_target target_name)
 endfunction()
 
 function(utils_add_platform_library_alias target_name base_name library_kind)
+  # The real library keeps the platform/static suffix, e.g.
+  #   libUtilsLite_osx_static.a
+  # and the unsuffixed name is kept only as a compatibility alias, e.g.
+  #   libUtilsLite.a -> libUtilsLite_osx_static.a
   if(library_kind STREQUAL "STATIC")
-    set(target_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${base_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    set(output_name "${base_name}_${UTILS_PLATFORM_SUFFIX}_static")
+    set(alias_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${base_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
     if(WIN32)
-      set(alias_filename "lib${base_name}_${UTILS_PLATFORM_SUFFIX}_static${CMAKE_STATIC_LIBRARY_SUFFIX}")
+      set(real_filename "lib${output_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+      set(output_name "lib${output_name}")
     else()
-      set(alias_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${base_name}_${UTILS_PLATFORM_SUFFIX}_static${CMAKE_STATIC_LIBRARY_SUFFIX}")
+      set(real_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${output_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
     endif()
   else()
-    set(target_filename "${CMAKE_SHARED_LIBRARY_PREFIX}${base_name}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(output_name "${base_name}_${UTILS_PLATFORM_SUFFIX}")
+    set(alias_filename "${CMAKE_SHARED_LIBRARY_PREFIX}${base_name}${CMAKE_SHARED_LIBRARY_SUFFIX}")
     if(WIN32)
-      set(alias_filename "lib${base_name}_${UTILS_PLATFORM_SUFFIX}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+      set(real_filename "lib${output_name}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+      set(output_name "lib${output_name}")
     else()
-      set(alias_filename "${CMAKE_SHARED_LIBRARY_PREFIX}${base_name}_${UTILS_PLATFORM_SUFFIX}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+      set(real_filename "${CMAKE_SHARED_LIBRARY_PREFIX}${output_name}${CMAKE_SHARED_LIBRARY_SUFFIX}")
     endif()
   endif()
+
+  set_target_properties(${target_name} PROPERTIES OUTPUT_NAME "${output_name}")
 
   if(WIN32)
     add_custom_command(
@@ -397,14 +407,15 @@ function(utils_add_platform_library_alias target_name base_name library_kind)
     )
 
     if(UTILS_INSTALL_LOCAL)
-      install(CODE
-        "file(MAKE_DIRECTORY \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\")"
-        "execute_process("
-        "  COMMAND \"${CMAKE_COMMAND}\" -E copy_if_different"
-        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${target_filename}\""
-        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${alias_filename}\""
-        ")"
+      string(CONCAT _alias_install_code
+        "file(MAKE_DIRECTORY \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\")\n"
+        "execute_process(\n"
+        "  COMMAND \"${CMAKE_COMMAND}\" -E copy_if_different\n"
+        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${real_filename}\"\n"
+        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${alias_filename}\"\n"
+        ")\n"
       )
+      install(CODE "${_alias_install_code}")
     endif()
   else()
     add_custom_command(
@@ -412,24 +423,25 @@ function(utils_add_platform_library_alias target_name base_name library_kind)
       COMMAND ${CMAKE_COMMAND} -E rm -f
               "$<TARGET_FILE_DIR:${target_name}>/${alias_filename}"
       COMMAND ${CMAKE_COMMAND} -E create_symlink
-              "${target_filename}"
+              "$<TARGET_FILE_NAME:${target_name}>"
               "$<TARGET_FILE_DIR:${target_name}>/${alias_filename}"
       VERBATIM
     )
 
     if(UTILS_INSTALL_LOCAL)
-      install(CODE
-        "file(MAKE_DIRECTORY \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\")"
-        "execute_process("
-        "  COMMAND \"${CMAKE_COMMAND}\" -E rm -f"
-        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${alias_filename}\""
-        ")"
-        "execute_process("
-        "  COMMAND \"${CMAKE_COMMAND}\" -E create_symlink"
-        "          \"${target_filename}\""
-        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${alias_filename}\""
-        ")"
+      string(CONCAT _alias_install_code
+        "file(MAKE_DIRECTORY \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\")\n"
+        "execute_process(\n"
+        "  COMMAND \"${CMAKE_COMMAND}\" -E rm -f\n"
+        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${alias_filename}\"\n"
+        ")\n"
+        "execute_process(\n"
+        "  COMMAND \"${CMAKE_COMMAND}\" -E create_symlink\n"
+        "          \"${real_filename}\"\n"
+        "          \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/${alias_filename}\"\n"
+        ")\n"
       )
+      install(CODE "${_alias_install_code}")
     endif()
   endif()
 endfunction()
@@ -437,7 +449,6 @@ endfunction()
 # Static target: keeps compatibility with previous cmake_utils naming.
 add_library(${UTILS_NAMESPACE}_${PROJECT_NAME}_Static STATIC ${SOURCES} ${PROJECT_HEADERS_FULL})
 add_library(${UTILS_NAMESPACE}::${PROJECT_NAME}_Static ALIAS ${UTILS_NAMESPACE}_${PROJECT_NAME}_Static)
-set_target_properties(${UTILS_NAMESPACE}_${PROJECT_NAME}_Static PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 utils_configure_target(${UTILS_NAMESPACE}_${PROJECT_NAME}_Static)
 utils_add_platform_library_alias(${UTILS_NAMESPACE}_${PROJECT_NAME}_Static ${PROJECT_NAME} STATIC)
 
@@ -445,7 +456,6 @@ utils_add_platform_library_alias(${UTILS_NAMESPACE}_${PROJECT_NAME}_Static ${PRO
 if(UTILS_BUILD_SHARED)
   add_library(${UTILS_NAMESPACE}_${PROJECT_NAME} SHARED ${SOURCES} ${PROJECT_HEADERS_FULL})
   add_library(${UTILS_NAMESPACE}::${PROJECT_NAME} ALIAS ${UTILS_NAMESPACE}_${PROJECT_NAME})
-  set_target_properties(${UTILS_NAMESPACE}_${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
   utils_configure_target(${UTILS_NAMESPACE}_${PROJECT_NAME})
   utils_add_platform_library_alias(${UTILS_NAMESPACE}_${PROJECT_NAME} ${PROJECT_NAME} SHARED)
 endif()

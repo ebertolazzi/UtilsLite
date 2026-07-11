@@ -37,11 +37,16 @@ OS = case RUBY_PLATFORM
 
 BUILD_TYPE = COMPILE_DEBUG ? 'Debug' : 'Release'
 
-BUILD_OPTIONS = [
+BASE_BUILD_OPTIONS = [
   "-DCMAKE_BUILD_TYPE=#{BUILD_TYPE}",
-  "-DUTILS_ENABLE_TESTS=#{COMPILE_EXECUTABLE ? 'ON' : 'OFF'}",
   "-DUTILS_BUILD_SHARED=#{COMPILE_DYNAMIC ? 'ON' : 'OFF'}"
-].join(' ')
+].freeze
+
+def cmake_options(enable_tests:)
+  (BASE_BUILD_OPTIONS + [
+    "-DUTILS_ENABLE_TESTS=#{enable_tests ? 'ON' : 'OFF'}"
+  ]).join(' ')
+end
 
 PARALLEL = if OS == :win
              ''
@@ -65,15 +70,22 @@ def visual_studio_arch
   end
 end
 
-def configure_and_build(bits: nil)
+def configure_and_build(bits: nil, enable_tests: false, target: 'install')
   FileUtils.rm_rf('lib')
   FileUtils.rm_rf('build')
 
   in_dir('build') do
     bits_opt = bits ? "-DBITS=#{bits}" : ''
-    sh "cmake -G Ninja #{bits_opt} #{BUILD_OPTIONS} .."
-    sh "cmake --build . --config #{BUILD_TYPE} --target install #{PARALLEL}"
+    target_opt = target ? "--target #{target}" : ''
+    sh "cmake -G Ninja #{bits_opt} #{cmake_options(enable_tests: enable_tests)} .."
+    sh "cmake --build . --config #{BUILD_TYPE} #{target_opt} #{PARALLEL}"
   end
+end
+
+def build_and_run_tests
+  bits = OS == :win ? visual_studio_arch : nil
+  configure_and_build(bits: bits, enable_tests: true, target: nil)
+  Dir.chdir('build') { sh "ctest -C #{BUILD_TYPE} --output-on-failure" }
 end
 
 desc 'Default task: build'
@@ -84,28 +96,17 @@ task :build do
   puts "Build (#{OS})".green
 
   bits = OS == :win ? visual_studio_arch : nil
-  configure_and_build(bits: bits)
+  configure_and_build(bits: bits, enable_tests: false, target: 'install')
 end
 
-desc 'Run CTest from build/'
+desc 'Build tests and run CTest'
 task :test do
-  Dir.chdir('build') { sh 'ctest --output-on-failure' }
+  build_and_run_tests
 end
 
-desc 'Run executables from bin/'
+desc 'Build tests and run CTest'
 task :run do
-  exes = if OS == :win || OS == :mingw
-           Dir.glob('bin/*.exe')
-         else
-           Dir.glob('bin/*').select { |path| File.file?(path) && File.executable?(path) }
-         end
-
-  raise 'No executables found in bin/' if exes.empty?
-
-  exes.sort.each do |exe|
-    puts "execute #{exe}".yellow
-    sh exe
-  end
+  build_and_run_tests
 end
 
 desc 'Clean build artifacts'
