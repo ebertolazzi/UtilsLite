@@ -20,6 +20,7 @@
 // Includi il nuovo header
 #include "Utils.hh"
 #include "Utils_System.hh"
+#include "Utils_fmt.hh"
 
 #include <filesystem>
 

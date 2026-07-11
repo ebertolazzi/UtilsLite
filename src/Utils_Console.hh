@@ -18,20 +18,17 @@
 \*--------------------------------------------------------------------------*/
 
 /**
- * \file Console.hxx
+ * \file Utils_Console.hh
  * \brief Console utility for formatted output with different message levels.
  */
 
 #ifndef UTILS_CONSOLE_HXX
 #define UTILS_CONSOLE_HXX
 
+#include "Utils_fmt.hh"
+
 namespace Utils
 {
-
-  using istream_type = std::basic_istream<char>;  //!< Type for input stream
-  using ostream_type = std::basic_ostream<char>;  //!< Type for output stream
-  using string       = std::string;               //!< Type for string
-  using string_view  = std::string_view;          //!< Type for string view
 
   //! Get the base name of a file.
   /*!
@@ -235,7 +232,7 @@ namespace Utils
       if ( m_level >= 1 ) { *m_stream << fmt::format( m_error_style.ts, "{}", msg ); }
     }
 
-    //! Output a fatal message.
+    //! Output a fatal message. (Always printed!)
     /*!
      * \param msg The fatal message to output.
      */

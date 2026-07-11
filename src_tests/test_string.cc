@@ -18,6 +18,7 @@
 \*--------------------------------------------------------------------------*/
 
 #include "Utils_string.hh"
+#include "Utils_fmt.hh"
 #include <vector>
 #include <array>
 

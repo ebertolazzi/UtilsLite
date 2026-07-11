@@ -16,6 +16,7 @@
 
 // Include your SHA3 implementation
 #include "Utils_SHA3.hh"
+#include "Utils_fmt.hh"
 
 using namespace std;
 using namespace Utils;

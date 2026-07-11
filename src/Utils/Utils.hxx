@@ -114,7 +114,6 @@
 #include <limits>
 #include <list>
 #include <map>
-#include <map>
 #include <memory>
 #include <numeric>
 #include <random>
@@ -127,7 +126,7 @@
 #include <vector>
 
 // disable mingw-std-threads for mingw on MATLAB
-#if defined( __MINGW32__ ) || defined( __MINGW64__ ) && !defined( MATLAB_MEX_FILE )
+#if ( defined( __MINGW32__ ) || defined( __MINGW64__ ) ) && !defined( MATLAB_MEX_FILE )
 #include <_mingw.h>
 #if defined( __MINGW64_VERSION_MAJOR )
 #if __MINGW64_VERSION_MAJOR < 8
@@ -135,7 +134,7 @@
 #endif
 #endif
 #if defined( __MINGW32_VERSION_MAJOR )
-#if __MINGW32_VERSION_MAJORs < 8
+#if __MINGW32_VERSION_MAJOR < 8
 #define UTILS_USE_MINGW_PORTABLE_THREADS
 #endif
 #endif
@@ -176,16 +175,6 @@ namespace Utils
   using string_view  = std::string_view;
   using ostream_type = std::basic_ostream<char>;
   using istream_type = std::basic_istream<char>;
-}  // namespace Utils
-
-#include "3rd/fmt/color.h"
-#include "3rd/fmt/std.h"
-#include "3rd/fmt/chrono.h"
-#include "3rd/fmt/ostream.h"
-#include "3rd/fmt/printf.h"
-
-namespace Utils
-{
   using std::runtime_error;
 
   //!
@@ -221,7 +210,7 @@ namespace Utils
     //! \param line The line number in the file where the error occurred.
     //!
     explicit Runtime_Error( string_view reason, string_view file, int line )
-      : std::runtime_error( fmt::format( "\n{}\nOn File:{}:{}\n", reason, file, line ) )
+      : std::runtime_error( std::format( "\n{}\nOn File:{}:{}\n", reason, file, line ) )
     {
     }
 
@@ -257,7 +246,7 @@ namespace Utils
 #endif
 
 #ifndef UTILS_ERROR
-#define UTILS_ERROR( ... ) throw Utils::Runtime_Error( fmt::format( __VA_ARGS__ ), __FILENAME__, __LINE__ )
+#define UTILS_ERROR( ... ) throw Utils::Runtime_Error( std::format( __VA_ARGS__ ), __FILENAME__, __LINE__ )
 #endif
 
 #ifndef UTILS_ASSERT
@@ -287,7 +276,6 @@ namespace Utils
 #endif
 
 #include "Malloc.hxx"
-#include "Console.hxx"
 #include "Numbers.hxx"
 
 // order must be preserved

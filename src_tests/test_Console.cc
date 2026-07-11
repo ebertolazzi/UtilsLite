@@ -23,6 +23,7 @@
 #include "Utils.hh"
 #include "Utils_TicToc.hh"
 #include "Utils_progress_bar.hh"
+#include "Utils_Console.hh"
 
 using namespace std;
 

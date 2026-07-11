@@ -16,6 +16,7 @@
 \*--------------------------------------------------------------------------*/
 
 #include "Utils_Token.hh"
+#include "Utils_fmt.hh"
 
 using std::endl;
 using std::string;

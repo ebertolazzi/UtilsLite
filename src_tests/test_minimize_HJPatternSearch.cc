@@ -27,6 +27,7 @@
 #include <algorithm>
 
 #include "Utils_fmt.hh"
+#include "Utils_Console.hh"
 #include "Utils_minimize_HJPatternSearch.hh"
 
 using namespace std;
