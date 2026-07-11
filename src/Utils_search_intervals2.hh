@@ -655,7 +655,7 @@ namespace Utils
 
 }  // namespace Utils
 
-#endif  // UTILS_INTERVALS_HH
+#endif  // UTILS_SEARCH_INTERVALS2_HH
 
 //
 // eof: Utils_search_intervals2.hh
