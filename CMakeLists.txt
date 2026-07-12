@@ -4,8 +4,23 @@
 #                                                                          #
 ############################################################################
 
+# Require a CMake version recent enough for modern target usage,
+# FetchContent, generator expressions and install/export rules used below.
 cmake_minimum_required(VERSION 3.16)
 
+# --------------------------------------------------------------------------
+# CMake policy selection
+# --------------------------------------------------------------------------
+# Policies make behavior explicit across CMake releases.  The guarded checks
+# keep the file compatible with older CMake versions that do not know newer
+# policy identifiers.
+#
+# CMP0177 NEW: use the newer install path normalization behavior when running
+# with CMake >= 3.31.
+# CMP0135 NEW: FetchContent/external archives get predictable timestamps,
+# avoiding stale rebuild decisions after downloads.
+# CMP0169 OLD: keep compatibility with the existing FetchContent_Populate()
+# usage in this project.
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.31)
   cmake_policy(SET CMP0177 NEW)
 endif()
@@ -16,8 +31,48 @@ if(POLICY CMP0169)
   cmake_policy(SET CMP0169 OLD)
 endif()
 
-# Version from the latest Git tag when available.  This replaces the
-# UTILS_PROJECT_VERSION value that used to come from cmake_utils.
+# --------------------------------------------------------------------------
+# Apple FAT/universal build setup
+# --------------------------------------------------------------------------
+# On Apple platforms a single library can contain slices for several CPU
+# architectures, for example arm64 and x86_64.  This is controlled by
+# CMAKE_OSX_ARCHITECTURES.
+#
+# The variable must be set before project(), otherwise CMake may initialize
+# compilers and targets before the requested architectures are known.
+#
+# Default behavior:
+#   - ON  on Apple hosts or Apple cross-compilation targets.
+#   - OFF on Linux/Windows and other platforms, where there is no equivalent
+#     single-file universal library format.
+#
+# User overrides:
+#   -DUTILS_BUILD_FAT=OFF
+#   -DUTILS_FAT_ARCHITECTURES=arm64
+#   -DCMAKE_OSX_ARCHITECTURES=arm64\;x86_64
+set(UTILS_BUILD_FAT_DEFAULT OFF)
+if(CMAKE_HOST_APPLE OR CMAKE_SYSTEM_NAME MATCHES "Darwin|iOS|tvOS|watchOS|visionOS")
+  set(UTILS_BUILD_FAT_DEFAULT ON)
+endif()
+option(UTILS_BUILD_FAT "Build Apple universal/fat binaries when supported" ${UTILS_BUILD_FAT_DEFAULT})
+set(UTILS_FAT_ARCHITECTURES "arm64;x86_64" CACHE STRING "Apple architectures to build when UTILS_BUILD_FAT is ON")
+
+if(UTILS_BUILD_FAT AND NOT CMAKE_OSX_ARCHITECTURES)
+  set(
+    CMAKE_OSX_ARCHITECTURES
+    "${UTILS_FAT_ARCHITECTURES}"
+    CACHE STRING "Build architectures for Apple platforms"
+    FORCE
+  )
+endif()
+
+# --------------------------------------------------------------------------
+# Project version discovery
+# --------------------------------------------------------------------------
+# Prefer the most recent Git tag as project version.  This keeps the CMake
+# project version aligned with repository releases.  If Git is not available,
+# or the source tree is not a Git checkout with tags, the version falls back
+# to 0.0.0.
 find_package(Git QUIET)
 if(Git_FOUND)
   execute_process(
@@ -35,6 +90,9 @@ if(NOT UTILS_PROJECT_VERSION)
   set(UTILS_PROJECT_VERSION "0.0.0")
 endif()
 
+# Declare the CMake project after all pre-project settings have been applied.
+# The VERSION value is used later for target properties, installation exports
+# and package metadata.
 project(
   UtilsLite
   VERSION ${UTILS_PROJECT_VERSION}
@@ -42,17 +100,43 @@ project(
   LANGUAGES CXX
 )
 
+# --------------------------------------------------------------------------
+# Standard CMake modules and project helper modules
+# --------------------------------------------------------------------------
+# GNUInstallDirs defines portable install directory variables such as
+# CMAKE_INSTALL_INCLUDEDIR and CMAKE_INSTALL_LIBDIR.
+# CTest enables test registration through add_test().
+# FetchContent is used to retrieve header-only/vendor dependencies when local
+# checkouts are not available.
+# Update3rdParties.cmake provides helper routines used to rewrite and vendor
+# third-party headers into src/Utils/3rd.
 include(GNUInstallDirs)
 include(CTest)
 include(FetchContent)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Update3rdParties.cmake")
 
-# Options formerly provided by cmake_utils.
+# --------------------------------------------------------------------------
+# Public build options
+# --------------------------------------------------------------------------
+# These cache options are visible to users configuring the project with cmake.
+# They replace options that were previously provided by cmake_utils.
+#
+# UTILS_BUILD_SHARED: also build a shared library in addition to the static one.
+# UTILS_ENABLE_TESTS: build tests by default only for a top-level checkout.
+# UTILS_INSTALL_LOCAL: enable install rules by default only for a top-level
+# project, avoiding unexpected install rules when embedded as a dependency.
+# UTILS_UPDATE_3RDPARTY: regenerate vendored third-party headers on request.
 option(UTILS_BUILD_SHARED "Build the UtilsLite shared library" OFF)
 option(UTILS_ENABLE_TESTS "Build UtilsLite tests" ${PROJECT_IS_TOP_LEVEL})
 option(UTILS_INSTALL_LOCAL "Enable UtilsLite install rules" ${PROJECT_IS_TOP_LEVEL})
 option(UTILS_UPDATE_3RDPARTY "Download and regenerate vendored 3rd-party headers in src/Utils/3rd" OFF)
 
+# --------------------------------------------------------------------------
+# Third-party dependency versions
+# --------------------------------------------------------------------------
+# Each dependency can be provided by a local checkout or fetched from the
+# configured upstream archive.  These cache variables let users pin or override
+# the versions without editing this file.
 set(UTILS_EIGEN_VERSION "5.0.0" CACHE STRING "Eigen version to fetch")
 set(UTILS_CLI11_VERSION "2.6.2" CACHE STRING "CLI11 version to fetch")
 set(UTILS_FMT_VERSION "12.2.0" CACHE STRING "fmt version to fetch")
@@ -62,6 +146,13 @@ if(UTILS_AUTODIFF_VERSION STREQUAL "1.1.2")
   set(UTILS_AUTODIFF_VERSION "main" CACHE STRING "autodiff branch or tag to fetch" FORCE)
 endif()
 
+# --------------------------------------------------------------------------
+# Preferred local dependency locations
+# --------------------------------------------------------------------------
+# The build first looks for sibling checkouts next to this project.  This is
+# useful for development because it avoids network access and allows local
+# dependency modifications.  If the expected probe file is missing, the
+# dependency is obtained through FetchContent instead.
 set(
   UTILS_EIGEN_LOCAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../eigen"
   CACHE PATH "Path to a local Eigen checkout to use before FetchContent"
@@ -78,6 +169,9 @@ set(
   UTILS_BS_THREAD_POOL_LOCAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../BS_thread_pool"
   CACHE PATH "Path to a local BS::thread_pool checkout to use before FetchContent"
 )
+# Backward-compatibility correction for an older local directory name.  If the
+# cache still points to ../thread-pool but the newer ../BS_thread_pool checkout
+# exists, prefer the newer path automatically.
 if(
   UTILS_BS_THREAD_POOL_LOCAL_DIR STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}/../thread-pool" AND
   EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../BS_thread_pool/include/BS_thread_pool.hpp"
@@ -93,6 +187,13 @@ set(
   CACHE PATH "Path to a local autodiff checkout to use before FetchContent"
 )
 
+# --------------------------------------------------------------------------
+# Top-level install prefix
+# --------------------------------------------------------------------------
+# When this repository is configured directly, install into the source tree by
+# default so headers/libraries go into the project-local lib/ directory.  When
+# the project is included by another project, this block is skipped to avoid
+# overriding the parent build's install prefix.
 if(
   PROJECT_IS_TOP_LEVEL AND
   (
@@ -108,6 +209,12 @@ if(
   )
 endif()
 
+# For top-level builds, use the historical local layout:
+#   lib/include  installed headers
+#   lib/lib      static/shared libraries
+#   lib/bin      executables/tests
+# The directories are created early so subsequent build and install steps have
+# stable output locations.
 if(PROJECT_IS_TOP_LEVEL)
   set(CMAKE_INSTALL_INCLUDEDIR "lib/include" CACHE PATH "Install include directory" FORCE)
   set(CMAKE_INSTALL_LIBDIR "lib/lib" CACHE PATH "Install library directory" FORCE)
@@ -119,9 +226,22 @@ if(PROJECT_IS_TOP_LEVEL)
   )
 endif()
 
+# --------------------------------------------------------------------------
+# Project-wide naming and source-root variables
+# --------------------------------------------------------------------------
+# UTILS_NAMESPACE is used for internal target names and exported aliases.
+# SOURCE_DIR centralizes the source tree root used by source discovery, include
+# directories and installation rules.
 set(UTILS_NAMESPACE utils)
 set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
+# --------------------------------------------------------------------------
+# Platform suffix used in generated library names
+# --------------------------------------------------------------------------
+# The real binary name includes an OS/toolchain suffix such as osx, linux,
+# win64 or mingw64.  A compatibility alias without the suffix is created later.
+# This preserves existing consumer expectations while keeping artifacts
+# unambiguous by platform.
 if(APPLE)
   set(UTILS_PLATFORM_SUFFIX osx)
 elseif(WIN32)
@@ -142,15 +262,32 @@ else()
   string(TOLOWER "${CMAKE_SYSTEM_NAME}" UTILS_PLATFORM_SUFFIX)
 endif()
 
+# --------------------------------------------------------------------------
+# C++ language standard
+# --------------------------------------------------------------------------
+# Require ISO C++20 for all targets, and disable compiler-specific extensions
+# so the code is built in a portable standard mode.
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# --------------------------------------------------------------------------
+# Default build type for single-configuration generators
+# --------------------------------------------------------------------------
+# Makefiles and Ninja normally need CMAKE_BUILD_TYPE.  If the user did not set
+# one, use Release.  Multi-configuration generators such as Xcode or Visual
+# Studio use CMAKE_CONFIGURATION_TYPES instead and are not touched here.
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
 endif()
 
+# --------------------------------------------------------------------------
+# Global warning adjustments for Clang-family compilers
+# --------------------------------------------------------------------------
+# These suppress warnings that are noisy for this codebase or for common
+# third-party/header-only usage patterns.  They are only added for C++
+# compilation units through generator expressions.
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang")
   add_compile_options(
     "$<$<COMPILE_LANGUAGE:CXX>:-Wno-poison-system-directories>"
@@ -159,23 +296,54 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang")
   )
 endif()
 
+# --------------------------------------------------------------------------
+# Optional local customization hook
+# --------------------------------------------------------------------------
+# A sibling CMakeLists-customize.txt file can inject site-specific settings
+# without modifying this tracked build script.  This is useful for local paths,
+# toolchain choices or developer-specific overrides.
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../CMakeLists-customize.txt")
   include("${CMAKE_CURRENT_LIST_DIR}/../CMakeLists-customize.txt")
 endif()
 
+# --------------------------------------------------------------------------
+# Optional regeneration of vendored third-party headers
+# --------------------------------------------------------------------------
+# This is intentionally opt-in because it modifies files under src/Utils/3rd.
+# It is enabled only for a top-level build, not when UtilsLite is embedded by
+# another project.
 if(UTILS_UPDATE_3RDPARTY AND PROJECT_IS_TOP_LEVEL)
   include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Update3rdParties.cmake")
   utils_update_3rdparties()
 endif()
 
+# --------------------------------------------------------------------------
+# Resolve a dependency from a local checkout or FetchContent
+# --------------------------------------------------------------------------
+# Arguments:
+#   dep_name   FetchContent identifier.
+#   local_dir  Preferred local checkout path.
+#   probe_rel  File/directory expected inside local_dir to prove it is valid.
+#   url        Archive URL used by FetchContent if local_dir is not valid.
+#   out_root   Output variable receiving the resolved dependency root.
+#   out_source Output variable receiving a human-readable source description.
+#
+# The result variables are returned to the caller with PARENT_SCOPE.
 function(utils_resolve_dependency dep_name local_dir probe_rel url out_root out_source)
+  # Normalize the local path relative to this source directory so callers may
+  # pass relative paths consistently.
   get_filename_component(_local_abs "${local_dir}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+  # Prefer the local checkout if the probe path exists.  This avoids network
+  # access and lets developers work against sibling dependency repositories.
   if(EXISTS "${_local_abs}/${probe_rel}")
     set(${out_root} "${_local_abs}" PARENT_SCOPE)
     set(${out_source} "local: ${_local_abs}" PARENT_SCOPE)
     return()
   endif()
 
+  # Local checkout not found: declare and populate the dependency from the
+  # configured archive URL.  DOWNLOAD_EXTRACT_TIMESTAMP is aligned with CMP0135
+  # so extracted files get deterministic timestamps.
   FetchContent_Declare(
     ${dep_name}
     URL "${url}"
@@ -186,10 +354,17 @@ function(utils_resolve_dependency dep_name local_dir probe_rel url out_root out_
     FetchContent_Populate(${dep_name})
   endif()
 
+  # Return the FetchContent source directory and a description used in the
+  # configuration summary printed at the end of this file.
   set(${out_root} "${${dep_name}_SOURCE_DIR}" PARENT_SCOPE)
   set(${out_source} "FetchContent: ${url}" PARENT_SCOPE)
 endfunction()
 
+# --------------------------------------------------------------------------
+# Write a file only when its content actually changes
+# --------------------------------------------------------------------------
+# This avoids touching timestamps unnecessarily, which prevents avoidable
+# rebuilds in incremental builds.
 function(utils_write_file_if_different file_path content)
   if(EXISTS "${file_path}")
     file(READ "${file_path}" _existing)
@@ -202,20 +377,32 @@ function(utils_write_file_if_different file_path content)
   endif()
 endfunction()
 
+# --------------------------------------------------------------------------
+# Synchronize resolved third-party headers into src/Utils/3rd
+# --------------------------------------------------------------------------
+# This project vendors selected header-only dependencies into Utils/3rd.
+# The function copies the resolved dependency headers and applies include-path
+# rewrites where needed so installed headers can be used standalone.
 function(utils_sync_resolved_3rdparty)
   set(_third_party_dir "${SOURCE_DIR}/Utils/3rd")
   set(_stage_dir "${CMAKE_CURRENT_BINARY_DIR}/_utils_3rd_stage")
   file(MAKE_DIRECTORY "${_third_party_dir}")
   file(MAKE_DIRECTORY "${_stage_dir}")
 
+  # Eigen: copy the main Eigen include tree.
   file(REMOVE_RECURSE "${_third_party_dir}/Eigen")
   file(COPY "${UTILS_EIGEN_INCLUDE_DIR}/Eigen" DESTINATION "${_third_party_dir}")
 
+  # Eigen unsupported modules are optional; copy them only if the resolved
+  # Eigen distribution provides the unsupported/ directory.
   if(EXISTS "${UTILS_EIGEN_INCLUDE_DIR}/unsupported")
     file(REMOVE_RECURSE "${_third_party_dir}/unsupported")
     file(COPY "${UTILS_EIGEN_INCLUDE_DIR}/unsupported" DESTINATION "${_third_party_dir}")
   endif()
 
+  # CLI11: stage the headers first, rewrite prefixed includes, then replace
+  # the vendored copy atomically.  CLI11.hpp is added as a compatibility entry
+  # point that includes CLI/CLI.hpp.
   file(REMOVE_RECURSE "${_third_party_dir}/CLI")
   set(_cli_stage "${_stage_dir}/CLI")
   file(REMOVE_RECURSE "${_cli_stage}")
@@ -227,13 +414,20 @@ function(utils_sync_resolved_3rdparty)
     "#pragma once\n#include \"CLI/CLI.hpp\"\n"
   )
 
+  # fmt: copy the header tree.  The target later defines FMT_HEADER_ONLY, so
+  # consumers do not need a separately compiled fmt library.
   file(REMOVE_RECURSE "${_third_party_dir}/fmt")
   file(COPY "${UTILS_FMT_INCLUDE_DIR}/fmt" DESTINATION "${_third_party_dir}")
 
+  # BS::thread_pool: remove the previous legacy header name if present, then
+  # copy the current upstream single-header implementation.
   file(REMOVE "${_third_party_dir}/task_thread_pool.hpp")
 
   file(COPY "${UTILS_BS_THREAD_POOL_ROOT}/include/BS_thread_pool.hpp" DESTINATION "${_third_party_dir}")
 
+  # autodiff: stage the source tree and rewrite includes so vendored autodiff
+  # headers use the vendored Eigen and relative autodiff paths.  The helper
+  # functions come from cmake/Update3rdParties.cmake.
   set(_autodiff_stage "${_stage_dir}/autodiff")
   file(REMOVE_RECURSE "${_autodiff_stage}")
   file(COPY "${UTILS_AUTODIFF_ROOT}/autodiff/" DESTINATION "${_autodiff_stage}")
@@ -250,6 +444,12 @@ function(utils_sync_resolved_3rdparty)
   _utils_replace_dir("${_autodiff_stage}" "${_third_party_dir}/autodiff")
 endfunction()
 
+# --------------------------------------------------------------------------
+# Resolve concrete dependency roots
+# --------------------------------------------------------------------------
+# Each block asks utils_resolve_dependency() to either use a local checkout or
+# fetch the requested archive.  The *_ROOT variables are then converted to
+# include roots as needed by the synchronization step and target include paths.
 utils_resolve_dependency(
   utils_eigen
   "${UTILS_EIGEN_LOCAL_DIR}"
@@ -298,16 +498,24 @@ utils_resolve_dependency(
   UTILS_AUTODIFF_SOURCE
 )
 
+# After all dependency roots are known, refresh the vendored header tree used
+# by the build and install rules.
 utils_sync_resolved_3rdparty()
 
-# Sources: ONLY .cc
+# --------------------------------------------------------------------------
+# Source discovery
+# --------------------------------------------------------------------------
+# Only .cc files are compiled into the library.  CONFIGURE_DEPENDS tells CMake
+# to re-run configuration when matching source files are added or removed.
 file(
   GLOB_RECURSE SOURCES
   CONFIGURE_DEPENDS
   "${SOURCE_DIR}/*.cc"
 )
 
-# Project headers and vendored 3rd-party headers are installed separately.
+# Discover project headers for IDE visibility and installation.  Vendored
+# third-party headers under Utils/3rd are excluded here because they are
+# installed by a dedicated rule later.
 file(
   GLOB_RECURSE PROJECT_HEADERS_FULL
   CONFIGURE_DEPENDS
@@ -319,10 +527,15 @@ file(
 )
 list(FILTER PROJECT_HEADERS_FULL EXCLUDE REGEX "/Utils/3rd/")
 
+# Mark headers as non-compilable source entries.  This lets IDE generators show
+# them in the target without trying to compile them as translation units.
 foreach(H IN LISTS PROJECT_HEADERS_FULL)
   set_source_files_properties("${H}" PROPERTIES HEADER_FILE_ONLY TRUE)
 endforeach()
 
+# Build a private include-directory list used for compilation.  Public include
+# directories are set in utils_configure_target(); this expanded list gives
+# implementation files direct access to nested Utils subdirectories.
 set(INCLUDE_DIRS
   "${SOURCE_DIR}/Utils/3rd"
   "${SOURCE_DIR}"
@@ -337,8 +550,17 @@ foreach(DIR IN LISTS UTILS_SUBDIRS)
 endforeach()
 list(REMOVE_DUPLICATES INCLUDE_DIRS)
 
+# --------------------------------------------------------------------------
+# Common target configuration
+# --------------------------------------------------------------------------
+# Apply the same compile features, include directories, definitions, warnings,
+# Apple universal settings and output directories to each library target.
 function(utils_configure_target target_name)
+  # Publish the required C++ standard to consumers linking this target.
   target_compile_features(${target_name} PUBLIC cxx_std_20)
+  # Public include paths distinguish between build-tree and install-tree usage.
+  # Private include paths expose implementation-only subdirectories while
+  # compiling this target.
   target_include_directories(
     ${target_name}
     PUBLIC
@@ -349,16 +571,32 @@ function(utils_configure_target target_name)
     PRIVATE
       ${INCLUDE_DIRS}
   )
+  # Build fmt as header-only.  This avoids a separate fmt link dependency and
+  # matches the vendored-header approach used by this project.
   target_compile_definitions(
     ${target_name}
     PUBLIC
       FMT_HEADER_ONLY
   )
 
+  # Enable common warnings for GCC/Clang-like compilers on the project target.
   if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang|GNU")
     target_compile_options(${target_name} PRIVATE -Wall -Wextra)
   endif()
 
+  # For Apple universal builds, explicitly attach the architecture list to
+  # the target.  CMAKE_OSX_ARCHITECTURES was set before project(), but setting
+  # OSX_ARCHITECTURES here makes the intended target property unambiguous.
+  if(APPLE AND UTILS_BUILD_FAT)
+    set_target_properties(
+      ${target_name}
+      PROPERTIES
+        OSX_ARCHITECTURES "${CMAKE_OSX_ARCHITECTURES}"
+    )
+  endif()
+
+  # Place generated artifacts in the historical project-local directories and
+  # expose the source root to Xcode's header search path setting.
   set_target_properties(
     ${target_name}
     PROPERTIES
@@ -370,11 +608,20 @@ function(utils_configure_target target_name)
   )
 endfunction()
 
+# --------------------------------------------------------------------------
+# Platform-specific library naming and compatibility alias
+# --------------------------------------------------------------------------
+# The real output file includes a platform suffix.  A second unsuffixed file is
+# created as a compatibility alias for older consumers that expected names such
+# as libUtilsLite.a.
 function(utils_add_platform_library_alias target_name base_name library_kind)
   # The real library keeps the platform/static suffix, e.g.
   #   libUtilsLite_osx_static.a
   # and the unsuffixed name is kept only as a compatibility alias, e.g.
   #   libUtilsLite.a -> libUtilsLite_osx_static.a
+  # Compute output and alias names.  Static libraries get an extra _static
+  # marker; shared libraries do not.  Windows uses a lib prefix here to keep
+  # naming compatible with the previous layout.
   if(library_kind STREQUAL "STATIC")
     set(output_name "${base_name}_${UTILS_PLATFORM_SUFFIX}_static")
     set(alias_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${base_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
@@ -395,8 +642,11 @@ function(utils_add_platform_library_alias target_name base_name library_kind)
     endif()
   endif()
 
+  # Apply the computed real output name to the CMake target.
   set_target_properties(${target_name} PROPERTIES OUTPUT_NAME "${output_name}")
 
+  # Windows cannot rely on POSIX symlinks in the same way, so the alias is
+  # materialized as a copied file.
   if(WIN32)
     add_custom_command(
       TARGET ${target_name} POST_BUILD
@@ -418,6 +668,8 @@ function(utils_add_platform_library_alias target_name base_name library_kind)
       install(CODE "${_alias_install_code}")
     endif()
   else()
+    # On Unix-like platforms, create a lightweight symlink alias next to the
+    # real library after the target has been built.
     add_custom_command(
       TARGET ${target_name} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E rm -f
@@ -446,13 +698,21 @@ function(utils_add_platform_library_alias target_name base_name library_kind)
   endif()
 endfunction()
 
-# Static target: keeps compatibility with previous cmake_utils naming.
+# --------------------------------------------------------------------------
+# Static library target
+# --------------------------------------------------------------------------
+# This is always built.  The target name and alias preserve compatibility with
+# the previous cmake_utils-based naming scheme.
 add_library(${UTILS_NAMESPACE}_${PROJECT_NAME}_Static STATIC ${SOURCES} ${PROJECT_HEADERS_FULL})
 add_library(${UTILS_NAMESPACE}::${PROJECT_NAME}_Static ALIAS ${UTILS_NAMESPACE}_${PROJECT_NAME}_Static)
 utils_configure_target(${UTILS_NAMESPACE}_${PROJECT_NAME}_Static)
 utils_add_platform_library_alias(${UTILS_NAMESPACE}_${PROJECT_NAME}_Static ${PROJECT_NAME} STATIC)
 
-# Shared target: optional, same naming scheme as before.
+# --------------------------------------------------------------------------
+# Optional shared library target
+# --------------------------------------------------------------------------
+# Built only when UTILS_BUILD_SHARED is ON.  It uses the same source list and
+# common target configuration as the static library.
 if(UTILS_BUILD_SHARED)
   add_library(${UTILS_NAMESPACE}_${PROJECT_NAME} SHARED ${SOURCES} ${PROJECT_HEADERS_FULL})
   add_library(${UTILS_NAMESPACE}::${PROJECT_NAME} ALIAS ${UTILS_NAMESPACE}_${PROJECT_NAME})
@@ -460,12 +720,21 @@ if(UTILS_BUILD_SHARED)
   utils_add_platform_library_alias(${UTILS_NAMESPACE}_${PROJECT_NAME} ${PROJECT_NAME} SHARED)
 endif()
 
+# --------------------------------------------------------------------------
 # Tests
+# --------------------------------------------------------------------------
+# Test executables are built from src_tests/*.cc when UTILS_ENABLE_TESTS is ON.
+# The tests link against the static UtilsLite library plus platform-specific
+# system libraries when needed.
 if(UTILS_ENABLE_TESTS)
   enable_testing()
 
+  # Base test link libraries.  CMAKE_DL_LIBS adds the platform dynamic-loader
+  # library when one is required.
   set(LIBS ${UTILS_NAMESPACE}_${PROJECT_NAME}_Static ${CMAKE_DL_LIBS})
 
+  # Add operating-system-specific libraries used by the tests or by lower-level
+  # utility code.
   if(UNIX AND NOT APPLE)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
@@ -474,16 +743,21 @@ if(UTILS_ENABLE_TESTS)
     list(APPEND LIBS ws2_32 iphlpapi kernel32 pdh psapi)
   endif()
 
+  # Discover test sources.  CONFIGURE_DEPENDS keeps the build system updated
+  # when test files are added or removed.
   file(
     GLOB_RECURSE TEST_SOURCES
     CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src_tests/*.cc"
   )
 
+  # If at least one test exists, create an aggregate target built by default.
   if(TEST_SOURCES)
     add_custom_target("${PROJECT_NAME}_all_tests" ALL)
   endif()
 
+  # Each .cc file becomes one executable.  The executable name is derived from
+  # the filename without extension and is also used as the CTest test name.
   foreach(TEST_SOURCE IN LISTS TEST_SOURCES)
     get_filename_component(TEST_NAME "${TEST_SOURCE}" NAME_WE)
     add_executable(${TEST_NAME} "${TEST_SOURCE}")
@@ -494,6 +768,15 @@ if(UTILS_ENABLE_TESTS)
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin"
         XCODE_ATTRIBUTE_HEADER_SEARCH_PATHS "${SOURCE_DIR}"
     )
+    # Tests get the same Apple universal architecture setting as the library so
+    # they can link correctly against universal artifacts.
+    if(APPLE AND UTILS_BUILD_FAT)
+      set_target_properties(
+        ${TEST_NAME}
+        PROPERTIES
+          OSX_ARCHITECTURES "${CMAKE_OSX_ARCHITECTURES}"
+      )
+    endif()
     target_link_libraries(${TEST_NAME} PRIVATE ${LIBS})
     target_include_directories(${TEST_NAME} PRIVATE ${INCLUDE_DIRS})
     add_test(NAME ${TEST_NAME} COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/bin/${TEST_NAME}.exe")
@@ -501,13 +784,21 @@ if(UTILS_ENABLE_TESTS)
   endforeach()
 endif()
 
-# Install
+# --------------------------------------------------------------------------
+# Installation rules
+# --------------------------------------------------------------------------
+# When enabled, install library targets, project headers, vendored third-party
+# headers and an export file usable by downstream CMake projects.
 if(UTILS_INSTALL_LOCAL)
+  # Start with the always-built static library; append the shared library only
+  # when it exists.
   set(_utils_install_targets ${UTILS_NAMESPACE}_${PROJECT_NAME}_Static)
   if(UTILS_BUILD_SHARED)
     list(APPEND _utils_install_targets ${UTILS_NAMESPACE}_${PROJECT_NAME})
   endif()
 
+  # Install compiled targets and generate export metadata for downstream
+  # find_package/import use.
   install(
     TARGETS ${_utils_install_targets}
     EXPORT ${PROJECT_NAME}Targets
@@ -517,6 +808,8 @@ if(UTILS_INSTALL_LOCAL)
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   )
 
+  # Install project headers while excluding vendored third-party files, which
+  # are handled by the next install rule to preserve their Utils/3rd location.
   install(
     DIRECTORY "${SOURCE_DIR}/"
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
@@ -533,6 +826,8 @@ if(UTILS_INSTALL_LOCAL)
       PATTERN "*.swo" EXCLUDE
   )
 
+  # Install the vendored third-party headers in their dedicated subdirectory so
+  # installed project headers keep valid include paths.
   install(
     DIRECTORY "${SOURCE_DIR}/Utils/3rd/"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/Utils/3rd"
@@ -542,6 +837,8 @@ if(UTILS_INSTALL_LOCAL)
     PATTERN "*.swo" EXCLUDE
   )
 
+  # Export CMake target definitions under the utils:: namespace for consumers
+  # that include the generated package files from the install tree.
   install(
     EXPORT ${PROJECT_NAME}Targets
     NAMESPACE ${UTILS_NAMESPACE}::
@@ -549,17 +846,33 @@ if(UTILS_INSTALL_LOCAL)
   )
 endif()
 
+# --------------------------------------------------------------------------
+# CPack packaging metadata
+# --------------------------------------------------------------------------
+# Configure simple source/binary package generation in TGZ and ZIP formats.
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "UtilsLite C++ utility library")
 set(CPACK_GENERATOR "TGZ;ZIP")
 include(CPack)
 
+# --------------------------------------------------------------------------
+# Configuration summary
+# --------------------------------------------------------------------------
+# Print the most important configuration decisions at the end of configure so
+# users can immediately verify compiler, platform, architecture, install paths
+# and dependency origins.
 message(STATUS "")
 message(STATUS "${PROJECT_NAME} configuration summary:")
 message(STATUS "  Version          : ${PROJECT_VERSION}")
 message(STATUS "  Compiler         : ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "  Platform suffix  : ${UTILS_PLATFORM_SUFFIX}")
+if(APPLE)
+  message(STATUS "  Build fat/universal: ${UTILS_BUILD_FAT}")
+  if(UTILS_BUILD_FAT)
+    message(STATUS "  Apple archs      : ${CMAKE_OSX_ARCHITECTURES}")
+  endif()
+endif()
 message(STATUS "  Build shared     : ${UTILS_BUILD_SHARED}")
 message(STATUS "  Build tests      : ${UTILS_ENABLE_TESTS}")
 message(STATUS "  Install rules    : ${UTILS_INSTALL_LOCAL}")
