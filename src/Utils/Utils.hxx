@@ -106,6 +106,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -117,6 +118,7 @@
 #include <memory>
 #include <numeric>
 #include <random>
+#include <source_location>
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
@@ -124,6 +126,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+
 
 // disable mingw-std-threads for mingw on MATLAB
 #if ( defined( __MINGW32__ ) || defined( __MINGW64__ ) ) && !defined( MATLAB_MEX_FILE )
@@ -225,6 +228,55 @@ namespace Utils
     //!
     char const * what() const noexcept override { return runtime_error::what(); }
   };
+  
+  inline
+  void Error( std::string_view msg, std::source_location loc = std::source_location::current() ) {
+    throw Utils::Runtime_Error( std::string{msg}, loc.file_name(), loc.line() );
+  }
+
+  inline
+  void Assert( bool ok, std::string_view msg, std::source_location loc = std::source_location::current() ) {
+    if ( !ok )
+      throw Utils::Runtime_Error( std::string{msg}, loc.file_name(), loc.line() );
+  }
+
+  inline
+  void Warning( bool ok, std::string_view msg, std::source_location loc = std::source_location::current() ) {
+    if ( !ok )
+      std::cout << std::format( "{}\nfile: {}, line: {}\n", msg, loc.file_name(), loc.line() );
+  }
+
+  template<class... Args>
+  struct Format_With_Location {
+    std::format_string<Args...> fmt;
+    std::source_location loc;
+
+    template<class S>
+    consteval Format_With_Location( S&& s, std::source_location l = std::source_location::current() )
+    : fmt(std::forward<S>(s)), loc(l)
+    {}
+  };
+
+  template<class... Args>
+  inline
+  void Error( Format_With_Location<std::type_identity_t<Args>...> f, Args&&... args ) {
+    throw Utils::Runtime_Error( std::format(f.fmt, std::forward<Args>(args)...), f.loc.file_name(), f.loc.line() );
+  }
+
+  template<class... Args>
+  inline
+  void Assert( bool ok, Format_With_Location<std::type_identity_t<Args>...> f, Args&&... args ) {
+    if ( !ok )
+      throw Utils::Runtime_Error( std::format(f.fmt, std::forward<Args>(args)...), f.loc.file_name(), f.loc.line() );
+  }
+
+  template<class... Args>
+  inline
+  void Warning( bool ok, Format_With_Location<std::type_identity_t<Args>...> f, Args&&... args ) {
+    if ( !ok )
+      std::cout << std::format( "{}\nfile: {}, line: {}\n", std::format(f.fmt, std::forward<Args>(args)...), f.loc.file_name(), f.loc.line() );
+  }
+
 }  // namespace Utils
 
 #ifndef __FILENAME__
@@ -251,7 +303,7 @@ namespace Utils
 
 #ifndef UTILS_ASSERT
 #define UTILS_ASSERT( COND, ... ) \
-  if ( !( COND ) ) UTILS_ERROR( __VA_ARGS__ )
+  if ( !( COND ) ) Utils::Error( __VA_ARGS__ )
 #endif
 
 #ifndef UTILS_WARNING
@@ -271,7 +323,7 @@ namespace Utils
 #define UTILS_ASSERT0_DEBUG( COND, MSG ) UTILS_ASSERT0( COND, MSG )
 #endif
 #ifndef UTILS_ASSERT_DEBUG
-#define UTILS_ASSERT_DEBUG( COND, ... ) UTILS_ASSERT( COND, __VA_ARGS__ )
+#define UTILS_ASSERT_DEBUG( COND, ... ) Utils::Assert( COND, __VA_ARGS__ )
 #endif
 #endif
 

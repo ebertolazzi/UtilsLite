@@ -47,7 +47,7 @@ namespace Utils
         FALSE,  // mutex not owned
         NULL    // object name
       );
-      UTILS_ASSERT( m_mutex != NULL, "WinMutex(): error: {}.\n", GetLastError() );
+      Utils::Assert( m_mutex != NULL, "WinMutex(): error: {}.\n", GetLastError() );
     }
 
     ~WinMutex()

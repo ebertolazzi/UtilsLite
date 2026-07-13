@@ -210,7 +210,7 @@ namespace Utils
     std::string tmp{ "[" };
     size_t      v_size = v.size();
 
-    UTILS_ASSERT( max_size >= 3, "format_index_vector: max_size={} must be >= 3\n", max_size );
+    Utils::Assert( max_size >= 3, "format_index_vector: max_size={} must be >= 3\n", max_size );
 
     if ( v_size == 0 ) { return "[]"; }
 
@@ -274,7 +274,7 @@ namespace Utils
     std::string tmp{ "[" };
     size_t      v_size = v.size();
 
-    UTILS_ASSERT( max_size >= 3, "format_reduced_vector: max_size={} must be >= 3\n", max_size );
+    Utils::Assert( max_size >= 3, "format_reduced_vector: max_size={} must be >= 3\n", max_size );
 
     if ( v_size == 0 ) { return "[]"; }
 
