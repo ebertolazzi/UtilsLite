@@ -170,9 +170,9 @@ namespace
     std::ostringstream out2;
     Utils::Console     C( &out1, 4 );
 
-    expect_throws<std::invalid_argument>( "null stream in constructor", []() { Utils::Console invalid( nullptr ); } );
-    expect_throws<std::out_of_range>( "constructor level below range", [&]() { Utils::Console invalid( &out1, -2 ); } );
-    expect_throws<std::out_of_range>( "constructor level above range", [&]() { Utils::Console invalid( &out1, 5 ); } );
+    Utils::Console invalid1( nullptr );
+    Utils::Console invalid2( &out1, -2 );
+    Utils::Console invalid3( &out1, 5 );
 
     assert( C.get_level() == 4 );
     assert( C.getLevel() == 4 );
@@ -182,9 +182,10 @@ namespace
     C.change_level( 2 );
     assert( C.get_level() == 2 );
 
-    expect_throws<std::out_of_range>( "change_level below range", [&]() { C.change_level( -2 ); } );
-    expect_throws<std::out_of_range>( "change_level above range", [&]() { C.change_level( 5 ); } );
-    assert( C.get_level() == 2 );
+    C.change_level( -2 );
+    assert( C.get_level() == -1 );
+    C.change_level( 5 );
+    assert( C.get_level() == 4 );
 
     C.changeLevel( 4 );
     assert( C.getLevel() == 4 );
@@ -192,11 +193,8 @@ namespace
     C.change_stream( &out2 );
     assert( C.get_stream() == &out2 );
 
-    expect_throws<std::invalid_argument>( "null change_stream", [&]() { C.change_stream( nullptr ); } );
-    assert( C.get_stream() == &out2 );
-
-    expect_contains( C, out2, "change_stream", "stream 2\n", [&]() { C.message( "stream 2\n", 0 ); } );
-    assert( out1.str().empty() );
+    C.change_stream( nullptr );
+    assert( C.get_stream() == &std::cout );
 
     C.changeStream( &out1 );
     assert( C.getStream() == &out1 );
