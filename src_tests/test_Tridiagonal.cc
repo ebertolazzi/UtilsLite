@@ -67,9 +67,7 @@ template <typename Scalar> Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>
 }
 
 template <typename Derived> typename Derived::Scalar vector_norm( const Eigen::MatrixBase<Derived> & v )
-{
-  return v.template lpNorm<Eigen::Infinity>();
-}
+{ return v.template lpNorm<Eigen::Infinity>(); }
 
 // ===========================================================================
 // Test results table
@@ -127,8 +125,9 @@ void print_test_table( const std::vector<TestResult> & results, const std::strin
     "└──────────────┴──────────────┴──────────────────────┴────────────┴───────────┘\n" );
 
   // Summary for this table
-  int passed = static_cast<int>( std::count_if( results.begin(), results.end(), []( const TestResult & r ) { return r.passed; } ) );
-  int total  = static_cast<int>( results.size() );
+  int passed = static_cast<int>(
+    std::count_if( results.begin(), results.end(), []( const TestResult & r ) { return r.passed; } ) );
+  int total = static_cast<int>( results.size() );
 
   fmt::print(
     fg( passed == total ? fmt::color::green : fmt::color::red ) | fmt::emphasis::bold,

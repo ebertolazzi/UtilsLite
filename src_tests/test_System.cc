@@ -41,24 +41,16 @@ void print_section( const string & title )
 }
 
 void print_success( const string & message )
-{
-  fmt::print( fg( fmt::color::lime_green ) | fmt::emphasis::bold, "  ✓ {}\n", message );
-}
+{ fmt::print( fg( fmt::color::lime_green ) | fmt::emphasis::bold, "  ✓ {}\n", message ); }
 
 void print_info( const string & message )
-{
-  fmt::print( fg( fmt::color::light_blue ), "  ℹ {}\n", message );
-}
+{ fmt::print( fg( fmt::color::light_blue ), "  ℹ {}\n", message ); }
 
 void print_warning( const string & message )
-{
-  fmt::print( fg( fmt::color::gold ) | fmt::emphasis::bold, "  ⚠ {}\n", message );
-}
+{ fmt::print( fg( fmt::color::gold ) | fmt::emphasis::bold, "  ⚠ {}\n", message ); }
 
 void print_error( const string & message )
-{
-  fmt::print( fg( fmt::color::red ) | fmt::emphasis::bold, "  ✗ {}\n", message );
-}
+{ fmt::print( fg( fmt::color::red ) | fmt::emphasis::bold, "  ✗ {}\n", message ); }
 
 void print_result( const string & label, const string & value, bool success = true )
 {

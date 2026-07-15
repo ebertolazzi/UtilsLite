@@ -68,34 +68,22 @@ void print_header( const string & title, fmt::color color = fmt::color::cyan )
 }
 
 void print_section( const string & subtitle )
-{
-  fmt::print( fg( fmt::color::blue ) | fmt::emphasis::bold, "\n┌─ {} ─\n", subtitle );
-}
+{ fmt::print( fg( fmt::color::blue ) | fmt::emphasis::bold, "\n┌─ {} ─\n", subtitle ); }
 
 void print_success( const string & message )
-{
-  fmt::print( fg( fmt::color::green ) | fmt::emphasis::bold, "✅  {}\n", message );
-}
+{ fmt::print( fg( fmt::color::green ) | fmt::emphasis::bold, "✅  {}\n", message ); }
 
 void print_error( const string & message )
-{
-  fmt::print( fg( fmt::color::red ) | fmt::emphasis::bold, "❌  {}\n", message );
-}
+{ fmt::print( fg( fmt::color::red ) | fmt::emphasis::bold, "❌  {}\n", message ); }
 
 void print_warning( const string & message )
-{
-  fmt::print( fg( fmt::color::yellow ) | fmt::emphasis::bold, "⚠️  {}\n", message );
-}
+{ fmt::print( fg( fmt::color::yellow ) | fmt::emphasis::bold, "⚠️  {}\n", message ); }
 
 void print_info( const string & message )
-{
-  fmt::print( fg( fmt::color::cyan ) | fmt::emphasis::bold, "ℹ️  {}\n", message );
-}
+{ fmt::print( fg( fmt::color::cyan ) | fmt::emphasis::bold, "ℹ️  {}\n", message ); }
 
 void print_progress( const string & message )
-{
-  fmt::print( fg( fmt::color::light_blue ), "   [{}]\n", message );
-}
+{ fmt::print( fg( fmt::color::light_blue ), "   [{}]\n", message ); }
 
 // ============================================================================
 // ENHANCED TEST RUNNER
@@ -974,7 +962,10 @@ private:
     real_type         log_end   = log10( end );
     real_type         log_step  = ( log_end - log_start ) / static_cast<real_type>( num_intervals );
 
-    for ( size_t i = 0; i <= num_intervals; ++i ) { X[i] = pow( 10.0, log_start + static_cast<real_type>( i ) * log_step ); }
+    for ( size_t i = 0; i <= num_intervals; ++i )
+    {
+      X[i] = pow( 10.0, log_start + static_cast<real_type>( i ) * log_step );
+    }
     // Add some randomness to make it truly non-uniform
     random_device                        rd;
     mt19937                              gen( rd() );
@@ -1441,8 +1432,8 @@ public:
       double min_speedup = *min_element( speedups.begin(), speedups.end() );
       double max_speedup = *max_element( speedups.begin(), speedups.end() );
 
-      const vector<double> & times    = times_by_size[num_intvls];
-      double                 avg_time = accumulate( times.begin(), times.end(), 0.0 ) / static_cast<double>( times.size() );
+      const vector<double> & times = times_by_size[num_intvls];
+      double avg_time = accumulate( times.begin(), times.end(), 0.0 ) / static_cast<double>( times.size() );
 
       // Theoretical complexities
       // double log_n = log2(num_intvls); // Variable non usata, commentata
@@ -1644,7 +1635,8 @@ public:
       // Calculate average speedup
       if ( !speedups.empty() )
       {
-        stats.avg_speedup = accumulate( speedups.begin(), speedups.end(), 0.0 ) / static_cast<double>( speedups.size() );
+        stats.avg_speedup = accumulate( speedups.begin(), speedups.end(), 0.0 ) /
+                            static_cast<double>( speedups.size() );
       }
 
       enh_runner.printPerformanceComparison();

@@ -105,9 +105,7 @@ class TestRunner
 
 public:
   static void print_header( const string & title )
-  {
-    fmt::print( fg( HEADER_COLOR ) | fmt::emphasis::bold, "\n{:=^80}\n", " " + title + " " );
-  }
+  { fmt::print( fg( HEADER_COLOR ) | fmt::emphasis::bold, "\n{:=^80}\n", " " + title + " " ); }
 
   static void print_test_header()
   {
@@ -332,8 +330,8 @@ private:
       r.passed =
         ( sum[0] == 6 && sum[1] == 8 && sum[2] == 10 && sum[3] == 12 && diff[0] == -4 && diff[1] == -4 &&
           diff[2] == -4 && diff[3] == -4 );
-      r.error = ( sum - Quaternion<real_type>( 6, 8, 10, 12 ) ).norm() +
-                ( diff - Quaternion<real_type>( -4, -4, -4, -4 ) ).norm();
+      r.error       = ( sum - Quaternion<real_type>( 6, 8, 10, 12 ) ).norm() +
+                      ( diff - Quaternion<real_type>( -4, -4, -4, -4 ) ).norm();
       r.duration_ms = timer.elapsed_ms();
       r.message     = "➕➖ Vector operations";
       results.push_back( r );
@@ -379,8 +377,8 @@ private:
       r.passed =
         ( scaled[0] == 2.5 && scaled[1] == 5.0 && scaled[2] == 7.5 && scaled[3] == 10.0 && divided[0] == 2.0 &&
           divided[1] == 4.0 && divided[2] == 6.0 && divided[3] == 8.0 );
-      r.error = ( scaled - Quaternion<real_type>( 2.5, 5, 7.5, 10 ) ).norm() +
-                ( divided - Quaternion<real_type>( 2, 4, 6, 8 ) ).norm();
+      r.error       = ( scaled - Quaternion<real_type>( 2.5, 5, 7.5, 10 ) ).norm() +
+                      ( divided - Quaternion<real_type>( 2, 4, 6, 8 ) ).norm();
       r.duration_ms = timer.elapsed_ms();
       r.message     = "📈 Scale by scalar";
       results.push_back( r );
@@ -625,10 +623,10 @@ private:
       roll2  = fmod( roll2 + M_PI, 2 * M_PI ) - M_PI;
 
       TestResult r;
-      r.test_name = "Euler Angles Round Trip";
-      r.passed    = ( abs( yaw - yaw2 ) < tolerance && abs( pitch - pitch2 ) < tolerance &&
-                   abs( roll - roll2 ) < tolerance ) &&
-                 ( q1.equals( q2, tolerance ) || q1.equals( -q2, tolerance ) );
+      r.test_name   = "Euler Angles Round Trip";
+      r.passed      = ( abs( yaw - yaw2 ) < tolerance && abs( pitch - pitch2 ) < tolerance &&
+                        abs( roll - roll2 ) < tolerance ) &&
+                      ( q1.equals( q2, tolerance ) || q1.equals( -q2, tolerance ) );
       r.error       = abs( yaw - yaw2 ) + abs( pitch - pitch2 ) + abs( roll - roll2 ) + quaternion_error( q1, q2 );
       r.duration_ms = timer.elapsed_ms();
       r.message     = "🔄 ZYX convention";

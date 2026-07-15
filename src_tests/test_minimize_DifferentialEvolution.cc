@@ -601,7 +601,8 @@ int main( int argc, char * argv[] )
   // Loop su tutti i test
   for ( size_t test_idx = 0; test_idx < nonlinear_system_tests.size(); ++test_idx )
   {
-    if ( !verbose_mode ) print_progress( static_cast<integer>( test_idx ), static_cast<integer>( nonlinear_system_tests.size() ) );
+    if ( !verbose_mode )
+      print_progress( static_cast<integer>( test_idx ), static_cast<integer>( nonlinear_system_tests.size() ) );
 
     NonlinearSystem * system = nonlinear_system_tests[test_idx];
     integer           n      = static_cast<integer>( system->num_equations() );
@@ -703,11 +704,11 @@ int main( int argc, char * argv[] )
     }
   }
 
-  if ( !verbose_mode ) {
+  if ( !verbose_mode )
+  {
     print_progress(
       static_cast<integer>( nonlinear_system_tests.size() ),
-      static_cast<integer>( nonlinear_system_tests.size() )
-    );
+      static_cast<integer>( nonlinear_system_tests.size() ) );
   }
   fmt::print( fg( fmt::color::green ) | fmt::emphasis::bold, "\n\nAll tests completed!\n" );
 

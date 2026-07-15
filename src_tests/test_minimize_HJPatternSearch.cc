@@ -94,9 +94,7 @@ static real_type sphere( real_type const X[], int n )
 }
 
 static real_type sphere2d( real_type const X[] )
-{
-  return sphere( X, 2 );
-}
+{ return sphere( X, 2 ); }
 
 static real_type rastrigin( real_type const X[], int n )
 {
@@ -107,9 +105,7 @@ static real_type rastrigin( real_type const X[], int n )
 }
 
 static real_type rastrigin2d( real_type const X[] )
-{
-  return rastrigin( X, 2 );
-}
+{ return rastrigin( X, 2 ); }
 
 static real_type himmelblau( real_type const X[] )
 {
@@ -480,10 +476,10 @@ void print_function_statistics()
   {
     if ( stats.successful_tests > 0 )
     {
-      stats.average_iterations =
-        static_cast<real_type>( stats.total_iterations ) / static_cast<real_type>( stats.successful_tests );
-      stats.success_rate =
-        ( 100.0 * static_cast<double>( stats.successful_tests ) ) / static_cast<double>( stats.total_tests );
+      stats.average_iterations = static_cast<real_type>( stats.total_iterations ) /
+                                 static_cast<real_type>( stats.successful_tests );
+      stats.success_rate       = ( 100.0 * static_cast<double>( stats.successful_tests ) ) /
+                                 static_cast<double>( stats.total_tests );
     }
   }
 

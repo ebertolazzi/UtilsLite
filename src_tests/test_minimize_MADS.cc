@@ -98,10 +98,10 @@ void update_line_search_statistics( const TestResult & result )
   // Calcola statistiche aggregate
   if ( stats.successful_tests > 0 )
   {
-    stats.avg_iterations =
-      static_cast<Scalar>( stats.total_iterations ) / static_cast<Scalar>( stats.successful_tests );
-    stats.success_rate =
-      100.0 * static_cast<double>( stats.successful_tests ) / static_cast<double>( stats.total_tests );
+    stats.avg_iterations = static_cast<Scalar>( stats.total_iterations ) /
+                           static_cast<Scalar>( stats.successful_tests );
+    stats.success_rate   = 100.0 * static_cast<double>( stats.successful_tests ) /
+                           static_cast<double>( stats.total_tests );
   }
 }
 
@@ -163,8 +163,8 @@ void print_summary_table()
     global_test_results.end(),
     []( const TestResult & r ) { return r.converged; } );
 
-  Scalar success_rate =
-    100.0 * static_cast<Scalar>( converged_tests ) / static_cast<Scalar>( std::max<integer>( total_tests, 1 ) );
+  Scalar success_rate = 100.0 * static_cast<Scalar>( converged_tests ) /
+                        static_cast<Scalar>( std::max<integer>( total_tests, 1 ) );
 
   integer total_iterations = 0;
   integer total_evals      = 0;
@@ -228,9 +228,9 @@ void print_line_search_statistics()
 
   for ( const auto & [name, stats] : line_search_statistics )
   {
-    Scalar avg_evals = ( stats.successful_tests > 0 )
-                         ? static_cast<Scalar>( stats.total_function_evals ) / static_cast<Scalar>( stats.successful_tests )
-                         : 0.0;
+    Scalar avg_evals = ( stats.successful_tests > 0 ) ? static_cast<Scalar>( stats.total_function_evals ) /
+                                                          static_cast<Scalar>( stats.successful_tests )
+                                                      : 0.0;
 
     auto success_color = stats.success_rate > 80.0   ? fmt::fg( fmt::color::green )
                          : stats.success_rate > 50.0 ? fmt::fg( fmt::color::yellow )

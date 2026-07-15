@@ -2701,7 +2701,7 @@ public:
 
     // H(0,1) Simmetrica
     T h01            = 2.0 * ( df1_dx1 * df1_dx2 + f1 * ( -100.0 * d2theta_dx1dx2 ) + df2_dx1 * df2_dx2 +
-                    f2 * ( -10.0 * x1 * x2 / ( r * r2 ) ) );
+                               f2 * ( -10.0 * x1 * x2 / ( r * r2 ) ) );
     H.insert( 0, 1 ) = H.insert( 1, 0 ) = h01;
 
     // H(0,2) e H(1,2)
@@ -2900,7 +2900,7 @@ public:
 
     T d_exp_arg_dx2 = sign_inner * ( -x2 ) / ( pi * R );
     T dg_dx2        = std::sin( x1 ) * ( -std::sin( x2 ) ) * exp_val +
-               std::sin( x1 ) * std::cos( x2 ) * exp_val * d_exp_arg_dx2;
+                      std::sin( x1 ) * std::cos( x2 ) * exp_val * d_exp_arg_dx2;
 
     // Now apply the outer absolute value: f = -|g|
     // df/dx = -sign(g) * dg/dx

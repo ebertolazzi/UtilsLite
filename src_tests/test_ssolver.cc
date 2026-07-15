@@ -1235,7 +1235,8 @@ bool testSparsityPatternAnalysis()
     {
       for ( integer j = std::max<integer>( 0, i - bandwidth ); j <= std::min<integer>( n - 1, i + bandwidth ); ++j )
       {
-        if ( std::abs( i - j ) <= bandwidth ) {
+        if ( std::abs( i - j ) <= bandwidth )
+        {
           banded.insert( i, j ) = 1.0 / ( static_cast<double>( std::abs( i - j ) ) + 1.0 );
         }
       }

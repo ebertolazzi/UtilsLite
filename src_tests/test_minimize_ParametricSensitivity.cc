@@ -45,29 +45,19 @@ void print_section_title( const std::string & title )
 }
 
 void print_subsection( const std::string & title )
-{
-  fmt::print( fmt::fg( fmt::color::yellow ) | fmt::emphasis::bold, "\n┌─▶ {}:\n", title );
-}
+{ fmt::print( fmt::fg( fmt::color::yellow ) | fmt::emphasis::bold, "\n┌─▶ {}:\n", title ); }
 
 void print_success( const std::string & message )
-{
-  fmt::print( fmt::fg( fmt::color::green ) | fmt::emphasis::bold, "   ✓ {}", message );
-}
+{ fmt::print( fmt::fg( fmt::color::green ) | fmt::emphasis::bold, "   ✓ {}", message ); }
 
 void print_warning( const std::string & message )
-{
-  fmt::print( fmt::fg( fmt::color::orange ) | fmt::emphasis::bold, "   ⚠ {}", message );
-}
+{ fmt::print( fmt::fg( fmt::color::orange ) | fmt::emphasis::bold, "   ⚠ {}", message ); }
 
 void print_error( const std::string & message )
-{
-  fmt::print( fmt::fg( fmt::color::red ) | fmt::emphasis::bold, "   ✗ {}", message );
-}
+{ fmt::print( fmt::fg( fmt::color::red ) | fmt::emphasis::bold, "   ✗ {}", message ); }
 
 void print_info( const std::string & message )
-{
-  fmt::print( fmt::fg( fmt::color::light_blue ), "   • {}", message );
-}
+{ fmt::print( fmt::fg( fmt::color::light_blue ), "   • {}", message ); }
 
 void print_matrix_info( const std::string & name, const Matrix & mat, bool show_values = false )
 {

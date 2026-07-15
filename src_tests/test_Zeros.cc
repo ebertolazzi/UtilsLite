@@ -74,9 +74,7 @@ class MixedFunction1 : public Utils::Zeros_base_fun<real_type>
 {
 public:
   [[nodiscard]] real_type eval( real_type x ) const override
-  {
-    return log( 1 + x * x ) + exp( x * ( x - 3 ) ) * sin( x );
-  }
+  { return log( 1 + x * x ) + exp( x * ( x - 3 ) ) * sin( x ); }
   [[nodiscard]] real_type eval_D( real_type x ) const override
   {
     real_type t1  = x * x;
@@ -465,9 +463,7 @@ class TestRunner
 
 public:
   static void print_header( const string & title )
-  {
-    fmt::print( fg( HEADER_COLOR ) | fmt::emphasis::bold, "\n{:=^80}\n", " " + title + " " );
-  }
+  { fmt::print( fg( HEADER_COLOR ) | fmt::emphasis::bold, "\n{:=^80}\n", " " + title + " " ); }
 
   static void print_table_header()
   {

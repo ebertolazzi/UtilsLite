@@ -1008,7 +1008,9 @@ int main( int argc, char * argv[] )
     }
   }
 
-  print_progress( static_cast<int>( nonlinear_system_tests.size() ), static_cast<int>( nonlinear_system_tests.size() ) );
+  print_progress(
+    static_cast<int>( nonlinear_system_tests.size() ),
+    static_cast<int>( nonlinear_system_tests.size() ) );
   fmt::print( fg( fmt::color::green ) | fmt::emphasis::bold, "\n\nAll tests completed!\n" );
 
   // Stampa tabella riassuntiva

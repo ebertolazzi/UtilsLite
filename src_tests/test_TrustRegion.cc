@@ -132,9 +132,7 @@ Eigen::VectorXd generateRandomGradient( integer n, unsigned seed = 123 )
  * @brief Compute quadratic model value m(p) = ½pᵀHp + gᵀp
  */
 Scalar computeModelValue( const Eigen::VectorXd & p, const Eigen::SparseMatrix<Scalar> & H, const Eigen::VectorXd & g )
-{
-  return 0.5 * p.dot( H * p ) + g.dot( p );
-}
+{ return 0.5 * p.dot( H * p ) + g.dot( p ); }
 
 /**
  * @brief Check if trust region constraint is satisfied
@@ -152,9 +150,7 @@ Eigen::VectorXd computeModelGradient(
   const Eigen::VectorXd &             p,
   const Eigen::SparseMatrix<Scalar> & H,
   const Eigen::VectorXd &             g )
-{
-  return H * p + g;
-}
+{ return H * p + g; }
 
 /**
  * @brief Print a formatted test result
@@ -630,9 +626,10 @@ bool testMethodComparison()
 
     for ( integer n : sizes )
     {
-      Eigen::SparseMatrix<Scalar> H = generateRandomPositiveDefiniteHessian( n, static_cast<unsigned>( 300 + n ), 0.1, 1.0 );
-      Eigen::VectorXd             g = generateRandomGradient( n, static_cast<unsigned>( 400 + n ) );
-      Scalar                      delta = 1.0;
+      Eigen::SparseMatrix<Scalar> H =
+        generateRandomPositiveDefiniteHessian( n, static_cast<unsigned>( 300 + n ), 0.1, 1.0 );
+      Eigen::VectorXd g     = generateRandomGradient( n, static_cast<unsigned>( 400 + n ) );
+      Scalar          delta = 1.0;
 
       std::vector<Scalar> times_ms( methods.size(), 0.0 );
       std::vector<bool>   successes( methods.size(), false );

@@ -269,10 +269,7 @@ void print_line_search_statistics()
   // Calcola medie finali
   for ( auto & [name, stats] : line_search_statistics )
   {
-    if ( stats.successful_tests > 0 )
-    {
-      stats.avg_gradient_norm /= static_cast<Scalar>( stats.successful_tests );
-    }
+    if ( stats.successful_tests > 0 ) { stats.avg_gradient_norm /= static_cast<Scalar>( stats.successful_tests ); }
   }
 
   fmt::print(
@@ -292,7 +289,7 @@ void print_line_search_statistics()
 
     Scalar avg_eval = ( s.successful_tests > 0 )
                         ? static_cast<Scalar>( s.total_function_evals ) / static_cast<Scalar>( s.successful_tests )
-                                                 : 0.0;
+                        : 0.0;
 
     auto color = ( success_rate >= 80.0 )   ? fmt::fg( fmt::color::green )
                  : ( success_rate >= 60.0 ) ? fmt::fg( fmt::color::yellow )

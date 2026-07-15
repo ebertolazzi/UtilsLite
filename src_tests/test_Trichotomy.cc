@@ -592,7 +592,7 @@ void run_benchmark()
     { "Quartic",
       []( real_type x )
       {
-        real_type                                        t          = x * x - x;
+        real_type t = x * x - x;
         return 100 * t * t + 15 * ( 1 - x );
       } },
     { "Rastrigin", []( real_type x ) { return x * x - 10 * cos( 2 * m_pi * x ) + 10; } }

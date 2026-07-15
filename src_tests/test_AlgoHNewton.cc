@@ -28,21 +28,13 @@ using Utils::m_pi;
 using real_type = double;
 
 static inline real_type power2( real_type const x )
-{
-  return x * x;
-}
+{ return x * x; }
 static inline real_type power3( real_type const x )
-{
-  return x * x * x;
-}
+{ return x * x * x; }
 static inline real_type power4( real_type const x )
-{
-  return power2( power2( x ) );
-}
+{ return power2( power2( x ) ); }
 static inline real_type power5( real_type const x )
-{
-  return power4( x ) * x;
-}
+{ return power4( x ) * x; }
 
 static int ntest{ 0 };
 static int nfuneval{ 0 };
@@ -370,9 +362,7 @@ public:
   explicit FUN8( real_type const _n ) : n( _n ) {}
   real_type eval( real_type const x ) const override { return ( 1 + power4( 1 - n ) ) * x - power4( 1 - n * x ); }
   real_type D( real_type const x ) const override
-  {
-    return ( 1 + ( 1 - x ) * n ) * exp( -n * x ) + n * pow( x, n - 1 );
-  }
+  { return ( 1 + ( 1 - x ) * n ) * exp( -n * x ) + n * pow( x, n - 1 ); }
 };
 
 class FUN9 : public Utils::AlgoHNewton_base_fun<real_type>

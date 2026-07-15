@@ -30,9 +30,7 @@ using Real = double;
 
 // Test functions
 Real test_function( Real x )
-{
-  return std::sin( 2.0 * x ) + std::exp( -0.5 * x ) * std::cos( 3.0 * x );
-}
+{ return std::sin( 2.0 * x ) + std::exp( -0.5 * x ) * std::cos( 3.0 * x ); }
 
 Real exact_first_derivative( Real x )
 {
@@ -41,9 +39,7 @@ Real exact_first_derivative( Real x )
 }
 
 Real exact_second_derivative( Real x )
-{
-  return ( -35 * std::cos( 3 * x ) + 12 * std::sin( 3 * x ) ) * std::exp( -x / 2 ) / 4.0 - 4.0 * std::sin( 2 * x );
-}
+{ return ( -35 * std::cos( 3 * x ) + 12 * std::sin( 3 * x ) ) * std::exp( -x / 2 ) / 4.0 - 4.0 * std::sin( 2 * x ); }
 
 // Grid generator
 enum GridType

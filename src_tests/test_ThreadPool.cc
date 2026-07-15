@@ -207,30 +207,24 @@ struct ResourceUsage
     user_ticks.LowPart  = user_time.dwLowDateTime;
     user_ticks.HighPart = user_time.dwHighDateTime;
 
-    return ResourceUsage{
-      static_cast<long>( mem_counters.PeakWorkingSetSize / 1024ULL ),
-      static_cast<long>( user_ticks.QuadPart / 10000ULL ),
-      static_cast<long>( kernel_ticks.QuadPart / 10000ULL )
-    };
+    return ResourceUsage{ static_cast<long>( mem_counters.PeakWorkingSetSize / 1024ULL ),
+                          static_cast<long>( user_ticks.QuadPart / 10000ULL ),
+                          static_cast<long>( kernel_ticks.QuadPart / 10000ULL ) };
 #else
     struct rusage usage;
     getrusage( RUSAGE_SELF, &usage );
 
-    return ResourceUsage{
-      usage.ru_maxrss,
-      usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000,
-      usage.ru_stime.tv_sec * 1000 + usage.ru_stime.tv_usec / 1000
-    };
+    return ResourceUsage{ usage.ru_maxrss,
+                          usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000,
+                          usage.ru_stime.tv_sec * 1000 + usage.ru_stime.tv_usec / 1000 };
 #endif
   }
 
   ResourceUsage operator-( const ResourceUsage & other ) const
   {
-    return ResourceUsage{
-      std::max( max_rss_kb, other.max_rss_kb ),
-      user_time_ms - other.user_time_ms,
-      system_time_ms - other.system_time_ms
-    };
+    return ResourceUsage{ std::max( max_rss_kb, other.max_rss_kb ),
+                          user_time_ms - other.user_time_ms,
+                          system_time_ms - other.system_time_ms };
   }
 };
 

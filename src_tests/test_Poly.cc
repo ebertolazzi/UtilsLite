@@ -45,9 +45,7 @@ using sturm     = Utils::Sturm<real_type>;
 static jmp_buf assertion_jmp_buf;
 
 static void assertion_handler( int )
-{
-  longjmp( assertion_jmp_buf, 1 );
-}
+{ longjmp( assertion_jmp_buf, 1 ); }
 
 // Test result tracking
 struct TestResults
@@ -133,14 +131,10 @@ struct TestResults
 
 // Helper function to compare floating point numbers
 template <typename T> bool approx_equal( T a, T b, T epsilon = 1e-10 )
-{
-  return std::abs( a - b ) < epsilon;
-}
+{ return std::abs( a - b ) < epsilon; }
 
 template <typename T, typename U> bool approx_equal( T a, U b, T epsilon = 1e-10 )
-{
-  return std::abs( a - static_cast<T>( b ) ) < epsilon;
-}
+{ return std::abs( a - static_cast<T>( b ) ) < epsilon; }
 
 // Safe coefficient access for polynomials that might be empty
 static real_type safe_coeff( const poly & p, integer i, real_type default_value = 0.0 )

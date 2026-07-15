@@ -109,9 +109,7 @@ template <typename Real> std::set<integer> brute_force_bbox_intersection(
 
 // Verifica se set1 è superset di set2
 template <typename T> bool is_superset( const std::set<T> & set1, const std::set<T> & set2 )
-{
-  return std::includes( set1.begin(), set1.end(), set2.begin(), set2.end() );
-}
+{ return std::includes( set1.begin(), set1.end(), set2.begin(), set2.end() ); }
 
 // ===========================================================================
 // Test Cases

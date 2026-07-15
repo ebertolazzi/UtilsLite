@@ -525,8 +525,8 @@ private:
     }
 
     // Summary
-    integer passed_count =
-      static_cast<integer>( count_if( results.begin(), results.end(), []( const auto & p ) { return p.second; } ) );
+    integer passed_count = static_cast<integer>(
+      count_if( results.begin(), results.end(), []( const auto & p ) { return p.second; } ) );
 
     print( colors::header, "\nEdge Cases: {}/{} passed\n", passed_count, results.size() );
   }

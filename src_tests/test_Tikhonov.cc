@@ -111,21 +111,13 @@ inline void header( std::string const & msg )
 }
 
 inline std::string sci( double v )
-{
-  return fmt::format( "{:>12.3e}", v );
-}
+{ return fmt::format( "{:>12.3e}", v ); }
 inline std::string ms_format( double v )
-{
-  return fmt::format( "    {}", fmt::format( "{:.2f} ms", v ) );
-}
+{ return fmt::format( "    {}", fmt::format( "{:.2f} ms", v ) ); }
 inline std::string ratio_format( double v )
-{
-  return fmt::format( "    {}", fmt::format( "{:.2f}x", v ) );
-}
+{ return fmt::format( "    {}", fmt::format( "{:.2f}x", v ) ); }
 inline std::string small_ms_format( double v )
-{
-  return fmt::format( "    {}", fmt::format( "{:.4f} ms", v ) );
-}
+{ return fmt::format( "    {}", fmt::format( "{:.4f} ms", v ) ); }
 
 //==============================================================================
 // RUN TEST STANDARD (D = I)

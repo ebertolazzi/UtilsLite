@@ -266,13 +266,13 @@ void print_line_search_statistics()
   {
     if ( stats.successful_tests > 0 )
     {
-      stats.average_iterations =
-        static_cast<Scalar>( stats.total_iterations ) / static_cast<Scalar>( stats.successful_tests );
+      stats.average_iterations = static_cast<Scalar>( stats.total_iterations ) /
+                                 static_cast<Scalar>( stats.successful_tests );
 
       stats.avg_gradient_norm = stats.total_gradient_norm / static_cast<Scalar>( stats.successful_tests );
 
-      stats.success_rate =
-        ( 100.0 * static_cast<double>( stats.successful_tests ) ) / static_cast<double>( stats.total_tests );
+      stats.success_rate = ( 100.0 * static_cast<double>( stats.successful_tests ) ) /
+                           static_cast<double>( stats.total_tests );
     }
     else
     {
@@ -398,7 +398,8 @@ void print_summary_table()
     ( 100.0 * static_cast<double>( converged_tests ) / static_cast<double>( total_tests ) ) );
   fmt::print( "   • Total iterations: {}\n", accumulated_iter );
   fmt::print( "   • Total function evaluations: {}\n", accumulated_evals );
-  if ( grad_count > 0 ) {
+  if ( grad_count > 0 )
+  {
     fmt::print( "   • Average final ‖g‖: {:.2e}\n", total_grad_norm / static_cast<Scalar>( grad_count ) );
   }
 }

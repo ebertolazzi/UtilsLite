@@ -25,33 +25,19 @@ using Utils::m_pi;
 using real_type = double;
 
 static inline real_type power2( real_type x )
-{
-  return x * x;
-}
+{ return x * x; }
 static inline real_type power3( real_type x )
-{
-  return x * x * x;
-}
+{ return x * x * x; }
 static inline real_type power4( real_type x )
-{
-  return power2( power2( x ) );
-}
+{ return power2( power2( x ) ); }
 static inline real_type power5( real_type x )
-{
-  return power4( x ) * x;
-}
+{ return power4( x ) * x; }
 static inline real_type power6( real_type x )
-{
-  return power4( x ) * power2( x );
-}
+{ return power4( x ) * power2( x ); }
 static inline real_type power7( real_type x )
-{
-  return power4( x ) * power3( x );
-}
+{ return power4( x ) * power3( x ); }
 static inline real_type power8( real_type x )
-{
-  return power2( power4( x ) );
-}
+{ return power2( power4( x ) ); }
 
 using FUN1D = std::function<real_type( real_type )>;
 

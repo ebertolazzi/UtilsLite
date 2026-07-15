@@ -63,9 +63,7 @@ static void do_test()
 }
 
 static void do_passa( int const ii )
-{
-  cout << "passa ii=" << ii << '\n';
-}
+{ cout << "passa ii=" << ii << '\n'; }
 
 int main()
 {

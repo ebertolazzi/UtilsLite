@@ -26,9 +26,7 @@ using namespace std;
 using namespace rang;
 
 static void printHeading( string_view const heading )
-{
-  cout << '\n' << style::reset << heading << style::reset << bg::reset << fg::reset << endl;
-}
+{ cout << '\n' << style::reset << heading << style::reset << bg::reset << fg::reset << endl; }
 
 static void test_colors( ostream & os, winTerm const opt )
 {

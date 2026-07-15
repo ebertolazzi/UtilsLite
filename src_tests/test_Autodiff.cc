@@ -124,9 +124,7 @@ namespace TestUtils
   }
 
   bool check_approx( double computed, double expected, double tolerance = 1e-10 )
-  {
-    return abs( computed - expected ) <= tolerance;
-  }
+  { return abs( computed - expected ) <= tolerance; }
 
 }  // namespace TestUtils
 
@@ -136,66 +134,44 @@ namespace TestUtils
 
 // Basic function tests
 dual f1( dual x )
-{
-  return 1 + x + x * x + 1 / x + log( x );
-}
+{ return 1 + x + x * x + 1 / x + log( x ); }
 
 dual f2( dual x )
-{
-  return sin( x ) * cos( x ) + exp( x );
-}
+{ return sin( x ) * cos( x ) + exp( x ); }
 
 dual f3( dual x )
-{
-  return tan( x ) - asin( x ) + acos( x );
-}
+{ return tan( x ) - asin( x ) + acos( x ); }
 
 // Multi-variable functions
 dual g1( dual x, dual y )
-{
-  return x * x + y * y + x * y;
-}
+{ return x * x + y * y + x * y; }
 
 dual g2( dual x, dual y )
-{
-  return sin( x * y ) + cos( x / y );
-}
+{ return sin( x * y ) + cos( x / y ); }
 
 dual g3( dual x, dual y, dual z )
-{
-  return exp( x * y * z ) + log( x + y + z );
-}
+{ return exp( x * y * z ) + log( x + y + z ); }
 
 // Higher order derivatives
 dual2nd f_second( dual2nd x )
-{
-  return x * x * x + sin( x ) * cos( x );
-}
+{ return x * x * x + sin( x ) * cos( x ); }
 
 // ============================================================================
 // SECTION: Analytical Derivatives (for verification)
 // ============================================================================
 
 double df1_analytical( double x )
-{
-  return 1 + 2 * x - 1 / ( x * x ) + 1 / x;
-}
+{ return 1 + 2 * x - 1 / ( x * x ) + 1 / x; }
 
 double df2_analytical( double x )
-{
-  return cos( x ) * cos( x ) - sin( x ) * sin( x ) + exp( x );
-}
+{ return cos( x ) * cos( x ) - sin( x ) * sin( x ) + exp( x ); }
 
 double d2f2_analytical( double x )
-{
-  return -4 * sin( x ) * cos( x ) + exp( x );
-}
+{ return -4 * sin( x ) * cos( x ) + exp( x ); }
 
 // Gradient for multi-variable functions
 array<double, 2> dg1_analytical( double x, double y )
-{
-  return { 2 * x + y, 2 * y + x };
-}
+{ return { 2 * x + y, 2 * y + x }; }
 
 // ============================================================================
 // SECTION: Comprehensive Math Function Tests
@@ -1497,117 +1473,79 @@ namespace MacroTestFunctions
   // ========================================================================
 
   double test_func2( double x, double y )
-  {
-    return x * x * y + sin( x ) * cos( y );
-  }
+  { return x * x * y + sin( x ) * cos( y ); }
 
   // Analytical derivatives for test_func2
   inline double test_func2_D_1_analytic( double x, double y )
-  {
-    return 2 * x * y + cos( x ) * cos( y );
-  }
+  { return 2 * x * y + cos( x ) * cos( y ); }
 
   inline double test_func2_D_2_analytic( double x, double y )
-  {
-    return x * x - sin( x ) * sin( y );
-  }
+  { return x * x - sin( x ) * sin( y ); }
 
   inline double test_func2_D_1_1_analytic( double x, double y )
-  {
-    return 2 * y - sin( x ) * cos( y );
-  }
+  { return 2 * y - sin( x ) * cos( y ); }
 
   inline double test_func2_D_1_2_analytic( double x, double y )
-  {
-    return 2 * x - cos( x ) * sin( y );
-  }
+  { return 2 * x - cos( x ) * sin( y ); }
 
   inline double test_func2_D_2_2_analytic( double x, double y )
-  {
-    return -sin( x ) * cos( y );
-  }
+  { return -sin( x ) * cos( y ); }
 
   // ========================================================================
   // 3 ARGUMENTS
   // ========================================================================
 
   double test_func3( double x, double y, double z )
-  {
-    return x * y * z + sin( x ) * cos( y ) * exp( z );
-  }
+  { return x * y * z + sin( x ) * cos( y ) * exp( z ); }
 
   // Analytical derivatives for test_func3
   inline double test_func3_D_1_analytic( double x, double y, double z )
-  {
-    return y * z + cos( x ) * cos( y ) * exp( z );
-  }
+  { return y * z + cos( x ) * cos( y ) * exp( z ); }
 
   inline double test_func3_D_2_analytic( double x, double y, double z )
-  {
-    return x * z - sin( x ) * sin( y ) * exp( z );
-  }
+  { return x * z - sin( x ) * sin( y ) * exp( z ); }
 
   inline double test_func3_D_3_analytic( double x, double y, double z )
-  {
-    return x * y + sin( x ) * cos( y ) * exp( z );
-  }
+  { return x * y + sin( x ) * cos( y ) * exp( z ); }
 
   inline double test_func3_D_1_1_analytic( double x, double y, double z )
-  {
-    return -sin( x ) * cos( y ) * exp( z );
-  }
+  { return -sin( x ) * cos( y ) * exp( z ); }
 
   inline double test_func3_D_1_2_analytic( double x, double y, double z )
-  {
-    return z - cos( x ) * sin( y ) * exp( z );
-  }
+  { return z - cos( x ) * sin( y ) * exp( z ); }
 
   inline double test_func3_D_1_3_analytic( double x, double y, double z )
-  {
-    return y + cos( x ) * cos( y ) * exp( z );
-  }
+  { return y + cos( x ) * cos( y ) * exp( z ); }
 
   inline double test_func3_D_2_2_analytic( double x, double y, double z )
-  {
-    return -sin( x ) * cos( y ) * exp( z );
-  }
+  { return -sin( x ) * cos( y ) * exp( z ); }
 
   inline double test_func3_D_2_3_analytic( double x, double y, double z )
-  {
-    return x - sin( x ) * sin( y ) * exp( z );
-  }
+  { return x - sin( x ) * sin( y ) * exp( z ); }
 
   inline double test_func3_D_3_3_analytic( double x, double y, double z )
-  {
-    return sin( x ) * cos( y ) * exp( z );
-  }
+  { return sin( x ) * cos( y ) * exp( z ); }
 
   // ========================================================================
   // 4 ARGUMENTS
   // ========================================================================
 
   double test_func4( double x, double y, double z, double w )
-  {
-    return x * y + z * w + sin( x * z ) * cos( y * w );
-  }
+  { return x * y + z * w + sin( x * z ) * cos( y * w ); }
 
   // ========================================================================
   // 5 ARGUMENTS
   // ========================================================================
 
   double test_func5( double x1, double x2, double x3, double x4, double x5 )
-  {
-    return x1 * x2 + x3 * x4 * x5 + sin( x1 * x3 ) * cos( x2 * x4 ) * exp( x5 );
-  }
+  { return x1 * x2 + x3 * x4 * x5 + sin( x1 * x3 ) * cos( x2 * x4 ) * exp( x5 ); }
 
   // ========================================================================
   // 6 ARGUMENTS
   // ========================================================================
 
   double test_func6( double x1, double x2, double x3, double x4, double x5, double x6 )
-  {
-    return x1 * x2 * x3 + x4 * x5 * x6 + sin( x1 * x4 ) * cos( x2 * x5 ) * exp( x3 * x6 );
-  }
+  { return x1 * x2 * x3 + x4 * x5 * x6 + sin( x1 * x4 ) * cos( x2 * x5 ) * exp( x3 * x6 ); }
 
 }  // namespace MacroTestFunctions
 
@@ -1619,55 +1557,41 @@ namespace MacroTestAutodiff
   // ========================================================================
 
   dual test_func2_ad( dual x, dual y )
-  {
-    return x * x * y + sin( x ) * cos( y );
-  }
+  { return x * x * y + sin( x ) * cos( y ); }
 
   dual2nd test_func2_ad2( dual2nd x, dual2nd y )
-  {
-    return x * x * y + sin( x ) * cos( y );
-  }
+  { return x * x * y + sin( x ) * cos( y ); }
 
   // ========================================================================
   // 3 ARGUMENTS
   // ========================================================================
 
   dual test_func3_ad( dual x, dual y, dual z )
-  {
-    return x * y * z + sin( x ) * cos( y ) * exp( z );
-  }
+  { return x * y * z + sin( x ) * cos( y ) * exp( z ); }
 
   dual2nd test_func3_ad2( dual2nd x, dual2nd y, dual2nd z )
-  {
-    return x * y * z + sin( x ) * cos( y ) * exp( z );
-  }
+  { return x * y * z + sin( x ) * cos( y ) * exp( z ); }
 
   // ========================================================================
   // 4 ARGUMENTS
   // ========================================================================
 
   dual test_func4_ad( dual x, dual y, dual z, dual w )
-  {
-    return x * y + z * w + sin( x * z ) * cos( y * w );
-  }
+  { return x * y + z * w + sin( x * z ) * cos( y * w ); }
 
   // ========================================================================
   // 5 ARGUMENTS
   // ========================================================================
 
   dual test_func5_ad( dual x1, dual x2, dual x3, dual x4, dual x5 )
-  {
-    return x1 * x2 + x3 * x4 * x5 + sin( x1 * x3 ) * cos( x2 * x4 ) * exp( x5 );
-  }
+  { return x1 * x2 + x3 * x4 * x5 + sin( x1 * x3 ) * cos( x2 * x4 ) * exp( x5 ); }
 
   // ========================================================================
   // 6 ARGUMENTS
   // ========================================================================
 
   dual test_func6_ad( dual x1, dual x2, dual x3, dual x4, dual x5, dual x6 )
-  {
-    return x1 * x2 * x3 + x4 * x5 * x6 + sin( x1 * x4 ) * cos( x2 * x5 ) * exp( x3 * x6 );
-  }
+  { return x1 * x2 * x3 + x4 * x5 * x6 + sin( x1 * x4 ) * cos( x2 * x5 ) * exp( x3 * x6 ); }
 
 }  // namespace MacroTestAutodiff
 
@@ -2119,15 +2043,11 @@ public:
 
   // Overload for dual1st - MUST BE const
   autodiff::dual1st myFunc2_dual( autodiff::dual1st const & x, autodiff::dual1st const & y ) const
-  {
-    return x * x * y + sin( x ) * cos( y );
-  }
+  { return x * x * y + sin( x ) * cos( y ); }
 
   // Overload for dual2nd - MUST BE const
   autodiff::dual2nd myFunc2_dual( autodiff::dual2nd const & x, autodiff::dual2nd const & y ) const
-  {
-    return x * x * y + sin( x ) * cos( y );
-  }
+  { return x * x * y + sin( x ) * cos( y ); }
 
   UTILS_AUTODIFF_DERIV_2ARG( inline, , myFunc2, myFunc2_dual, const )
 };
@@ -2140,27 +2060,21 @@ public:
 
   // Function to differentiate (double version)
   real_type myFunc3( real_type const x, real_type const y, real_type const z ) const
-  {
-    return x * y * z + sin( x ) * cos( y ) * exp( z );
-  }
+  { return x * y * z + sin( x ) * cos( y ) * exp( z ); }
 
   // Overload for dual1st - MUST BE const
   autodiff::dual1st myFunc3_dual(
     autodiff::dual1st const & x,
     autodiff::dual1st const & y,
     autodiff::dual1st const & z ) const
-  {
-    return x * y * z + sin( x ) * cos( y ) * exp( z );
-  }
+  { return x * y * z + sin( x ) * cos( y ) * exp( z ); }
 
   // Overload for dual2nd - MUST BE const
   autodiff::dual2nd myFunc3_dual(
     autodiff::dual2nd const & x,
     autodiff::dual2nd const & y,
     autodiff::dual2nd const & z ) const
-  {
-    return x * y * z + sin( x ) * cos( y ) * exp( z );
-  }
+  { return x * y * z + sin( x ) * cos( y ) * exp( z ); }
 
   UTILS_AUTODIFF_DERIV_3ARG( inline, , myFunc3, myFunc3_dual, const )
 };
@@ -2173,9 +2087,7 @@ public:
 
   // Function to differentiate (double version)
   real_type myFunc4( real_type const x, real_type const y, real_type const z, real_type const w ) const
-  {
-    return x * y + z * w + sin( x * z ) * cos( y * w );
-  }
+  { return x * y + z * w + sin( x * z ) * cos( y * w ); }
 
   // Overload for dual1st - MUST BE const
   autodiff::dual1st myFunc4_dual(
@@ -2183,9 +2095,7 @@ public:
     autodiff::dual1st const & y,
     autodiff::dual1st const & z,
     autodiff::dual1st const & w ) const
-  {
-    return x * y + z * w + sin( x * z ) * cos( y * w );
-  }
+  { return x * y + z * w + sin( x * z ) * cos( y * w ); }
 
   // Overload for dual2nd - MUST BE const
   autodiff::dual2nd myFunc4_dual(
@@ -2193,9 +2103,7 @@ public:
     autodiff::dual2nd const & y,
     autodiff::dual2nd const & z,
     autodiff::dual2nd const & w ) const
-  {
-    return x * y + z * w + sin( x * z ) * cos( y * w );
-  }
+  { return x * y + z * w + sin( x * z ) * cos( y * w ); }
 
   UTILS_AUTODIFF_DERIV_4ARG( inline, , myFunc4, myFunc4_dual, const )
 };
@@ -2212,9 +2120,7 @@ public:
     real_type const x3,
     real_type const x4,
     real_type const x5 ) const
-  {
-    return x1 * x2 + x3 * x4 * x5 + sin( x1 * x3 ) * cos( x2 * x4 ) * exp( x5 );
-  }
+  { return x1 * x2 + x3 * x4 * x5 + sin( x1 * x3 ) * cos( x2 * x4 ) * exp( x5 ); }
 
   // Overload for dual1st - MUST BE const
   autodiff::dual1st myFunc5_dual(
@@ -2223,9 +2129,7 @@ public:
     autodiff::dual1st const & x3,
     autodiff::dual1st const & x4,
     autodiff::dual1st const & x5 ) const
-  {
-    return x1 * x2 + x3 * x4 * x5 + sin( x1 * x3 ) * cos( x2 * x4 ) * exp( x5 );
-  }
+  { return x1 * x2 + x3 * x4 * x5 + sin( x1 * x3 ) * cos( x2 * x4 ) * exp( x5 ); }
 
   // Overload for dual2nd - MUST BE const
   autodiff::dual2nd myFunc5_dual(
@@ -2234,9 +2138,7 @@ public:
     autodiff::dual2nd const & x3,
     autodiff::dual2nd const & x4,
     autodiff::dual2nd const & x5 ) const
-  {
-    return x1 * x2 + x3 * x4 * x5 + sin( x1 * x3 ) * cos( x2 * x4 ) * exp( x5 );
-  }
+  { return x1 * x2 + x3 * x4 * x5 + sin( x1 * x3 ) * cos( x2 * x4 ) * exp( x5 ); }
 
   UTILS_AUTODIFF_DERIV_5ARG( inline, , myFunc5, myFunc5_dual, const )
 };
@@ -2255,9 +2157,7 @@ public:
     real_type const x4,
     real_type const x5,
     real_type const x6 ) const
-  {
-    return x1 * x2 * x3 + x4 * x5 * x6 + sin( x1 * x4 ) * cos( x2 * x5 ) * exp( x3 * x6 );
-  }
+  { return x1 * x2 * x3 + x4 * x5 * x6 + sin( x1 * x4 ) * cos( x2 * x5 ) * exp( x3 * x6 ); }
 
   // Overload for dual1st - MUST BE const
   autodiff::dual1st myFunc6_dual(
@@ -2267,9 +2167,7 @@ public:
     autodiff::dual1st const & x4,
     autodiff::dual1st const & x5,
     autodiff::dual1st const & x6 ) const
-  {
-    return x1 * x2 * x3 + x4 * x5 * x6 + sin( x1 * x4 ) * cos( x2 * x5 ) * exp( x3 * x6 );
-  }
+  { return x1 * x2 * x3 + x4 * x5 * x6 + sin( x1 * x4 ) * cos( x2 * x5 ) * exp( x3 * x6 ); }
 
   // Overload for dual2nd - MUST BE const
   autodiff::dual2nd myFunc6_dual(
@@ -2279,9 +2177,7 @@ public:
     autodiff::dual2nd const & x4,
     autodiff::dual2nd const & x5,
     autodiff::dual2nd const & x6 ) const
-  {
-    return x1 * x2 * x3 + x4 * x5 * x6 + sin( x1 * x4 ) * cos( x2 * x5 ) * exp( x3 * x6 );
-  }
+  { return x1 * x2 * x3 + x4 * x5 * x6 + sin( x1 * x4 ) * cos( x2 * x5 ) * exp( x3 * x6 ); }
 
   UTILS_AUTODIFF_DERIV_6ARG( inline, , myFunc6, myFunc6_dual, const )
 };
@@ -2472,18 +2368,14 @@ void test_declaration_macros()
     real_type myFunc2( real_type const x, real_type const y ) const { return x * y; }
     real_type myFunc3( real_type const x, real_type const y, real_type const z ) const { return x * y * z; }
     real_type myFunc4( real_type const x, real_type const y, real_type const z, real_type const w ) const
-    {
-      return x * y + z * w;
-    }
+    { return x * y + z * w; }
     real_type myFunc5(
       real_type const x1,
       real_type const x2,
       real_type const x3,
       real_type const x4,
       real_type const x5 ) const
-    {
-      return x1 + x2 + x3 + x4 + x5;
-    }
+    { return x1 + x2 + x3 + x4 + x5; }
     real_type myFunc6(
       real_type const x1,
       real_type const x2,
@@ -2491,9 +2383,7 @@ void test_declaration_macros()
       real_type const x4,
       real_type const x5,
       real_type const x6 ) const
-    {
-      return x1 * x2 * x3 * x4 * x5 * x6;
-    }
+    { return x1 * x2 * x3 * x4 * x5 * x6; }
 
     // Define dual versions for autodiff - MUST BE const
     autodiff::dual1st myFunc_dual( autodiff::dual1st const & x ) const { return x * x; }
@@ -2568,7 +2458,7 @@ void test_macro_generated_functions()
 
   print_header( "MACRO-GENERATED FUNCTIONS TESTS" );
 
-  int    passed = 0, total = 0;
+  int passed = 0, total = 0;
   // ========================================================================
   // TEST: 1-argument macro-generated functions
   // ========================================================================

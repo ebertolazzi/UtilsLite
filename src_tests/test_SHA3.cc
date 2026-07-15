@@ -23,9 +23,7 @@ using namespace Utils;
 
 // Test utility functions
 void print_test_header( const string & name )
-{
-  fmt::print( fg( fmt::color::cyan ) | fmt::emphasis::bold, "\n=== {} ===\n", name );
-}
+{ fmt::print( fg( fmt::color::cyan ) | fmt::emphasis::bold, "\n=== {} ===\n", name ); }
 
 void print_test_result( bool passed, const string & message )
 {
