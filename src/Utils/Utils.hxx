@@ -285,6 +285,33 @@ namespace Utils
   {
     if ( !ok ) throw Utils::Runtime_Error( std::string{ msg }, loc.file_name(), loc.line() );
   }
+  
+  /**
+   * @brief Checks a runtime condition and throws an exception if it evaluates to false.
+   *
+   * This function verifies the provided condition and throws a Utils::Runtime_Error
+   * with the specified error message and source location if the condition is false.
+   *
+   * Unlike formatting-based overloads of Check, this overload accepts a plain
+   * std::string_view message that is already fully constructed by the caller.
+   *
+   * @param ok The condition to check. If false, an exception is thrown.
+   * @param msg The error message to include in the exception.
+   * @param loc The source location where the check was triggered.
+   *            Defaults to the caller's location.
+   *
+   * @throws Utils::Runtime_Error If the condition is false.
+   *
+   * @example
+   * @code
+   * Check(index >= 0, "Index must be non-negative");
+   * Check(ptr != nullptr, "Pointer must not be null");
+   * @endcode
+   */
+  inline void Check( bool ok, std::string_view msg, std::source_location loc = std::source_location::current() )
+  {
+    if ( !ok ) throw Utils::Runtime_Error( std::string{ msg }, loc.file_name(), loc.line() );
+  }
 
   /**
    * @brief Displays a warning message if the condition is false.
