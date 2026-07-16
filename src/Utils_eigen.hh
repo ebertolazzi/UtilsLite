@@ -47,14 +47,6 @@
 #pragma warning( disable : 4127 )
 #endif
 
-#ifndef EIGEN_DONT_PARALLELIZE
-#define EIGEN_DONT_PARALLELIZE
-#endif
-
-#ifndef EIGEN_NO_AUTOMATIC_RESIZING
-#define EIGEN_NO_AUTOMATIC_RESIZING
-#endif
-
 #include <type_traits>
 
 #include "Utils/3rd/Eigen/Core"

@@ -137,7 +137,7 @@ option(UTILS_UPDATE_3RDPARTY "Download and regenerate vendored 3rd-party headers
 # Each dependency can be provided by a local checkout or fetched from the
 # configured upstream archive.  These cache variables let users pin or override
 # the versions without editing this file.
-set(UTILS_EIGEN_VERSION "5.0.0" CACHE STRING "Eigen version to fetch")
+set(UTILS_EIGEN_VERSION "5.0.1" CACHE STRING "Eigen version to fetch")
 set(UTILS_CLI11_VERSION "2.6.2" CACHE STRING "CLI11 version to fetch")
 set(UTILS_FMT_VERSION "12.2.0" CACHE STRING "fmt version to fetch")
 set(UTILS_BS_THREAD_POOL_VERSION "5.0.0" CACHE STRING "BS::thread_pool version to fetch")

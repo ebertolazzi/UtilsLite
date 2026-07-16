@@ -23,7 +23,7 @@ include(FetchContent)
 # ----------------------------------------------------------------------------
 # Pinned versions (match the previous ThirdParties/*/Rakefile values)
 # ----------------------------------------------------------------------------
-set(UTILS_3RD_EIGEN_VERSION            "5.0.0"  CACHE STRING "Eigen version to vendor")
+set(UTILS_3RD_EIGEN_VERSION            "5.0.1"  CACHE STRING "Eigen version to vendor")
 set(UTILS_3RD_BS_THREAD_POOL_VERSION   "5.0.0"  CACHE STRING "BS::thread_pool version to vendor")
 set(UTILS_3RD_AUTODIFF_VERSION         "main"  CACHE STRING "autodiff branch or tag to vendor")
 if(UTILS_3RD_AUTODIFF_VERSION STREQUAL "1.1.2")
