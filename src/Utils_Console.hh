@@ -22,6 +22,8 @@
  * \brief Console utility for formatted output with different message levels.
  */
 
+#pragma once
+
 #ifndef UTILS_CONSOLE_HXX
 #define UTILS_CONSOLE_HXX
 
@@ -131,7 +133,7 @@ namespace Utils
     void print_styled( fmt::text_style const & ts, string_view const msg, integer const msg_level ) const
     {
       std::lock_guard lock_access( m_message_mutex );
-      if ( m_level >= 0 && msg_level <= m_level ) { write_styled_unlocked( ts, msg ); }
+      if ( m_level >= 0 && msg_level <= m_level ) write_styled_unlocked( ts, msg );
     }
 
     template <typename... Args> void print_styled(
@@ -153,7 +155,7 @@ namespace Utils
     void print_always( fmt::text_style const & ts, string_view const msg ) const
     {
       std::lock_guard lock_access( m_message_mutex );
-      if ( m_level > -1 ) { write_styled_unlocked( ts, msg ); }
+      if ( m_level > -1 ) write_styled_unlocked( ts, msg );
     }
 
     template <typename... Args>

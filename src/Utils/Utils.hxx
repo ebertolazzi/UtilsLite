@@ -524,9 +524,10 @@ namespace Utils
   {
     // Empty implementation - all debug checks are removed in release builds
   }
-  inline void Debug( bool ok, std::string_view msg, std::source_location loc = std::source_location::current() )
+  inline void Debug( bool /*ok */, std::string_view /* msg */, std::source_location loc = std::source_location::current() )
   {
-    if ( !ok ) throw Utils::Runtime_Error( std::string{ msg }, loc.file_name(), loc.line() );
+    (void)loc;
+    // Empty implementation - all debug checks are removed in release builds
   }
 
 #else
@@ -550,52 +551,35 @@ namespace Utils
 
 // OBSOLETE MASCROS WILL BE REMOVED IN FUTURE RELEASE --- BEGIN
 
-#ifndef __FILENAME__
-#define __FILENAME__ ( strrchr( __FILE__, '/' ) ? strrchr( "/" __FILE__, '/' ) + 1 : __FILE__ )
-#endif
-
 #ifndef UTILS_ERROR0
-#define UTILS_ERROR0( MSG ) throw Utils::Runtime_Error( MSG, __FILENAME__, __LINE__ )
+#define UTILS_ERROR0( MSG ) Utils::Error( MSG )
 #endif
 
 #ifndef UTILS_ASSERT0
-#define UTILS_ASSERT0( COND, MSG ) \
-  if ( !( COND ) ) UTILS_ERROR0( MSG )
+#define UTILS_ASSERT0( COND, MSG ) Utils::Check( COND, MSG )
 #endif
 
 #ifndef UTILS_WARNING0
-#define UTILS_WARNING0( COND, MSG ) \
-  if ( !( COND ) ) std::cerr << MSG
+#define UTILS_WARNING0( COND, MSG ) Utils::Warning( COND, MSG )
 #endif
 
 #ifndef UTILS_ERROR
-#define UTILS_ERROR( ... ) throw Utils::Runtime_Error( std::format( __VA_ARGS__ ), __FILENAME__, __LINE__ )
+#define UTILS_ERROR( ... ) Utils::Error(__VA_ARGS__)
 #endif
 
 #ifndef UTILS_ASSERT
-#define UTILS_ASSERT( COND, ... ) \
-  if ( !( COND ) ) Utils::Error( __VA_ARGS__ )
+#define UTILS_ASSERT( COND, ... ) Utils::Assert( COND, __VA_ARGS__ )
 #endif
 
 #ifndef UTILS_WARNING
-#define UTILS_WARNING( COND, ... ) \
-  if ( !( COND ) ) fmt::print( __VA_ARGS__ )
+#define UTILS_WARNING( COND, ... ) Utils::Warning( COND, __VA_ARGS__ )
 #endif
 
-#ifdef UTILS_NO_DEBUG
 #ifndef UTILS_ASSERT0_DEBUG
-#define UTILS_ASSERT0_DEBUG( COND, MSG )
+#define UTILS_ASSERT0_DEBUG( COND, MSG ) Utils::Debug( COND, MSG )
 #endif
 #ifndef UTILS_ASSERT_DEBUG
-#define UTILS_ASSERT_DEBUG( COND, ... )
-#endif
-#else
-#ifndef UTILS_ASSERT0_DEBUG
-#define UTILS_ASSERT0_DEBUG( COND, MSG ) UTILS_ASSERT0( COND, MSG )
-#endif
-#ifndef UTILS_ASSERT_DEBUG
-#define UTILS_ASSERT_DEBUG( COND, ... ) Utils::Check( COND, __VA_ARGS__ )
-#endif
+#define UTILS_ASSERT_DEBUG( COND, ... ) Utils::Debug( COND, __VA_ARGS__ )
 #endif
 
 // OBSOLETE MASCROS WILL BE REMOVED IN FUTURE RELEASE --- END
