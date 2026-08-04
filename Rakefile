@@ -39,7 +39,9 @@ BUILD_TYPE = COMPILE_DEBUG ? 'Debug' : 'Release'
 
 BASE_BUILD_OPTIONS = [
   "-DCMAKE_BUILD_TYPE=#{BUILD_TYPE}",
-  "-DUTILS_BUILD_SHARED=#{COMPILE_DYNAMIC ? 'ON' : 'OFF'}"
+  "-DUTILS_BUILD_SHARED=#{COMPILE_DYNAMIC ? 'ON' : 'OFF'}",
+  "-DUTILS_UPDATE_3RDPARTY=OFF",
+  "-DUTILS_ALLOW_NETWORK_FETCH=OFF"
 ].freeze
 
 def cmake_options(enable_tests:)
@@ -71,9 +73,6 @@ def visual_studio_arch
 end
 
 def configure_and_build(bits: nil, enable_tests: false, target: 'install')
-  FileUtils.rm_rf('lib')
-  FileUtils.rm_rf('build')
-
   in_dir('build') do
     bits_opt = bits ? "-DBITS=#{bits}" : ''
     target_opt = target ? "--target #{target}" : ''

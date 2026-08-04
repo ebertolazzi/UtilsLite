@@ -131,6 +131,7 @@ option(UTILS_BUILD_SHARED "Build the UtilsLite shared library" OFF)
 option(UTILS_ENABLE_TESTS "Build UtilsLite tests" ${PROJECT_IS_TOP_LEVEL})
 option(UTILS_INSTALL_LOCAL "Enable UtilsLite install rules" ${PROJECT_IS_TOP_LEVEL})
 option(UTILS_UPDATE_3RDPARTY "Download and regenerate vendored 3rd-party headers in src/Utils/3rd" OFF)
+option(UTILS_ALLOW_NETWORK_FETCH "Allow network downloads when refreshing third-party headers" OFF)
 
 
 # --------------------------------------------------------------------------
@@ -362,9 +363,10 @@ endif()
 # This is intentionally opt-in because it modifies files under src/Utils/3rd.
 # It is enabled only for a top-level build, not when UtilsLite is embedded by
 # another project.
-if(UTILS_UPDATE_3RDPARTY AND PROJECT_IS_TOP_LEVEL)
-  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Update3rdParties.cmake")
-  utils_update_3rdparties()
+if(UTILS_UPDATE_3RDPARTY AND NOT UTILS_ALLOW_NETWORK_FETCH)
+  message(FATAL_ERROR
+    "UTILS_UPDATE_3RDPARTY=ON requires UTILS_ALLOW_NETWORK_FETCH=ON. "
+    "Normal builds use the committed src/Utils/3rd headers and never access the network.")
 endif()
 
 # --------------------------------------------------------------------------
@@ -500,6 +502,8 @@ endfunction()
 # Each block asks utils_resolve_dependency() to either use a local checkout or
 # fetch the requested archive.  The *_ROOT variables are then converted to
 # include roots as needed by the synchronization step and target include paths.
+if(UTILS_UPDATE_3RDPARTY)
+message(STATUS "UtilsLite: refreshing vendored dependencies (network fallback explicitly enabled)")
 utils_resolve_dependency(
   utils_eigen
   "${UTILS_EIGEN_LOCAL_DIR}"
@@ -551,6 +555,23 @@ utils_resolve_dependency(
 # After all dependency roots are known, refresh the vendored header tree used
 # by the build and install rules.
 utils_sync_resolved_3rdparty()
+else()
+  set(UTILS_VENDORED_ROOT "${SOURCE_DIR}/Utils/3rd")
+  set(UTILS_EIGEN_ROOT "${UTILS_VENDORED_ROOT}")
+  set(UTILS_EIGEN_INCLUDE_DIR "${UTILS_VENDORED_ROOT}")
+  set(UTILS_CLI11_ROOT "${UTILS_VENDORED_ROOT}")
+  set(UTILS_CLI11_INCLUDE_DIR "${UTILS_VENDORED_ROOT}")
+  set(UTILS_FMT_ROOT "${UTILS_VENDORED_ROOT}")
+  set(UTILS_FMT_INCLUDE_DIR "${UTILS_VENDORED_ROOT}")
+  set(UTILS_BS_THREAD_POOL_ROOT "${UTILS_VENDORED_ROOT}")
+  set(UTILS_AUTODIFF_ROOT "${UTILS_VENDORED_ROOT}")
+  set(UTILS_EIGEN_SOURCE "vendored: src/Utils/3rd/Eigen")
+  set(UTILS_CLI11_SOURCE "vendored: src/Utils/3rd/CLI")
+  set(UTILS_FMT_SOURCE "vendored: src/Utils/3rd/fmt")
+  set(UTILS_BS_THREAD_POOL_SOURCE "vendored: src/Utils/3rd/BS_thread_pool.hpp")
+  set(UTILS_AUTODIFF_SOURCE "vendored: src/Utils/3rd/autodiff")
+  message(STATUS "UtilsLite: using committed third-party headers; network access disabled")
+endif()
 
 # --------------------------------------------------------------------------
 # Source discovery
