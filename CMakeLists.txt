@@ -113,6 +113,7 @@ project(
 include(GNUInstallDirs)
 include(CTest)
 include(FetchContent)
+include(CheckIPOSupported)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Update3rdParties.cmake")
 
 # --------------------------------------------------------------------------
@@ -130,6 +131,55 @@ option(UTILS_BUILD_SHARED "Build the UtilsLite shared library" OFF)
 option(UTILS_ENABLE_TESTS "Build UtilsLite tests" ${PROJECT_IS_TOP_LEVEL})
 option(UTILS_INSTALL_LOCAL "Enable UtilsLite install rules" ${PROJECT_IS_TOP_LEVEL})
 option(UTILS_UPDATE_3RDPARTY "Download and regenerate vendored 3rd-party headers in src/Utils/3rd" OFF)
+
+
+# --------------------------------------------------------------------------
+# Compilation and optimization options
+# --------------------------------------------------------------------------
+# Native CPU tuning is enabled for ordinary single-architecture builds, but
+# disabled by default for Apple universal binaries: -march=native cannot
+# describe both arm64 and x86_64 slices in the same artifact.
+set(UTILS_APPLE_MULTI_ARCH FALSE)
+if(APPLE AND CMAKE_OSX_ARCHITECTURES)
+  list(LENGTH CMAKE_OSX_ARCHITECTURES UTILS_OSX_ARCHITECTURE_COUNT)
+  if(UTILS_OSX_ARCHITECTURE_COUNT GREATER 1)
+    set(UTILS_APPLE_MULTI_ARCH TRUE)
+  endif()
+endif()
+
+set(UTILS_USE_NATIVE_ARCH_DEFAULT ON)
+if(UTILS_APPLE_MULTI_ARCH)
+  set(UTILS_USE_NATIVE_ARCH_DEFAULT OFF)
+endif()
+
+option(
+  UTILS_USE_NATIVE_ARCH
+  "Optimize Release builds for the current CPU architecture"
+  ${UTILS_USE_NATIVE_ARCH_DEFAULT}
+)
+option(UTILS_ENABLE_LTO "Enable interprocedural optimization / LTO" ON)
+option(UTILS_UNROLL_LOOPS "Enable explicit loop unrolling in Release builds" OFF)
+option(
+  UTILS_ENABLE_FAST_MATH
+  "Enable aggressive floating-point optimizations; may change IEEE-754 semantics"
+  OFF
+)
+
+# Probe IPO/LTO support once and reuse the result for every UtilsLite target.
+set(UTILS_IPO_SUPPORTED FALSE)
+set(UTILS_IPO_STATUS "disabled")
+if(UTILS_ENABLE_LTO)
+  check_ipo_supported(
+    RESULT UTILS_IPO_SUPPORTED
+    OUTPUT UTILS_IPO_ERROR
+    LANGUAGES CXX
+  )
+  if(UTILS_IPO_SUPPORTED)
+    set(UTILS_IPO_STATUS "enabled")
+  else()
+    set(UTILS_IPO_STATUS "not supported: ${UTILS_IPO_ERROR}")
+  endif()
+endif()
 
 # --------------------------------------------------------------------------
 # Third-party dependency versions
@@ -579,9 +629,92 @@ function(utils_configure_target target_name)
       FMT_HEADER_ONLY
   )
 
-  # Enable common warnings for GCC/Clang-like compilers on the project target.
-  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang|GNU")
-    target_compile_options(${target_name} PRIVATE -Wall -Wextra)
+  # Diagnostics and conformance warnings.  Keep them target-local so UtilsLite
+  # does not inject warning flags into parent projects when used as a dependency.
+  target_compile_options(
+    ${target_name}
+    PRIVATE
+      $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall>
+      $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wextra>
+      $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wpedantic>
+      $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wshadow>
+      $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wnon-virtual-dtor>
+      $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Woverloaded-virtual>
+      $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wcast-align>
+      $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wunused>
+      $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wformat=2>
+      $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wimplicit-fallthrough>
+      $<$<CXX_COMPILER_ID:GNU>:-Wduplicated-cond>
+      $<$<CXX_COMPILER_ID:GNU>:-Wduplicated-branches>
+      $<$<CXX_COMPILER_ID:GNU>:-Wlogical-op>
+      $<$<CXX_COMPILER_ID:GNU>:-Wnull-dereference>
+      $<$<CXX_COMPILER_ID:GNU>:-Wmisleading-indentation>
+      $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Wno-poison-system-directories>
+      $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Wno-switch-default>
+      $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Wno-exit-time-destructors>
+      $<$<CXX_COMPILER_ID:MSVC>:/W4>
+      $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+      $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
+  )
+
+  # Explicit optimization policy.  These generator expressions work with both
+  # single-configuration generators (Ninja/Makefiles) and multi-config IDEs.
+  target_compile_options(
+    ${target_name}
+    PRIVATE
+      $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-O3>
+      $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/O2>
+      $<$<AND:$<CONFIG:RelWithDebInfo>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-O2>
+      $<$<AND:$<CONFIG:RelWithDebInfo>,$<CXX_COMPILER_ID:MSVC>>:/O2>
+  )
+
+  target_compile_definitions(
+    ${target_name}
+    PRIVATE
+      $<$<CONFIG:Release>:NDEBUG>
+      $<$<CONFIG:Release>:EIGEN_NO_DEBUG>
+  )
+
+  if(UTILS_USE_NATIVE_ARCH)
+    if(UTILS_APPLE_MULTI_ARCH)
+      message(STATUS
+        "Skipping native CPU flags for ${target_name}: Apple universal build uses "
+        "CMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}"
+      )
+    else()
+      target_compile_options(
+        ${target_name}
+        PRIVATE
+          $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-march=native>
+          $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-mtune=native>
+          $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:IntelLLVM>>:-xHost>
+          $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/arch:AVX2>
+      )
+    endif()
+  endif()
+
+  if(UTILS_UNROLL_LOOPS)
+    target_compile_options(
+      ${target_name}
+      PRIVATE
+        $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-funroll-loops>
+    )
+  endif()
+
+  # Deliberately OFF by default because it permits reassociation and other
+  # transformations that weaken strict IEEE-754 behavior.
+  if(UTILS_ENABLE_FAST_MATH)
+    target_compile_options(
+      ${target_name}
+      PRIVATE
+        $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-ffast-math>
+        $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/fp:fast>
+    )
+  endif()
+
+  if(UTILS_IPO_SUPPORTED)
+    set_property(TARGET ${target_name} PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+    set_property(TARGET ${target_name} PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO ON)
   endif()
 
   # For Apple universal builds, explicitly attach the architecture list to
@@ -874,6 +1007,12 @@ if(APPLE)
   endif()
 endif()
 message(STATUS "  Build shared     : ${UTILS_BUILD_SHARED}")
+message(STATUS "  Native arch      : ${UTILS_USE_NATIVE_ARCH}")
+message(STATUS "  Apple multi-arch : ${UTILS_APPLE_MULTI_ARCH}")
+message(STATUS "  LTO requested    : ${UTILS_ENABLE_LTO}")
+message(STATUS "  LTO status       : ${UTILS_IPO_STATUS}")
+message(STATUS "  Loop unrolling   : ${UTILS_UNROLL_LOOPS}")
+message(STATUS "  Fast math        : ${UTILS_ENABLE_FAST_MATH}")
 message(STATUS "  Build tests      : ${UTILS_ENABLE_TESTS}")
 message(STATUS "  Install rules    : ${UTILS_INSTALL_LOCAL}")
 message(STATUS "  Headers install  : ${CMAKE_INSTALL_INCLUDEDIR}")
@@ -884,4 +1023,38 @@ message(STATUS "  CLI11            : ${UTILS_CLI11_SOURCE}")
 message(STATUS "  fmt              : ${UTILS_FMT_SOURCE}")
 message(STATUS "  BS thread pool   : ${UTILS_BS_THREAD_POOL_SOURCE}")
 message(STATUS "  autodiff         : ${UTILS_AUTODIFF_SOURCE}")
+
+set(UTILS_EFFECTIVE_OPTIMIZATION_FLAGS)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+  list(APPEND UTILS_EFFECTIVE_OPTIMIZATION_FLAGS "Release:-O3" "RelWithDebInfo:-O2")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  list(APPEND UTILS_EFFECTIVE_OPTIMIZATION_FLAGS "Release:/O2" "RelWithDebInfo:/O2")
+endif()
+if(UTILS_USE_NATIVE_ARCH)
+  if(UTILS_APPLE_MULTI_ARCH)
+    list(APPEND UTILS_EFFECTIVE_OPTIMIZATION_FLAGS "native-arch:disabled-for-Apple-universal-build")
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+    list(APPEND UTILS_EFFECTIVE_OPTIMIZATION_FLAGS "Release:-march=native" "Release:-mtune=native")
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+    list(APPEND UTILS_EFFECTIVE_OPTIMIZATION_FLAGS "Release:-xHost")
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    list(APPEND UTILS_EFFECTIVE_OPTIMIZATION_FLAGS "Release:/arch:AVX2")
+  endif()
+endif()
+if(UTILS_UNROLL_LOOPS AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+  list(APPEND UTILS_EFFECTIVE_OPTIMIZATION_FLAGS "Release:-funroll-loops")
+endif()
+if(UTILS_ENABLE_FAST_MATH)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+    list(APPEND UTILS_EFFECTIVE_OPTIMIZATION_FLAGS "Release:-ffast-math")
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    list(APPEND UTILS_EFFECTIVE_OPTIMIZATION_FLAGS "Release:/fp:fast")
+  endif()
+endif()
+if(UTILS_IPO_SUPPORTED)
+  list(APPEND UTILS_EFFECTIVE_OPTIMIZATION_FLAGS "Release/RelWithDebInfo:IPO/LTO")
+endif()
+list(APPEND UTILS_EFFECTIVE_OPTIMIZATION_FLAGS "Release:NDEBUG" "Release:EIGEN_NO_DEBUG")
+list(JOIN UTILS_EFFECTIVE_OPTIMIZATION_FLAGS " " UTILS_EFFECTIVE_OPTIMIZATION_FLAGS_TEXT)
+message(STATUS "  Optimization flags: ${UTILS_EFFECTIVE_OPTIMIZATION_FLAGS_TEXT}")
 message(STATUS "")
