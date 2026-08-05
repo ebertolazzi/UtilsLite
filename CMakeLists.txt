@@ -101,6 +101,15 @@ project(
 )
 
 # --------------------------------------------------------------------------
+# Project-wide naming and source-root variables
+# --------------------------------------------------------------------------
+# UTILS_NAMESPACE is used for internal target names and exported aliases.
+# SOURCE_DIR centralizes the source tree root used by source discovery, include
+# directories and installation rules.
+set(UTILS_NAMESPACE utils)
+set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+
+# --------------------------------------------------------------------------
 # Standard CMake modules and project helper modules
 # --------------------------------------------------------------------------
 # GNUInstallDirs defines portable install directory variables such as
@@ -133,6 +142,33 @@ option(UTILS_INSTALL_LOCAL "Enable UtilsLite install rules" ${PROJECT_IS_TOP_LEV
 option(UTILS_UPDATE_3RDPARTY "Download and regenerate vendored 3rd-party headers in src/Utils/3rd" OFF)
 option(UTILS_ALLOW_NETWORK_FETCH "Allow network downloads when refreshing third-party headers" OFF)
 
+# --------------------------------------------------------------------------
+# Check presence of vendored third-party headers
+# --------------------------------------------------------------------------
+# If the required files are missing and the user has not explicitly requested
+# a refresh, stop with a clear error message.
+set(UTILS_3RD_REQUIRED_FILES
+  "${SOURCE_DIR}/Utils/3rd/Eigen/Core"
+  "${SOURCE_DIR}/Utils/3rd/fmt/format.h"
+  "${SOURCE_DIR}/Utils/3rd/CLI/CLI.hpp"
+  "${SOURCE_DIR}/Utils/3rd/BS_thread_pool.hpp"
+  "${SOURCE_DIR}/Utils/3rd/autodiff/forward/dual.hpp"
+)
+set(UTILS_3RD_MISSING FALSE)
+foreach(f IN LISTS UTILS_3RD_REQUIRED_FILES)
+  if(NOT EXISTS "${f}")
+    set(UTILS_3RD_MISSING TRUE)
+    message(STATUS "UtilsLite: missing vendored file: ${f}")
+  endif()
+endforeach()
+
+if(UTILS_3RD_MISSING AND NOT UTILS_UPDATE_3RDPARTY)
+  message(FATAL_ERROR
+    "Vendored third-party headers in src/Utils/3rd are incomplete or missing.\n"
+    "Please set -DUTILS_UPDATE_3RDPARTY=ON -DUTILS_ALLOW_NETWORK_FETCH=ON to regenerate them.\n"
+    "If you are building from a source distribution, ensure the src/Utils/3rd directory is complete."
+  )
+endif()
 
 # --------------------------------------------------------------------------
 # Compilation and optimization options
@@ -202,8 +238,8 @@ endif()
 # --------------------------------------------------------------------------
 # The build first looks for sibling checkouts next to this project.  This is
 # useful for development because it avoids network access and allows local
-# dependency modifications.  If the expected probe file is missing, the
-# dependency is obtained through FetchContent instead.
+# dependency modifications. A checkout is accepted only when its current Git
+# branch matches the configured fetch version; otherwise FetchContent is used.
 set(
   UTILS_EIGEN_LOCAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../eigen"
   CACHE PATH "Path to a local Eigen checkout to use before FetchContent"
@@ -276,15 +312,6 @@ if(PROJECT_IS_TOP_LEVEL)
     "${CMAKE_CURRENT_SOURCE_DIR}/lib/bin"
   )
 endif()
-
-# --------------------------------------------------------------------------
-# Project-wide naming and source-root variables
-# --------------------------------------------------------------------------
-# UTILS_NAMESPACE is used for internal target names and exported aliases.
-# SOURCE_DIR centralizes the source tree root used by source discovery, include
-# directories and installation rules.
-set(UTILS_NAMESPACE utils)
-set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 # --------------------------------------------------------------------------
 # Platform suffix used in generated library names
@@ -376,24 +403,81 @@ endif()
 #   dep_name   FetchContent identifier.
 #   local_dir  Preferred local checkout path.
 #   probe_rel  File/directory expected inside local_dir to prove it is valid.
+#   expected_ref Git ref (branch, tag, or commit) that a local checkout must match.
 #   url        Archive URL used by FetchContent if local_dir is not valid.
 #   out_root   Output variable receiving the resolved dependency root.
 #   out_source Output variable receiving a human-readable source description.
 #
 # The result variables are returned to the caller with PARENT_SCOPE.
-function(utils_resolve_dependency dep_name local_dir probe_rel url out_root out_source)
+function(utils_resolve_dependency dep_name local_dir probe_rel expected_ref url out_root out_source)
   # Normalize the local path relative to this source directory so callers may
   # pass relative paths consistently.
   get_filename_component(_local_abs "${local_dir}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-  # Prefer the local checkout if the probe path exists.  This avoids network
-  # access and lets developers work against sibling dependency repositories.
-  if(EXISTS "${_local_abs}/${probe_rel}")
+  set(_local_matches FALSE)
+  set(_local_desc "not available")
+  if(EXISTS "${_local_abs}/${probe_rel}" AND GIT_EXECUTABLE)
+    # Get current commit hash (works for both branches and detached HEAD)
+    execute_process(
+      COMMAND "${GIT_EXECUTABLE}" -C "${_local_abs}" rev-parse HEAD
+      RESULT_VARIABLE _rev_result
+      OUTPUT_VARIABLE _local_commit
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_QUIET
+    )
+    # Get current branch name if on a branch, otherwise "detached"
+    execute_process(
+      COMMAND "${GIT_EXECUTABLE}" -C "${_local_abs}" symbolic-ref --quiet --short HEAD
+      RESULT_VARIABLE _branch_result
+      OUTPUT_VARIABLE _local_branch
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_QUIET
+    )
+    if(_branch_result EQUAL 0)
+      set(_local_desc "branch '${_local_branch}'")
+    else()
+      set(_local_desc "detached at ${_local_commit}")
+    endif()
+
+    # Check if local checkout matches expected_ref:
+    # 1. If expected_ref looks like a tag (starts with v or is semantic version), verify commit matches tag
+    # 2. Otherwise treat as branch name and compare branch
+    if(_rev_result EQUAL 0)
+      if(expected_ref MATCHES "^v?[0-9]+\\.[0-9]+\\.[0-9]+")
+        # Expected ref is a version/tag - check if current commit matches that tag
+        execute_process(
+          COMMAND "${GIT_EXECUTABLE}" -C "${_local_abs}" rev-parse "refs/tags/${expected_ref}"
+          RESULT_VARIABLE _tag_result
+          OUTPUT_VARIABLE _tag_commit
+          OUTPUT_STRIP_TRAILING_WHITESPACE
+          ERROR_QUIET
+        )
+        if(_tag_result EQUAL 0 AND _tag_commit STREQUAL _local_commit)
+          set(_local_matches TRUE)
+        endif()
+      else()
+        # Expected ref is a branch name
+        if(_branch_result EQUAL 0 AND _local_branch STREQUAL expected_ref)
+          set(_local_matches TRUE)
+        endif()
+      endif()
+    endif()
+  endif()
+
+  if(_local_matches)
+    message(STATUS "UtilsLite: ${dep_name} -> local ${_local_abs} (${_local_desc}, matches '${expected_ref}')")
     set(${out_root} "${_local_abs}" PARENT_SCOPE)
-    set(${out_source} "local: ${_local_abs}" PARENT_SCOPE)
+    set(${out_source} "local: ${_local_abs} [${_local_desc}]" PARENT_SCOPE)
     return()
   endif()
 
-  # Local checkout not found: declare and populate the dependency from the
+  if(EXISTS "${_local_abs}/${probe_rel}")
+    message(STATUS "UtilsLite: ${dep_name} -> ignoring local ${_local_abs} (${_local_desc}, expected '${expected_ref}')")
+  else()
+    message(STATUS "UtilsLite: ${dep_name} -> local checkout not found at ${_local_abs}")
+  endif()
+  message(STATUS "UtilsLite: ${dep_name} -> FetchContent (requested '${expected_ref}')")
+
+  # Local checkout not found or doesn't match: declare and populate the dependency from the
   # configured archive URL.  DOWNLOAD_EXTRACT_TIMESTAMP is aligned with CMP0135
   # so extracted files get deterministic timestamps.
   FetchContent_Declare(
@@ -409,7 +493,7 @@ function(utils_resolve_dependency dep_name local_dir probe_rel url out_root out_
   # Return the FetchContent source directory and a description used in the
   # configuration summary printed at the end of this file.
   set(${out_root} "${${dep_name}_SOURCE_DIR}" PARENT_SCOPE)
-  set(${out_source} "FetchContent: ${url}" PARENT_SCOPE)
+  set(${out_source} "FetchContent: ${expected_ref} (${url})" PARENT_SCOPE)
 endfunction()
 
 # --------------------------------------------------------------------------
@@ -432,9 +516,6 @@ endfunction()
 # --------------------------------------------------------------------------
 # Synchronize resolved third-party headers into src/Utils/3rd
 # --------------------------------------------------------------------------
-# This project vendors selected header-only dependencies into Utils/3rd.
-# The function copies the resolved dependency headers and applies include-path
-# rewrites where needed so installed headers can be used standalone.
 function(utils_sync_resolved_3rdparty)
   set(_third_party_dir "${SOURCE_DIR}/Utils/3rd")
   set(_stage_dir "${CMAKE_CURRENT_BINARY_DIR}/_utils_3rd_stage")
@@ -442,8 +523,22 @@ function(utils_sync_resolved_3rdparty)
   file(MAKE_DIRECTORY "${_stage_dir}")
 
   # Eigen: copy the main Eigen include tree.
+  message(STATUS "UtilsLite: copying Eigen headers from ${UTILS_EIGEN_INCLUDE_DIR}/Eigen to ${_third_party_dir}/Eigen")
   file(REMOVE_RECURSE "${_third_party_dir}/Eigen")
-  file(COPY "${UTILS_EIGEN_INCLUDE_DIR}/Eigen" DESTINATION "${_third_party_dir}")
+  # Use REAL_PATH to correctly compare paths (handles symlinks, relative vs absolute)
+  file(REAL_PATH "${UTILS_EIGEN_INCLUDE_DIR}/Eigen" _eigen_src_real)
+  file(REAL_PATH "${_third_party_dir}/Eigen" _eigen_dst_real)
+  if(NOT _eigen_src_real STREQUAL _eigen_dst_real)
+    file(COPY "${UTILS_EIGEN_INCLUDE_DIR}/Eigen" DESTINATION "${_third_party_dir}")
+  endif()
+  # Verifica che la copia sia avvenuta correttamente
+  if(NOT EXISTS "${_third_party_dir}/Eigen/Core")
+    message(FATAL_ERROR
+      "Failed to copy Eigen headers: ${_third_party_dir}/Eigen/Core not found.\n"
+      "Check that UTILS_EIGEN_INCLUDE_DIR points to a valid Eigen distribution.\n"
+      "Current value: ${UTILS_EIGEN_INCLUDE_DIR}"
+    )
+  endif()
 
   # Eigen unsupported modules are optional; copy them only if the resolved
   # Eigen distribution provides the unsupported/ directory.
@@ -508,6 +603,7 @@ utils_resolve_dependency(
   utils_eigen
   "${UTILS_EIGEN_LOCAL_DIR}"
   "Eigen/Core"
+  "${UTILS_EIGEN_VERSION}"
   "https://gitlab.com/libeigen/eigen/-/archive/${UTILS_EIGEN_VERSION}/eigen-${UTILS_EIGEN_VERSION}.tar.gz"
   UTILS_EIGEN_ROOT
   UTILS_EIGEN_SOURCE
@@ -518,6 +614,7 @@ utils_resolve_dependency(
   utils_cli11
   "${UTILS_CLI11_LOCAL_DIR}"
   "include/CLI/CLI.hpp"
+  "v${UTILS_CLI11_VERSION}"
   "https://github.com/CLIUtils/CLI11/archive/refs/tags/v${UTILS_CLI11_VERSION}.tar.gz"
   UTILS_CLI11_ROOT
   UTILS_CLI11_SOURCE
@@ -528,6 +625,7 @@ utils_resolve_dependency(
   utils_fmt
   "${UTILS_FMT_LOCAL_DIR}"
   "include/fmt/format.h"
+  "${UTILS_FMT_VERSION}"
   "https://github.com/fmtlib/fmt/archive/refs/tags/${UTILS_FMT_VERSION}.tar.gz"
   UTILS_FMT_ROOT
   UTILS_FMT_SOURCE
@@ -538,6 +636,7 @@ utils_resolve_dependency(
   utils_bs_thread_pool
   "${UTILS_BS_THREAD_POOL_LOCAL_DIR}"
   "include/BS_thread_pool.hpp"
+  "v${UTILS_BS_THREAD_POOL_VERSION}"
   "https://github.com/bshoshany/thread-pool/archive/refs/tags/v${UTILS_BS_THREAD_POOL_VERSION}.tar.gz"
   UTILS_BS_THREAD_POOL_ROOT
   UTILS_BS_THREAD_POOL_SOURCE
@@ -547,6 +646,7 @@ utils_resolve_dependency(
   utils_autodiff
   "${UTILS_AUTODIFF_LOCAL_DIR}"
   "autodiff/forward/dual.hpp"
+  "${UTILS_AUTODIFF_VERSION}"
   "https://github.com/ebertolazzi/autodiff/archive/refs/heads/${UTILS_AUTODIFF_VERSION}.tar.gz"
   UTILS_AUTODIFF_ROOT
   UTILS_AUTODIFF_SOURCE
@@ -616,7 +716,12 @@ set(INCLUDE_DIRS
 file(GLOB_RECURSE UTILS_SUBDIRS CONFIGURE_DEPENDS "${SOURCE_DIR}/Utils/*/")
 foreach(DIR IN LISTS UTILS_SUBDIRS)
   if(IS_DIRECTORY "${DIR}")
-    list(APPEND INCLUDE_DIRS "${DIR}")
+    # Exclude vendored third-party subdirectories to avoid polluting include paths
+    # (e.g. Utils/3rd/Eigen, Utils/3rd/autodiff would allow #include <Core> instead of #include <Eigen/Core>)
+    string(FIND "${DIR}" "/Utils/3rd/" _is_3rd)
+    if(_is_3rd EQUAL -1)
+      list(APPEND INCLUDE_DIRS "${DIR}")
+    endif()
   endif()
 endforeach()
 list(REMOVE_DUPLICATES INCLUDE_DIRS)

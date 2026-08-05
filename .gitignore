@@ -24,9 +24,5 @@ doxygen/docs
 lib
 lib3rd
 line_search_results.csv
-src/Utils/3rd
-ThirdParties/autodiff/autodiff
-ThirdParties/Eigen/eigen-3.4.0
-ThirdParties/spdlog/spdlog-1.15.3
 tvd_test_results
 Xcode

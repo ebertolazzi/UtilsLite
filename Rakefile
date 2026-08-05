@@ -128,15 +128,6 @@ task :git_clean do
   sh 'git clean -d -x -f'
 end
 
-desc 'Install optional ThirdParties, if present'
-task :install_3rd do
-  if Dir.exist?('ThirdParties')
-    Dir.chdir('ThirdParties') { sh 'rake install' }
-  else
-    puts 'ThirdParties directory not found; skipping'.yellow
-  end
-end
-
 desc 'Generate compile_commands.json and run cppcheck'
 task :cppcheck do
   FileUtils.rm_rf('build')
@@ -151,6 +142,14 @@ task :cpack do
   Dir.chdir('build') do
     sh 'cpack -C CPackConfig.cmake'
     sh 'cpack -C CPackSourceConfig.cmake'
+  end
+end
+
+desc 'get 3rd software'
+task :get_3rd do
+  FileUtils.rm_rf('build')
+  in_dir('build') do
+    sh 'cmake -DUTILS_UPDATE_3RDPARTY=ON -DUTILS_ALLOW_NETWORK_FETCH=ON ..'
   end
 end
 

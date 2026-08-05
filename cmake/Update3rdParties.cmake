@@ -18,17 +18,6 @@
 ############################################################################
 
 include_guard(GLOBAL)
-include(FetchContent)
-
-# ----------------------------------------------------------------------------
-# Pinned versions (match the previous ThirdParties/*/Rakefile values)
-# ----------------------------------------------------------------------------
-set(UTILS_3RD_EIGEN_VERSION            "5.0.1"  CACHE STRING "Eigen version to vendor")
-set(UTILS_3RD_BS_THREAD_POOL_VERSION   "5.0.0"  CACHE STRING "BS::thread_pool version to vendor")
-set(UTILS_3RD_AUTODIFF_VERSION         "main"  CACHE STRING "autodiff branch or tag to vendor")
-if(UTILS_3RD_AUTODIFF_VERSION STREQUAL "1.1.2")
-  set(UTILS_3RD_AUTODIFF_VERSION "main" CACHE STRING "autodiff branch or tag to vendor" FORCE)
-endif()
 
 # ----------------------------------------------------------------------------
 # Helper: rewrite #include directives in a single file.
@@ -117,82 +106,6 @@ function(_utils_replace_dir SRC DST)
   get_filename_component(_parent "${DST}" DIRECTORY)
   file(MAKE_DIRECTORY "${_parent}")
   file(COPY "${SRC}/" DESTINATION "${DST}")
-endfunction()
-
-# ----------------------------------------------------------------------------
-# Main entry point.
-# ----------------------------------------------------------------------------
-function(utils_update_3rdparties)
-  set(_root  "${CMAKE_CURRENT_SOURCE_DIR}")
-  set(_dst   "${_root}/src/Utils/3rd")
-  set(_stage "${CMAKE_BINARY_DIR}/_3rd_stage")
-
-  file(MAKE_DIRECTORY "${_dst}")
-  file(REMOVE_RECURSE "${_stage}")
-  file(MAKE_DIRECTORY "${_stage}")
-
-  message(STATUS "==============================================================")
-  message(STATUS "Regenerating vendored third-party headers in ${_dst}")
-  message(STATUS "==============================================================")
-
-  # Download (extract only, never add_subdirectory) --------------------------
-  # The bogus SOURCE_SUBDIR keeps FetchContent from configuring each project.
-  FetchContent_Declare( eigen_src
-    URL "https://gitlab.com/libeigen/eigen/-/archive/${UTILS_3RD_EIGEN_VERSION}/eigen-${UTILS_3RD_EIGEN_VERSION}.zip"
-    SOURCE_SUBDIR _do_not_configure )
-  FetchContent_Declare( bs_thread_pool_src
-    URL "https://github.com/bshoshany/thread-pool/archive/refs/tags/v${UTILS_3RD_BS_THREAD_POOL_VERSION}.tar.gz"
-    SOURCE_SUBDIR _do_not_configure )
-  FetchContent_Declare( autodiff_src
-    URL "https://github.com/ebertolazzi/autodiff/archive/refs/heads/${UTILS_3RD_AUTODIFF_VERSION}.tar.gz"
-    SOURCE_SUBDIR _do_not_configure )
-
-  FetchContent_MakeAvailable(
-    eigen_src bs_thread_pool_src autodiff_src )
-
-  # --- Eigen ----------------------------------------------------------------
-  # Copy the Eigen/ header tree verbatim (no include rewriting needed).
-  message(STATUS "Vendoring Eigen ${UTILS_3RD_EIGEN_VERSION}")
-  _utils_replace_dir("${eigen_src_SOURCE_DIR}/Eigen" "${_dst}/Eigen")
-
-  # --- CLI11 ----------------------------------------------------------------
-  # Rewrite vendored CLI headers to use file-relative quoted includes.
-  message(STATUS "Vendoring CLI11")
-  set(_cli_stage "${_stage}/CLI")
-  file(COPY "${cli11_src_SOURCE_DIR}/include/CLI/" DESTINATION "${_cli_stage}")
-  _utils_rewrite_prefixed_includes_recursive("${_cli_stage}" "CLI")
-  _utils_replace_dir("${_cli_stage}" "${_dst}/CLI")
-  file(WRITE "${_dst}/CLI11.hpp" "#pragma once\n#include \"CLI/CLI.hpp\"\n")
-  # --- BS::thread_pool (single header) --------------------------------------
-  message(STATUS "Vendoring BS::thread_pool ${UTILS_3RD_BS_THREAD_POOL_VERSION}")
-  file(COPY "${bs_thread_pool_src_SOURCE_DIR}/include/BS_thread_pool.hpp"
-       DESTINATION "${_dst}")
-
-  # --- autodiff -------------------------------------------------------------
-  # Flatten <autodiff/...> and redirect <Eigen/...> to the vendored copy,
-  # then patch the tanh derivative (matches the original Rakefile).
-  message(STATUS "Vendoring autodiff ${UTILS_3RD_AUTODIFF_VERSION}")
-  set(_autodiff_stage "${_stage}/autodiff")
-  file(COPY "${autodiff_src_SOURCE_DIR}/autodiff/" DESTINATION "${_autodiff_stage}")
-  # Upstream ships a Bazel BUILD file in the headers dir; the vendored tree
-  # does not carry it. Drop it so the result matches the committed layout.
-  file(REMOVE "${_autodiff_stage}/BUILD")
-  # two levels deep (autodiff/*/*)
-  _utils_rewrite_glob("${_autodiff_stage}/*/*"
-    "#include <eigen3/Eigen/([^>]*)>" "#include \"../../../Eigen/\\1\""
-    "#include <Eigen/([^>]*)>"        "#include \"../../../Eigen/\\1\""
-    "#include <autodiff/([^>]*)>"     "#include \"../\\1\"")
-  # three levels deep (autodiff/*/*/*)
-  _utils_rewrite_glob("${_autodiff_stage}/*/*/*"
-    "#include <eigen3/Eigen/([^>]*)>" "#include \"../../../Eigen/\\1\""
-    "#include <Eigen/([^>]*)>"        "#include \"../../../Eigen/\\1\""
-    "#include <autodiff/([^>]*)>"     "#include \"../../\\1\"")
-  _utils_patch_autodiff("${_autodiff_stage}")
-  _utils_replace_dir("${_autodiff_stage}" "${_dst}/autodiff")
-
-  message(STATUS "==============================================================")
-  message(STATUS "Third-party headers regenerated. Review with `git diff`.")
-  message(STATUS "==============================================================")
 endfunction()
 
 # ----------------------------------------------------------------------------
