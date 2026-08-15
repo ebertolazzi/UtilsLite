@@ -153,6 +153,7 @@ set(UTILS_3RD_REQUIRED_FILES
   "${SOURCE_DIR}/Utils/3rd/CLI/CLI.hpp"
   "${SOURCE_DIR}/Utils/3rd/BS_thread_pool.hpp"
   "${SOURCE_DIR}/Utils/3rd/autodiff/forward/dual.hpp"
+  "${SOURCE_DIR}/Utils/3rd/TinyAD/Scalar.hh"
 )
 set(UTILS_3RD_MISSING FALSE)
 foreach(f IN LISTS UTILS_3RD_REQUIRED_FILES)
@@ -195,7 +196,7 @@ option(
   ${UTILS_USE_NATIVE_ARCH_DEFAULT}
 )
 option(UTILS_ENABLE_LTO "Enable interprocedural optimization / LTO" ON)
-option(UTILS_UNROLL_LOOPS "Enable explicit loop unrolling in Release builds" OFF)
+option(UTILS_UNROLL_LOOPS "Enable explicit loop unrolling in Release builds" ON)
 option(
   UTILS_ENABLE_FAST_MATH
   "Enable aggressive floating-point optimizations; may change IEEE-754 semantics"
@@ -229,6 +230,7 @@ set(UTILS_CLI11_VERSION "2.6.2" CACHE STRING "CLI11 version to fetch")
 set(UTILS_FMT_VERSION "12.2.0" CACHE STRING "fmt version to fetch")
 set(UTILS_BS_THREAD_POOL_VERSION "5.0.0" CACHE STRING "BS::thread_pool version to fetch")
 set(UTILS_AUTODIFF_VERSION "main" CACHE STRING "autodiff branch or tag to fetch")
+set(UTILS_TINYAD_VERSION "main" CACHE STRING "TinyAD branch or tag to fetch")
 if(UTILS_AUTODIFF_VERSION STREQUAL "1.1.2")
   set(UTILS_AUTODIFF_VERSION "main" CACHE STRING "autodiff branch or tag to fetch" FORCE)
 endif()
@@ -272,6 +274,10 @@ endif()
 set(
   UTILS_AUTODIFF_LOCAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../autodiff"
   CACHE PATH "Path to a local autodiff checkout to use before FetchContent"
+)
+set(
+  UTILS_TINYAD_LOCAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../TinyAD"
+  CACHE PATH "Path to a local TinyAD checkout to use before FetchContent"
 )
 
 # --------------------------------------------------------------------------
@@ -589,6 +595,15 @@ function(utils_sync_resolved_3rdparty)
     "#include <autodiff/([^>]*)>"     "#include \"../../\\1\"")
   _utils_patch_autodiff("${_autodiff_stage}")
   _utils_replace_dir("${_autodiff_stage}" "${_third_party_dir}/autodiff")
+
+  # TinyAD: vendor all public headers and rewrite TinyAD/Eigen includes to
+  # paths within Utils/3rd, matching the self-contained autodiff layout.
+  set(_tinyad_stage "${_stage_dir}/TinyAD")
+  file(REMOVE_RECURSE "${_tinyad_stage}")
+  file(COPY "${UTILS_TINYAD_ROOT}/include/TinyAD/" DESTINATION "${_tinyad_stage}")
+  file(COPY "${UTILS_TINYAD_ROOT}/LICENSE" DESTINATION "${_tinyad_stage}")
+  _utils_rewrite_tinyad_includes("${_tinyad_stage}" "${_third_party_dir}")
+  _utils_replace_dir("${_tinyad_stage}" "${_third_party_dir}/TinyAD")
 endfunction()
 
 # --------------------------------------------------------------------------
@@ -652,6 +667,16 @@ utils_resolve_dependency(
   UTILS_AUTODIFF_SOURCE
 )
 
+utils_resolve_dependency(
+  utils_tinyad
+  "${UTILS_TINYAD_LOCAL_DIR}"
+  "include/TinyAD/Scalar.hh"
+  "${UTILS_TINYAD_VERSION}"
+  "https://github.com/patr-schm/TinyAD/archive/refs/heads/${UTILS_TINYAD_VERSION}.tar.gz"
+  UTILS_TINYAD_ROOT
+  UTILS_TINYAD_SOURCE
+)
+
 # After all dependency roots are known, refresh the vendored header tree used
 # by the build and install rules.
 utils_sync_resolved_3rdparty()
@@ -665,11 +690,13 @@ else()
   set(UTILS_FMT_INCLUDE_DIR "${UTILS_VENDORED_ROOT}")
   set(UTILS_BS_THREAD_POOL_ROOT "${UTILS_VENDORED_ROOT}")
   set(UTILS_AUTODIFF_ROOT "${UTILS_VENDORED_ROOT}")
+  set(UTILS_TINYAD_ROOT "${UTILS_VENDORED_ROOT}")
   set(UTILS_EIGEN_SOURCE "vendored: src/Utils/3rd/Eigen")
   set(UTILS_CLI11_SOURCE "vendored: src/Utils/3rd/CLI")
   set(UTILS_FMT_SOURCE "vendored: src/Utils/3rd/fmt")
   set(UTILS_BS_THREAD_POOL_SOURCE "vendored: src/Utils/3rd/BS_thread_pool.hpp")
   set(UTILS_AUTODIFF_SOURCE "vendored: src/Utils/3rd/autodiff")
+  set(UTILS_TINYAD_SOURCE "vendored: src/Utils/3rd/TinyAD")
   message(STATUS "UtilsLite: using committed third-party headers; network access disabled")
 endif()
 
@@ -753,6 +780,9 @@ function(utils_configure_target target_name)
     ${target_name}
     PUBLIC
       FMT_HEADER_ONLY
+      # TinyAD is header-only: publish the Release setting so downstream
+      # consumers compile its headers without costly runtime assertions.
+      $<$<CONFIG:Release>:TINYAD_ENABLE_RUNTIME_CHECKS=0>
   )
 
   # Diagnostics and conformance warnings.  Keep them target-local so UtilsLite
@@ -1038,6 +1068,28 @@ if(UTILS_ENABLE_TESTS)
     endif()
     target_link_libraries(${TEST_NAME} PRIVATE ${LIBS})
     target_include_directories(${TEST_NAME} PRIVATE ${INCLUDE_DIRS})
+    # TinyAD and autodiff are header-only, so their hot paths are instantiated
+    # in each test executable rather than in the UtilsLite library. Mirror the
+    # selected Release optimizations here to make benchmark results meaningful.
+    if(UTILS_UNROLL_LOOPS)
+      target_compile_options(
+        ${TEST_NAME}
+        PRIVATE
+          $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-funroll-loops>
+      )
+    endif()
+    if(UTILS_ENABLE_FAST_MATH)
+      target_compile_options(
+        ${TEST_NAME}
+        PRIVATE
+          $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-ffast-math>
+          $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/fp:fast>
+      )
+    endif()
+    if(UTILS_IPO_SUPPORTED)
+      set_property(TARGET ${TEST_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+      set_property(TARGET ${TEST_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO ON)
+    endif()
     add_test(NAME ${TEST_NAME} COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/bin/${TEST_NAME}.exe")
     add_dependencies("${PROJECT_NAME}_all_tests" ${TEST_NAME})
   endforeach()
@@ -1149,6 +1201,7 @@ message(STATUS "  CLI11            : ${UTILS_CLI11_SOURCE}")
 message(STATUS "  fmt              : ${UTILS_FMT_SOURCE}")
 message(STATUS "  BS thread pool   : ${UTILS_BS_THREAD_POOL_SOURCE}")
 message(STATUS "  autodiff         : ${UTILS_AUTODIFF_SOURCE}")
+message(STATUS "  TinyAD           : ${UTILS_TINYAD_SOURCE}")
 
 set(UTILS_EFFECTIVE_OPTIMIZATION_FLAGS)
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")

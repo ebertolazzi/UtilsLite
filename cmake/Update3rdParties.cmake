@@ -100,6 +100,44 @@ function(_utils_rewrite_prefixed_includes_recursive ROOT PREFIX)
   endforeach()
 endfunction()
 
+# Rewrite TinyAD's public includes so the vendored copy is self-contained:
+# TinyAD headers refer to each other and to the sibling vendored Eigen tree
+# using relative paths instead of relying on external include directories.
+function(_utils_rewrite_tinyad_includes STAGE_DIR VENDORED_DIR)
+  file(GLOB_RECURSE _files "${STAGE_DIR}/*")
+  foreach(_f ${_files})
+    if(IS_DIRECTORY "${_f}")
+      continue()
+    endif()
+
+    file(READ "${_f}" _content)
+    set(_orig "${_content}")
+    get_filename_component(_file_dir "${_f}" DIRECTORY)
+
+    string(REGEX MATCHALL "#[ \t]*include[ \t]*<TinyAD/[^>]+>" _tinyad_matches "${_content}")
+    foreach(_match ${_tinyad_matches})
+      string(REGEX REPLACE ".*<TinyAD/([^>]+)>" "\\1" _suffix "${_match}")
+      file(RELATIVE_PATH _relative "${_file_dir}" "${STAGE_DIR}/${_suffix}")
+      string(REPLACE "${_match}" "#include \"${_relative}\"" _content "${_content}")
+    endforeach()
+
+    file(RELATIVE_PATH _stage_relative "${STAGE_DIR}" "${_f}")
+    get_filename_component(_stage_subdir "${_stage_relative}" DIRECTORY)
+    set(_vendored_file_dir "${VENDORED_DIR}/TinyAD/${_stage_subdir}")
+    string(REGEX MATCHALL "#[ \t]*include[ \t]*<Eigen/[^>]+>" _eigen_matches "${_content}")
+    foreach(_match ${_eigen_matches})
+      string(REGEX REPLACE ".*<Eigen/([^>]+)>" "\\1" _suffix "${_match}")
+      file(RELATIVE_PATH _relative "${_vendored_file_dir}" "${VENDORED_DIR}/Eigen/${_suffix}")
+      string(REPLACE "${_match}" "#include \"${_relative}\"" _content "${_content}")
+    endforeach()
+
+    if(NOT _content STREQUAL _orig)
+      file(WRITE "${_f}" "${_content}")
+      message(STATUS "  updated: ${_f}")
+    endif()
+  endforeach()
+endfunction()
+
 # Replace destination directory with a fresh copy of a source directory.
 function(_utils_replace_dir SRC DST)
   file(REMOVE_RECURSE "${DST}")
