@@ -56,7 +56,7 @@ static void test2()
   P.normalize();
   S.build( P );
 
-  constexpr double a{ 0 };
+  constexpr double a = 0;
   constexpr double b{ 0.1094 };
 
   fmt::print( "p(x) = {}\n", P.to_string() );
@@ -80,7 +80,7 @@ static void test3()
   P.normalize();
   S.build( P );
 
-  constexpr double a{ 0 };
+  constexpr double a = 0;
   constexpr double b{ 0.1094 };
 
   fmt::print( "p(x) = {}\n", P.to_string() );
@@ -117,7 +117,7 @@ static void test4()
   // P.normalize();
   S.build( P );
 
-  constexpr double a{ 0 };
+  constexpr double a = 0;
   constexpr double b{ 0.1100001 };
 
   fmt::print( "p(x) = {}\n", P.to_string() );
@@ -141,7 +141,7 @@ static void test5()
   // P.normalize();
   S.build( P );
 
-  constexpr double a{ 0 };
+  constexpr double a = 0;
   constexpr double b{ 0.15 };
 
   fmt::print( "p(x) = {}\n", P.to_string() );
@@ -190,7 +190,7 @@ static void test7()
   S.build( P );
 
   constexpr double a{ -2 };
-  constexpr double b{ 0 };
+  constexpr double b = 0;
 
   fmt::print( "p(x) = {}\n", P.to_string() );
 

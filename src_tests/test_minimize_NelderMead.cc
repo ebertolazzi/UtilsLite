@@ -53,11 +53,11 @@ using Vector   = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
 struct TestResult
 {
   std::string problem_name;
-  Scalar      final_value{ 0 };
-  size_t      dimension{ 0 };
-  size_t      outer_iters{ 0 };
-  size_t      inner_iters{ 0 };
-  size_t      total_evaluations{ 0 };
+  Scalar      final_value       = 0;
+  size_t      dimension         = 0;
+  size_t      outer_iters       = 0;
+  size_t      inner_iters       = 0;
+  size_t      total_evaluations = 0;
   std::string status_str;
 };
 

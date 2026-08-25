@@ -148,14 +148,14 @@ dvec_t generate_spike_signal( integer N, real_type noise_std = 0.05 )
 
 struct TVDMetrics
 {
-  real_type rmse{ 0 };             // Root Mean Square Error
-  real_type psnr{ 0 };             // Peak Signal-to-Noise Ratio (dB)
-  real_type tv_reduction{ 0 };     // Total Variation reduction (%)
-  real_type mae{ 0 };              // Mean Absolute Error
-  real_type max_error{ 0 };        // Maximum absolute error
-  real_type snr_improvement{ 0 };  // SNR improvement (dB)
-  real_type execution_ms{ 0 };     // Execution time (ms)
-  integer   segments{ 0 };         // Number of constant segments
+  real_type rmse            = 0;  // Root Mean Square Error
+  real_type psnr            = 0;  // Peak Signal-to-Noise Ratio (dB)
+  real_type tv_reduction    = 0;  // Total Variation reduction (%)
+  real_type mae             = 0;  // Mean Absolute Error
+  real_type max_error       = 0;  // Maximum absolute error
+  real_type snr_improvement = 0;  // SNR improvement (dB)
+  real_type execution_ms    = 0;  // Execution time (ms)
+  integer   segments        = 0;  // Number of constant segments
 
   // Method to compute all metrics
   void compute( const dvec_t & original, const dvec_t & noisy, const dvec_t & denoised, real_type exec_time = 0 )

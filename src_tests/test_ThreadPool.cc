@@ -44,16 +44,16 @@ enum class OutputMode
 
 struct BenchmarkConfig
 {
-  int              num_threads{ 16 };
-  int              task_size{ 200 };
-  std::vector<int> task_counts{ 16, 100, 1000, 10000 };
-  int              num_runs{ 3 };
-  bool             warmup{ true };
-  bool             validate{ true };
-  bool             export_csv{ false };
-  bool             export_json{ false };
-  bool             scaling_test{ false };
-  int              scaling_max_threads{ 32 };
+  int              num_threads         = 16;
+  int              task_size           = 200;
+  std::vector<int> task_counts         = { 16, 100, 1000, 10000 };
+  int              num_runs            = 3;
+  bool             warmup              = true;
+  bool             validate            = true;
+  bool             export_csv          = false;
+  bool             export_json         = false;
+  bool             scaling_test        = false;
+  int              scaling_max_threads = 32;
   OutputMode       output_mode{ OutputMode::VERBOSE };
 };
 
@@ -108,10 +108,10 @@ static void do_test( int const n, int const sz )
 {
   Counter   c;
   int const nn{ 1 + ( ( n * 111 ) % sz ) };
-  for ( int i{ 0 }; i < nn; ++i )
+  for ( int i = 0; i < nn; ++i )
   {
     int const mm{ 1 + ( ( i * 11 ) % 64 ) };
-    for ( int j{ 0 }; j < mm; ++j ) c.inc();
+    for ( int j = 0; j < mm; ++j ) c.inc();
   }
   global_accumulator += c.get();
 }
@@ -123,25 +123,25 @@ static void do_test( int const n, int const sz )
 struct TestResult
 {
   std::string pool_name;
-  unsigned    result{ 0 };
-  double      launch_avg_mus{ 0.0 };
-  double      launch_std_mus{ 0.0 };
-  double      wait_time_mus{ 0.0 };
-  double      wait_std_mus{ 0.0 };
-  double      delete_time_mus{ 0.0 };
-  double      delete_std_mus{ 0.0 };
-  double      total_time_mus{ 0.0 };
-  double      total_std_mus{ 0.0 };
-  double      throughput{ 0.0 };  // tasks/ms
-  double      efficiency{ 0.0 };  // speedup vs baseline
-  long        max_rss_kb{ 0 };    // peak memory usage
+  unsigned    result          = 0;
+  double      launch_avg_mus  = 0;
+  double      launch_std_mus  = 0;
+  double      wait_time_mus   = 0;
+  double      wait_std_mus    = 0;
+  double      delete_time_mus = 0;
+  double      delete_std_mus  = 0;
+  double      total_time_mus  = 0;
+  double      total_std_mus   = 0;
+  double      throughput      = 0;  // tasks/ms
+  double      efficiency      = 0;  // speedup vs baseline
+  long        max_rss_kb      = 0;  // peak memory usage
 
   // Ranking flags
-  bool is_best_launch{ false };
-  bool is_best_wait{ false };
-  bool is_best_total{ false };
-  bool is_best_throughput{ false };
-  bool is_best_efficiency{ false };
+  bool is_best_launch     = false;
+  bool is_best_wait       = false;
+  bool is_best_total      = false;
+  bool is_best_throughput = false;
+  bool is_best_efficiency = false;
 
   // Raw data for statistics
   std::vector<double> launch_samples;
@@ -179,9 +179,9 @@ struct TestResult
 
 struct ResourceUsage
 {
-  long max_rss_kb{ 0 };
-  long user_time_ms{ 0 };
-  long system_time_ms{ 0 };
+  long max_rss_kb     = 0;
+  long user_time_ms   = 0;
+  long system_time_ms = 0;
 
   static ResourceUsage get_current()
   {
@@ -313,7 +313,7 @@ template <class TP> TestResult test_TP_single_run( int const NN, int nt, int sz 
     // Measure launch time (average per task)
     tm.tic();
     tm2.tic();
-    for ( int i{ 0 }; i < NN; ++i ) pool.run( do_test, i, sz );
+    for ( int i = 0; i < NN; ++i ) pool.run( do_test, i, sz );
     tm.toc();
     t_launch = tm.elapsed_mus() / NN;
 
@@ -769,7 +769,7 @@ std::vector<TestResult> test_all_pools( int NN, int nt, int sz, int num_runs, bo
     global_accumulator = 0;
 
     tm.tic();
-    for ( int i{ 0 }; i < NN; ++i ) do_test( i, sz );
+    for ( int i = 0; i < NN; ++i ) do_test( i, sz );
     tm.toc();
 
     TestResult baseline;

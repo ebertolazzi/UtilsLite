@@ -452,12 +452,12 @@ namespace Utils
     integer m_m, m_n;  ///< Dimensions: m rows, n cols
     Matrix  m_KKT;  ///< KKT matrix \f$ \begin{bmatrix} \bm{I} & A \\ \bm{A}^\top & -\lambda \bm{D}^2 \end{bmatrix} \f$
     LU      m_LU;   ///< LU factorization of KKT matrix
-    Scalar  m_lambda;             ///< Regularization parameter \f$ \lambda \f$
-    Vector  m_D2;                 ///< Diagonal of \f$ \bm{D}^2 \f$ (empty → identity)
-    Vector  m_c;                  ///< Center vector \f$ \bm{c} \f$ (empty → zero)
-    bool    m_use_diag{ false };  ///< Flag: using non-identity diagonal D
-    bool    m_has_reg{ false };   ///< Flag: \f$ \lambda > 0 \f$ or \f$ D \neq 0 \f$
-    bool    m_has_c{ false };     ///< Flag: using non-zero center vector c
+    Scalar  m_lambda;            ///< Regularization parameter \f$ \lambda \f$
+    Vector  m_D2;                ///< Diagonal of \f$ \bm{D}^2 \f$ (empty → identity)
+    Vector  m_c;                 ///< Center vector \f$ \bm{c} \f$ (empty → zero)
+    bool    m_use_diag = false;  ///< Flag: using non-identity diagonal D
+    bool    m_has_reg  = false;  ///< Flag: \f$ \lambda > 0 \f$ or \f$ D \neq 0 \f$
+    bool    m_has_c    = false;  ///< Flag: using non-zero center vector c
 
     /// Numerical threshold: \f$ \epsilon = 10 \times \text{machine epsilon} \f$
     static constexpr Scalar epsilon() { return std::numeric_limits<Scalar>::epsilon() * Scalar( 10 ); }
@@ -724,9 +724,9 @@ namespace Utils
     Scalar       m_sqrt_lambda;  ///< Cached \f$ \sqrt{\lambda} \f$
     Vector       m_D;            ///< Diagonal of \f$ \bm{D} \f$ (empty → identity)
     Vector       m_c;            ///< Center vector (empty → zero)
-    bool         m_use_diag{ false };
-    bool         m_has_reg{ false };
-    bool         m_has_c{ false };
+    bool         m_use_diag = false;
+    bool         m_has_reg  = false;
+    bool         m_has_c    = false;
 
     /// Numerical threshold: \f$ \epsilon = 10 \times \text{machine epsilon} \f$
     static constexpr Scalar epsilon() { return std::numeric_limits<Scalar>::epsilon() * Scalar( 10 ); }
@@ -932,13 +932,13 @@ namespace Utils
     LDLT     m_LDLT;  ///< Symmetric indefinite factorization (preferred)
     SparseLU m_LU;    ///< General LU factorization (fallback)
 
-    bool   m_use_LDLT{ true };  ///< True if using LDLT, false if using LU
-    Scalar m_lambda;            ///< Regularization parameter
-    Vector m_D2;                ///< Diagonal of \f$ \bm{D}^2 \f$
-    Vector m_c;                 ///< Center vector
-    bool   m_use_diag{ false };
-    bool   m_has_reg{ false };
-    bool   m_has_c{ false };
+    bool   m_use_LDLT = true;  ///< True if using LDLT, false if using LU
+    Scalar m_lambda;           ///< Regularization parameter
+    Vector m_D2;               ///< Diagonal of \f$ \bm{D}^2 \f$
+    Vector m_c;                ///< Center vector
+    bool   m_use_diag = false;
+    bool   m_has_reg  = false;
+    bool   m_has_c    = false;
 
     /// Numerical threshold
     static constexpr Scalar epsilon() { return std::numeric_limits<Scalar>::epsilon() * Scalar( 10 ); }

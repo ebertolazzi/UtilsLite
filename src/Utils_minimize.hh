@@ -76,14 +76,14 @@ namespace Utils
     using SparseMatrix = Eigen::SparseMatrix<Scalar>;
 
   private:
-    Vector m_lower;            ///< Lower bounds ℓ
-    Vector m_upper;            ///< Upper bounds u
-    Vector m_tol_lower;        ///< Adaptive tolerances for lower bounds
-    Vector m_tol_upper;        ///< Adaptive tolerances for upper bounds
-    Vector m_lambda_lower;     ///< Multipliers for lower bounds
-    Vector m_lambda_upper;     ///< Multipliers for upper bounds
-    bool   m_active{ false };  ///< Whether constraints are active
-    Scalar m_epsi;             ///< Machine epsilon or user-defined tolerance
+    Vector m_lower;           ///< Lower bounds ℓ
+    Vector m_upper;           ///< Upper bounds u
+    Vector m_tol_lower;       ///< Adaptive tolerances for lower bounds
+    Vector m_tol_upper;       ///< Adaptive tolerances for upper bounds
+    Vector m_lambda_lower;    ///< Multipliers for lower bounds
+    Vector m_lambda_upper;    ///< Multipliers for upper bounds
+    bool   m_active = false;  ///< Whether constraints are active
+    Scalar m_epsi;            ///< Machine epsilon or user-defined tolerance
 
   public:
     // =========================================================================

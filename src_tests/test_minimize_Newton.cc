@@ -212,9 +212,9 @@ void print_summary_table()
     global_test_results.end(),
     []( const TestResult & r ) { return r.status == Status::CONVERGED; } );
 
-  MINIMIZER::integer accumulated_iter{ 0 };
-  MINIMIZER::integer accumulated_evals{ 0 };
-  MINIMIZER::integer accumulated_hess_evals{ 0 };
+  MINIMIZER::integer accumulated_iter       = 0;
+  MINIMIZER::integer accumulated_evals      = 0;
+  MINIMIZER::integer accumulated_hess_evals = 0;
 
   for ( auto const & r : global_test_results )
   {
@@ -248,7 +248,7 @@ int main()
     "\n" );
 
 #if 1
-  integer k{ 0 };
+  integer k = 0;
   for ( auto [ptr, name] : NL_list ) test( *ptr, fmt::format( "N.{} {}", ++k, name ) );
 #else
   auto ilist = { 6, 12, 16, 19, 26, 27, 28, 29, 37, 41 };

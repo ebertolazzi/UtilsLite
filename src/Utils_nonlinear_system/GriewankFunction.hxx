@@ -98,7 +98,7 @@ public:
     x_vec.resize( 2 );
     auto & x0{ x_vec[0] };
     x0.resize( n );
-    for ( integer i{ 0 }; i < n; i += 2 )
+    for ( integer i = 0; i < n; i += 2 )
     {
       x0( i + 0 ) = -50.0;
       if ( i + 1 < n ) x0( i + 1 ) = 70.0;

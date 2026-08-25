@@ -151,39 +151,39 @@ namespace Utils
 
   private:
     // Algorithm parameters
-    std::string const m_name;                ///< Name of the solver instance
-    Function          m_fun;                 ///< Objective function to minimize
-    Console const *   m_console{ nullptr };  ///< Console for output messages
-    integer           m_verbose{ 1 };        ///< Verbosity level (0=silent, 1=basic, 2=detailed, 3=debug)
+    std::string const m_name;               ///< Name of the solver instance
+    Function          m_fun;                ///< Objective function to minimize
+    Console const *   m_console = nullptr;  ///< Console for output messages
+    integer           m_verbose = 1;        ///< Verbosity level (0=silent, 1=basic, 2=detailed, 3=debug)
 
     // Algorithm constants
-    Real    m_rho{ static_cast<Real>( 0.9 ) };         ///< Step reduction factor (0 < ρ < 1)
-    Real    m_h{ static_cast<Real>( 0.1 ) };           ///< Current step size
-    Real    m_tolerance{ static_cast<Real>( 1e-8 ) };  ///< Convergence tolerance
-    integer m_dim{ 0 };                                ///< Problem dimension
+    Real    m_rho       = static_cast<Real>( 0.9 );   ///< Step reduction factor (0 < ρ < 1)
+    Real    m_h         = static_cast<Real>( 0.1 );   ///< Current step size
+    Real    m_tolerance = static_cast<Real>( 1e-8 );  ///< Convergence tolerance
+    integer m_dim       = 0;                          ///< Problem dimension
 
     // Counters and limits
-    integer m_max_iterations{ 500 };        ///< Maximum number of iterations
-    integer m_max_fun_evaluations{ 1000 };  ///< Maximum function evaluations
-    integer m_max_stagnations{ 10 };        ///< Maximum stagnations before stopping
-    integer m_iteration_count{ 0 };         ///< Current iteration count
-    integer m_fun_evaluation_count{ 0 };    ///< Function evaluation count
-    integer m_stagnation_count{ 0 };        ///< Stagnation counter
+    integer m_max_iterations       = 500;   ///< Maximum number of iterations
+    integer m_max_fun_evaluations  = 1000;  ///< Maximum function evaluations
+    integer m_max_stagnations      = 10;    ///< Maximum stagnations before stopping
+    integer m_iteration_count      = 0;     ///< Current iteration count
+    integer m_fun_evaluation_count = 0;     ///< Function evaluation count
+    integer m_stagnation_count     = 0;     ///< Stagnation counter
 
     // State variables
-    bool m_stencil_failure{ false };  ///< Flag indicating stencil failure
-    Real m_f_best;                    ///< Best function value found
-    Real m_f_old;                     ///< Previous function value
+    bool m_stencil_failure = false;  ///< Flag indicating stencil failure
+    Real m_f_best;                   ///< Best function value found
+    Real m_f_old;                    ///< Previous function value
 
     // Storage vectors (allocated on heap)
-    std::unique_ptr<Real[]> m_storage;                    ///< Raw storage for all vectors
-    MapVector               m_x_best{ nullptr, 0 };       ///< Best point found
-    MapVector               m_x_old{ nullptr, 0 };        ///< Previous point
-    MapVector               m_direction{ nullptr, 0 };    ///< Search direction for pattern move
-    MapVector               m_search_sign{ nullptr, 0 };  ///< Sign for coordinate search directions
-    MapVector               m_temp_point1{ nullptr, 0 };  ///< Temporary point 1
-    MapVector               m_temp_point2{ nullptr, 0 };  ///< Temporary point 2
-    MapVector               m_new_point{ nullptr, 0 };    ///< New point for pattern move
+    std::unique_ptr<Real[]> m_storage;                       ///< Raw storage for all vectors
+    MapVector               m_x_best      = { nullptr, 0 };  ///< Best point found
+    MapVector               m_x_old       = { nullptr, 0 };  ///< Previous point
+    MapVector               m_direction   = { nullptr, 0 };  ///< Search direction for pattern move
+    MapVector               m_search_sign = { nullptr, 0 };  ///< Sign for coordinate search directions
+    MapVector               m_temp_point1 = { nullptr, 0 };  ///< Temporary point 1
+    MapVector               m_temp_point2 = { nullptr, 0 };  ///< Temporary point 2
+    MapVector               m_new_point   = { nullptr, 0 };  ///< New point for pattern move
 
     /**
      * \brief Evaluate the objective function at a point

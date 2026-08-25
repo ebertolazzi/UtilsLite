@@ -122,9 +122,9 @@ namespace Utils
     Matrix               m_population;     // Dim x NP
     Vector               m_fitness;        // NP x 1
     Vector               m_best_solution;  // Dim x 1
-    real_type            m_best_fitness      = std::numeric_limits<real_type>::max();
-    integer              m_current_iteration = 0;
-    std::atomic<integer> m_function_evaluations{ 0 };
+    real_type            m_best_fitness         = std::numeric_limits<real_type>::max();
+    integer              m_current_iteration    = 0;
+    std::atomic<integer> m_function_evaluations = 0;
 
     // Random number generation
     std::mt19937                              m_random_engine;

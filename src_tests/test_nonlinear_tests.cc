@@ -55,7 +55,7 @@ namespace Utils
     auto rep = []( size_t n, std::string const & s )
     {
       std::string res;
-      for ( size_t k{ 0 }; k < n; ++k ) res += s;
+      for ( size_t k = 0; k < n; ++k ) res += s;
       return res;
     };
 

@@ -38,9 +38,9 @@ namespace Utils
       std::mutex              m_task_mutex;
       std::condition_variable m_task_cv;
 
-      bool m_active{ true };     //!< Indicates if the worker is active
-      bool m_task_done{ true };  //!< Indicates if the worker has completed its task
-      FUN  m_task;               //!< Function to be executed by the worker
+      bool m_active    = true;  //!< Indicates if the worker is active
+      bool m_task_done = true;  //!< Indicates if the worker has completed its task
+      FUN  m_task;              //!< Function to be executed by the worker
 
       // Startup synchronization
       std::promise<void>       m_startup_promise;
@@ -126,7 +126,7 @@ namespace Utils
       }
     };
 
-    std::size_t         m_thread_to_send{ 0 };
+    std::size_t         m_thread_to_send = 0;
     std::vector<Worker> m_workers;
 
   public:

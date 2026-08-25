@@ -841,7 +841,7 @@ public:
   virtual void initial_points( vector<Vector> & x_vec ) const override
   {
     x_vec.resize( 8 );
-    for ( integer i{ 0 }; i < 8; ++i )
+    for ( integer i = 0; i < 8; ++i )
     {
       x_vec[i].resize( n );
       x_vec[i].fill( static_cast<real_type>( i ) * 0.1 );
@@ -916,7 +916,7 @@ public:
   virtual void initial_points( vector<Vector> & x_vec ) const override
   {
     x_vec.resize( 8 );
-    for ( integer ini{ 0 }; ini < 8; ++ini )
+    for ( integer ini = 0; ini < 8; ++ini )
     {
       auto & x{ x_vec[ini] };
       x.resize( n );

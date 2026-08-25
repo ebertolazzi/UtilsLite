@@ -54,14 +54,14 @@ namespace Utils
 
     struct Options
     {
-      integer block_size{ 10 };
-      integer max_outer_iterations{ 100 };
-      integer max_inner_iterations{ 1000 };
-      integer max_function_evaluations{ 100000 };
-      Scalar  tolerance{ 1e-6 };
-      bool    verbose{ true };
-      integer verbosity_level{ 1 };  // 0: quiet, 1: outer stats, 2: inner progress, 3: detailed
-      integer inner_progress_frequency{ 10 };
+      integer block_size               = 10;
+      integer max_outer_iterations     = 100;
+      integer max_inner_iterations     = 1000;
+      integer max_function_evaluations = 100000;
+      Scalar  tolerance                = 1e-6;
+      bool    verbose                  = true;
+      integer verbosity_level          = 1;  // 0: quiet, 1: outer stats, 2: inner progress, 3: detailed
+      integer inner_progress_frequency = 10;
       typename NelderMead_classic<Scalar>::Options sub_options;
     };
 
@@ -70,19 +70,19 @@ namespace Utils
     NelderMead_classic<Scalar> m_solver;
     Vector                     m_lower;
     Vector                     m_upper;
-    bool                       m_use_bounds{ false };
+    bool                       m_use_bounds = false;
 
     // Results storage
     Vector             m_solution;
-    Scalar             m_final_function_value{ 0 };
-    Scalar             m_initial_function_value{ 0 };
+    Scalar             m_final_function_value   = 0;
+    Scalar             m_initial_function_value = 0;
     NelderMead::Status m_status{ NelderMead::Status::FAILED };
-    integer            m_outer_iterations{ 0 };
-    integer            m_inner_iterations{ 0 };
-    integer            m_total_iterations{ 0 };
-    integer            m_outer_evaluations{ 0 };
-    integer            m_inner_evaluations{ 0 };
-    integer            m_total_evaluations{ 0 };
+    integer            m_outer_iterations  = 0;
+    integer            m_inner_iterations  = 0;
+    integer            m_total_iterations  = 0;
+    integer            m_outer_evaluations = 0;
+    integer            m_inner_evaluations = 0;
+    integer            m_total_evaluations = 0;
 
     // Cyclic block selection
     vector<integer> select_block( integer n_dims, integer iter )
@@ -311,7 +311,7 @@ namespace Utils
         // Prepare Subspace
         // EIGEN3: Efficient subspace extraction without memory allocation
         Vector x_sub( k ), l_sub( k ), u_sub( k );
-        for ( integer i{ 0 }; i < k; ++i )
+        for ( integer i = 0; i < k; ++i )
         {
           x_sub( i ) = x( idxs[i] );
           if ( m_use_bounds )

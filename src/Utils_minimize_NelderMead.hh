@@ -157,57 +157,57 @@ namespace Utils
     struct Options
     {
       // Global budget (including restarts)
-      integer max_iterations{ 10000 };            ///< Maximum total iterations
-      integer max_function_evaluations{ 50000 };  ///< Maximum function evaluations
-      Scalar  tolerance{ 1e-8 };                  ///< Convergence tolerance
-      Scalar  stagnation_tolerance{ 1e-8 };       ///< Stagnation detection tolerance
-      Scalar  simplex_tolerance{ 1e-10 };         ///< Minimum simplex size tolerance
+      integer max_iterations           = 10000;  ///< Maximum total iterations
+      integer max_function_evaluations = 50000;  ///< Maximum function evaluations
+      Scalar  tolerance                = 1e-8;   ///< Convergence tolerance
+      Scalar  stagnation_tolerance     = 1e-8;   ///< Stagnation detection tolerance
+      Scalar  simplex_tolerance        = 1e-10;  ///< Minimum simplex size tolerance
 
       // Standard Nelder-Mead parameters
-      Scalar rho{ 1.0 };    ///< Reflection coefficient
-      Scalar chi{ 2.0 };    ///< Expansion coefficient
-      Scalar gamma{ 0.5 };  ///< Contraction coefficient
-      Scalar sigma{ 0.5 };  ///< Shrink coefficient
+      Scalar rho   = 1.0;  ///< Reflection coefficient
+      Scalar chi   = 2.0;  ///< Expansion coefficient
+      Scalar gamma = 0.5;  ///< Contraction coefficient
+      Scalar sigma = 0.5;  ///< Shrink coefficient
 
-      Scalar initial_step{ 0.1 };  ///< Initial step size for simplex construction
+      Scalar initial_step = 0.1;  ///< Initial step size for simplex construction
 
-      bool    adaptive_parameters{ true };  ///< Enable adaptive parameter adjustment
-      bool    verbose{ true };              ///< Enable verbose output
-      integer progress_frequency{ 100 };    ///< Progress reporting frequency
+      bool    adaptive_parameters = true;  ///< Enable adaptive parameter adjustment
+      bool    verbose             = true;  ///< Enable verbose output
+      integer progress_frequency  = 100;   ///< Progress reporting frequency
 
       // Restart mechanism
-      bool    enable_restart{ true };          ///< Enable restart strategy
-      integer max_restarts{ 5 };               ///< Maximum number of restarts
-      integer stagnation_threshold{ 30 };      ///< Iterations before stagnation detection
-      bool    use_relative_tolerance{ true };  ///< Use relative convergence criteria
+      bool    enable_restart         = true;  ///< Enable restart strategy
+      integer max_restarts           = 5;     ///< Maximum number of restarts
+      integer stagnation_threshold   = 30;    ///< Iterations before stagnation detection
+      bool    use_relative_tolerance = true;  ///< Use relative convergence criteria
 
-      Scalar restart_perturbation_ratio{ 0.25 };  ///< Restart perturbation scale
-      bool   track_best_point{ true };            ///< Track best point across restarts
+      Scalar restart_perturbation_ratio = 0.25;  ///< Restart perturbation scale
+      bool   track_best_point           = true;  ///< Track best point across restarts
 
       // Enhanced convergence parameters
-      Scalar min_step_size{ 1e-10 };          ///< Minimum step size to avoid degeneracy
-      bool   use_robust_convergence{ true };  ///< Use robust convergence criteria
-      Scalar convergence_relaxation{ 10.0 };  ///< Convergence criterion relaxation factor
+      Scalar min_step_size          = 1e-10;  ///< Minimum step size to avoid degeneracy
+      bool   use_robust_convergence = true;   ///< Use robust convergence criteria
+      Scalar convergence_relaxation = 10.0;   ///< Convergence criterion relaxation factor
 
       // Restart condition thresholds
-      Scalar restart_relative_improvement_threshold{ 0.05 };   ///< 5% min improvement for restart
-      Scalar restart_progress_per_eval_threshold{ 1e-6 };      ///< Progress per evaluation threshold
-      Scalar restart_simplex_geometry_threshold{ 0.3 };        ///< Improvement threshold for small simplex
-      Scalar restart_shrink_count_threshold{ 8 };              ///< Shrink operations before restart
-      Scalar restart_after_shrink_improvement{ 0.02 };         ///< Improvement after shrink threshold
-      Scalar restart_expected_progress_ratio{ 0.05 };          ///< Expected progress ratio for high dimensions
-      Scalar restart_quality_metric_threshold{ 1e-4 };         ///< Quality metric threshold
-      Scalar restart_degenerate_improvement_threshold{ 0.1 };  ///< Improvement threshold for degenerate simplex
-      Scalar restart_improvement_ratio{ 0.95 };                ///< Improvement ratio to accept restart
-      Scalar restart_absolute_improvement_threshold{ 0.1 };    ///< Absolute improvement threshold
+      Scalar restart_relative_improvement_threshold   = 0.05;  ///< 5% min improvement for restart
+      Scalar restart_progress_per_eval_threshold      = 1e-6;  ///< Progress per evaluation threshold
+      Scalar restart_simplex_geometry_threshold       = 0.3;   ///< Improvement threshold for small simplex
+      Scalar restart_shrink_count_threshold           = 8;     ///< Shrink operations before restart
+      Scalar restart_after_shrink_improvement         = 0.02;  ///< Improvement after shrink threshold
+      Scalar restart_expected_progress_ratio          = 0.05;  ///< Expected progress ratio for high dimensions
+      Scalar restart_quality_metric_threshold         = 1e-4;  ///< Quality metric threshold
+      Scalar restart_degenerate_improvement_threshold = 0.1;   ///< Improvement threshold for degenerate simplex
+      Scalar restart_improvement_ratio                = 0.95;  ///< Improvement ratio to accept restart
+      Scalar restart_absolute_improvement_threshold   = 0.1;   ///< Absolute improvement threshold
 
       // Geometry factors for restart conditions
-      Scalar restart_simplex_diameter_factor1{ 50.0 };  ///< Diameter factor for condition 3
-      Scalar restart_simplex_diameter_factor2{ 20.0 };  ///< Diameter factor for condition 7
-      Scalar restart_std_dev_factor{ 10.0 };            ///< Standard deviation factor
+      Scalar restart_simplex_diameter_factor1 = 50.0;  ///< Diameter factor for condition 3
+      Scalar restart_simplex_diameter_factor2 = 20.0;  ///< Diameter factor for condition 7
+      Scalar restart_std_dev_factor           = 10.0;  ///< Standard deviation factor
 
-      integer verbosity_level{ 1 };            // 0: quiet, 1: outer stats, 2: inner progress, 3: detailed
-      integer inner_progress_frequency{ 10 };  // Frequency for level 2
+      integer verbosity_level          = 1;   // 0: quiet, 1: outer stats, 2: inner progress, 3: detailed
+      integer inner_progress_frequency = 10;  // Frequency for level 2
     };
 
   private:
@@ -222,28 +222,28 @@ namespace Utils
       Scalar centroid_distance;  ///< Average distance to centroid
     };
 
-    Options m_options;              ///< Algorithm configuration
-    Vector  m_lower;                ///< Lower bounds (if used)
-    Vector  m_upper;                ///< Upper bounds (if used)
-    bool    m_use_bounds{ false };  ///< Whether bounds are active
+    Options m_options;             ///< Algorithm configuration
+    Vector  m_lower;               ///< Lower bounds (if used)
+    Vector  m_upper;               ///< Upper bounds (if used)
+    bool    m_use_bounds = false;  ///< Whether bounds are active
 
-    Callback const * m_callback{ nullptr };     ///< Objective function callback
-    integer          m_global_iterations{ 0 };  ///< Global iteration counter
-    integer          m_global_evals{ 0 };       ///< Global function evaluation counter
+    Callback const * m_callback          = nullptr;  ///< Objective function callback
+    integer          m_global_iterations = 0;        ///< Global iteration counter
+    integer          m_global_evals      = 0;        ///< Global function evaluation counter
 
     // EIGEN3: vector of Eigen vectors for efficient simplex storage
     vector<Vector> m_simplex;      ///< Simplex vertices
     vector<Scalar> m_values;       ///< Function values at vertices
     Vector         m_centroid;     ///< Current centroid (excluding worst)
     Vector         m_trial_point;  ///< Trial point for operations
-    integer        m_dim{ 0 };     ///< Problem dimension
+    integer        m_dim = 0;      ///< Problem dimension
 
-    mutable bool            m_simplex_ordered{ false };  ///< Whether simplex is sorted
-    mutable vector<integer> m_sorted_indices;            ///< Indices sorted by function value
+    mutable bool            m_simplex_ordered = false;  ///< Whether simplex is sorted
+    mutable vector<integer> m_sorted_indices;           ///< Indices sorted by function value
 
-    integer m_stagnation_count{ 0 };                                ///< Consecutive stagnation iterations
+    integer m_stagnation_count = 0;                                 ///< Consecutive stagnation iterations
     Scalar  m_previous_best{ std::numeric_limits<Scalar>::max() };  ///< Previous best value
-    integer m_shrink_count{ 0 };                                    ///< Shrink operation counter
+    integer m_shrink_count = 0;                                     ///< Shrink operation counter
 
     Vector m_best_point;                                        ///< Best point found (across restarts)
     Scalar m_best_value{ std::numeric_limits<Scalar>::max() };  ///< Best value found
@@ -254,18 +254,18 @@ namespace Utils
     string m_indent{ "" };
 
     // Results from last optimization
-    Vector m_solution;                     ///< Best solution found
-    Scalar m_final_function_value{ 0 };    ///< Final function value
-    Scalar m_initial_function_value{ 0 };  ///< Initial function value
-    Status m_status{ Status::FAILED };     ///< Status of last optimization
+    Vector m_solution;                    ///< Best solution found
+    Scalar m_final_function_value   = 0;  ///< Final function value
+    Scalar m_initial_function_value = 0;  ///< Initial function value
+    Status m_status{ Status::FAILED };    ///< Status of last optimization
 
     // Statistics
-    integer m_iterations{ 0 };            ///< Total iterations
-    integer m_function_evaluations{ 0 };  ///< Total function evaluations
-    Scalar  m_simplex_volume{ 0 };        ///< Final simplex volume
-    Scalar  m_simplex_diameter{ 0 };      ///< Final simplex diameter
-    integer m_restarts_performed{ 0 };    ///< Number of restarts performed
-    integer m_shrink_operations{ 0 };     ///< Total shrink operations
+    integer m_iterations           = 0;  ///< Total iterations
+    integer m_function_evaluations = 0;  ///< Total function evaluations
+    Scalar  m_simplex_volume       = 0;  ///< Final simplex volume
+    Scalar  m_simplex_diameter     = 0;  ///< Final simplex diameter
+    integer m_restarts_performed   = 0;  ///< Number of restarts performed
+    integer m_shrink_operations    = 0;  ///< Total shrink operations
 
     struct ConvergenceFlags
     {
@@ -615,7 +615,7 @@ namespace Utils
       Vector x_base   = m_simplex[0];
       Scalar min_step = m_options.min_step_size;
 
-      for ( integer i{ 0 }; i < m_dim; ++i )
+      for ( integer i = 0; i < m_dim; ++i )
       {
         Scalar step = get_smart_step( i, x_base( i ) );
 
@@ -655,7 +655,7 @@ namespace Utils
         }
         // EIGEN3: Use Vector::Random() for efficient random vector generation
         // This is optimized and may use vectorized random number generation
-        for ( integer i{ 1 }; i <= m_dim; ++i )
+        for ( integer i = 1; i <= m_dim; ++i )
         {
           Vector perturbation = Vector::Random( m_dim ) * min_step * 10;
           m_simplex[i] += perturbation;
@@ -686,7 +686,7 @@ namespace Utils
     void update_centroid( integer worst_index )
     {
       m_centroid.setZero();
-      for ( integer i{ 0 }; i <= m_dim; ++i )
+      for ( integer i = 0; i <= m_dim; ++i )
       {
         if ( i != worst_index ) m_centroid += m_simplex[i];
       }
@@ -702,8 +702,8 @@ namespace Utils
      */
     Scalar compute_diameter() const
     {
-      Scalar max_dist{ 0 };
-      for ( integer i{ 0 }; i <= m_dim; ++i )
+      Scalar max_dist = 0;
+      for ( integer i = 0; i <= m_dim; ++i )
       {
         for ( integer j{ i + 1 }; j <= m_dim; ++j )
         {
@@ -732,7 +732,7 @@ namespace Utils
 
       // EIGEN3: Construct basis matrix using Eigen
       Matrix basis( m_dim, m_dim );
-      for ( integer i{ 0 }; i < m_dim; ++i ) { basis.col( i ) = m_simplex[i + 1] - m_simplex[0]; }
+      for ( integer i = 0; i < m_dim; ++i ) { basis.col( i ) = m_simplex[i + 1] - m_simplex[0]; }
 
       // EIGEN3: Use QR decomposition with column pivoting for numerical
       // stability This handles rank-deficient cases gracefully
@@ -876,14 +876,14 @@ namespace Utils
     struct SingleRunResult
     {
       Vector  solution;
-      Scalar  final_function_value{ 0 };
-      Scalar  initial_function_value{ 0 };
+      Scalar  final_function_value   = 0;
+      Scalar  initial_function_value = 0;
       Status  status{ Status::FAILED };
-      integer iterations{ 0 };
-      integer function_evaluations{ 0 };
-      Scalar  simplex_volume{ 0 };
-      Scalar  simplex_diameter{ 0 };
-      integer shrink_operations{ 0 };
+      integer iterations           = 0;
+      integer function_evaluations = 0;
+      Scalar  simplex_volume       = 0;
+      Scalar  simplex_diameter     = 0;
+      integer shrink_operations    = 0;
     };
 
     /**
@@ -1038,7 +1038,7 @@ namespace Utils
     void shrink_simplex( integer best_index )
     {
       Vector best = m_simplex[best_index];
-      for ( integer i{ 0 }; i <= m_dim; ++i )
+      for ( integer i = 0; i <= m_dim; ++i )
       {
         if ( i != best_index )
         {

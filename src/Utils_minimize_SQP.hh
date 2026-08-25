@@ -154,18 +154,18 @@ namespace Utils
 
     // Results storage
     Status      m_status{ Status::FAILED };
-    integer     m_iterations{ 0 };
-    integer     m_function_evals{ 0 };
-    integer     m_hessian_evals{ 0 };
-    integer     m_qp_solves{ 0 };
-    integer     m_line_searches{ 0 };
-    Scalar      m_final_f{ 0 };
-    Scalar      m_initial_f{ 0 };
-    Scalar      m_final_grad_norm{ 0 };
-    Scalar      m_final_kkt_norm{ 0 };
+    integer     m_iterations      = 0;
+    integer     m_function_evals  = 0;
+    integer     m_hessian_evals   = 0;
+    integer     m_qp_solves       = 0;
+    integer     m_line_searches   = 0;
+    Scalar      m_final_f         = 0;
+    Scalar      m_initial_f       = 0;
+    Scalar      m_final_grad_norm = 0;
+    Scalar      m_final_kkt_norm  = 0;
     Vector      m_solution;
     Vector      m_multipliers;
-    integer     m_active_constraints{ 0 };
+    integer     m_active_constraints = 0;
     std::string m_method_used{ "SQP" };
 
     // Active set
@@ -191,7 +191,7 @@ namespace Utils
      */
     struct QPSolution
     {
-      bool   success{ false };
+      bool   success = false;
       Vector p;
       Vector multipliers;
     };
@@ -213,10 +213,10 @@ namespace Utils
      */
     struct LineSearchResult
     {
-      bool    success{ false };
-      Scalar  alpha{ 0 };
-      Scalar  f_new{ 0 };
-      integer evals{ 0 };
+      bool    success = false;
+      Scalar  alpha   = 0;
+      Scalar  f_new   = 0;
+      integer evals   = 0;
     };
 
     /**

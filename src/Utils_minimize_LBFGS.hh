@@ -156,16 +156,16 @@ namespace Utils
 
     // Cache vectors to avoid allocations
     mutable Vector  m_x, m_g, m_p, m_x_new, m_g_new;
-    mutable integer m_iter_since_reset{ 0 };
-    mutable integer m_function_evaluations{ 0 };
-    mutable integer m_consecutive_weak_steps{ 0 };  // NEW: Track stagnation
+    mutable integer m_iter_since_reset       = 0;
+    mutable integer m_function_evaluations   = 0;
+    mutable integer m_consecutive_weak_steps = 0;  // NEW: Track stagnation
 
     // Optimization results
     Status  m_status{ Status::FAILED };
-    integer m_total_iterations{ 0 };
-    Scalar  m_final_gradient_norm{ 0 };
-    Scalar  m_final_function_value{ 0 };
-    Scalar  m_initial_function_value{ 0 };
+    integer m_total_iterations       = 0;
+    Scalar  m_final_gradient_norm    = 0;
+    Scalar  m_final_function_value   = 0;
+    Scalar  m_initial_function_value = 0;
 
     // ===========================================================================
     // HELPER METHODS

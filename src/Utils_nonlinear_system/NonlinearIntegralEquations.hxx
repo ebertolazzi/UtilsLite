@@ -88,7 +88,7 @@ public:
     auto & x0{ x_vec[0] };
     x0.resize( n );
     real_type h = 1.0 / ( static_cast<real_type>( n ) - 1.0 );
-    for ( integer i{ 0 }; i < n; ++i )
+    for ( integer i = 0; i < n; ++i )
     {
       real_type t = h * static_cast<real_type>( i );
       x0( i )     = t * ( t - 1 );

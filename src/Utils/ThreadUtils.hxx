@@ -478,7 +478,7 @@ namespace Utils
   class WaitWorker
   {
   private:
-    std::atomic<int> n_worker{ 0 };
+    std::atomic<int> n_worker = 0;
 
   public:
     WaitWorker() = default;

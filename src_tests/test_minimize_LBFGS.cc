@@ -58,25 +58,25 @@ struct TestResult
   Vector  final_solution;
   integer dimension;
   Status  status;
-  integer total_iterations{ 0 };
-  integer total_evaluations{ 0 };
-  Scalar  final_function_value{ 0.0 };
-  Scalar  initial_function_value{ 0.0 };
-  Scalar  final_gradient_norm{ 0.0 };  // NUOVO CAMPO
+  integer total_iterations       = 0;
+  integer total_evaluations      = 0;
+  Scalar  final_function_value   = 0;
+  Scalar  initial_function_value = 0;
+  Scalar  final_gradient_norm    = 0;  // NUOVO CAMPO
 };
 
 // Struttura per statistiche delle line search
 struct LineSearchStats
 {
   string  name;
-  integer total_tests{ 0 };
-  integer successful_tests{ 0 };
-  integer total_iterations{ 0 };
-  integer total_evaluations{ 0 };
-  Scalar  average_iterations{ 0 };
-  Scalar  success_rate{ 0 };
-  Scalar  avg_gradient_norm{ 0.0 };    // NUOVO: media norma gradiente
-  Scalar  total_gradient_norm{ 0.0 };  // Per calcolare la media
+  integer total_tests         = 0;
+  integer successful_tests    = 0;
+  integer total_iterations    = 0;
+  integer total_evaluations   = 0;
+  Scalar  average_iterations  = 0;
+  Scalar  success_rate        = 0;
+  Scalar  avg_gradient_norm   = 0;  // NUOVO: media norma gradiente
+  Scalar  total_gradient_norm = 0;  // Per calcolare la media
 };
 
 // Collettore globale dei risultati
@@ -374,10 +374,10 @@ void print_summary_table()
     global_test_results.end(),
     []( const TestResult & r ) { return r.status == Status::CONVERGED; } );
 
-  integer accumulated_iter{ 0 };
-  integer accumulated_evals{ 0 };
-  Scalar  total_grad_norm{ 0.0 };
-  integer grad_count{ 0 };
+  integer accumulated_iter  = 0;
+  integer accumulated_evals = 0;
+  Scalar  total_grad_norm   = 0;
+  integer grad_count        = 0;
 
   for ( auto const & r : global_test_results )
   {

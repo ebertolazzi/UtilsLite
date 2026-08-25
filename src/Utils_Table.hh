@@ -435,9 +435,9 @@ namespace Utils
     inline integer Cell::width( integer col ) const
     {
       integer const padding{ ( m_col_span - 1 ) * m_Table->cell_spacing() };
-      integer       innerWidth{ 0 };
+      integer       innerWidth = 0;
 
-      for ( integer i{ 0 }; i < m_col_span; ++i ) innerWidth += m_Table->column_width( col + i );
+      for ( integer i = 0; i < m_col_span; ++i ) innerWidth += m_Table->column_width( col + i );
 
       return innerWidth + padding;
     }
@@ -447,7 +447,7 @@ namespace Utils
 
     inline integer Cell::maximum_line_width() const
     {
-      integer            maxlen{ 0 };
+      integer            maxlen = 0;
       string             line;
       std::istringstream stream( m_Value );
       while ( std::getline( stream, line ) )
@@ -464,7 +464,7 @@ namespace Utils
       {
         std::istringstream stream( m_Value );
         string             line;
-        for ( integer i{ 0 }; i <= idx; ++i ) std::getline( stream, line );
+        for ( integer i = 0; i <= idx; ++i ) std::getline( stream, line );
         trim_line( line );
         return line;
       }
@@ -572,10 +572,10 @@ namespace Utils
       Style const   style{ m_Table->style() };
       integer const nc{ static_cast<integer>( m_Cells.size() ) };
 
-      for ( integer l{ 0 }; l < numLines; ++l )
+      for ( integer l = 0; l < numLines; ++l )
       {
         ss << style.border_left();
-        integer c{ 0 };
+        integer c = 0;
         while ( c < num_columns )
         {
           if ( c < nc )
@@ -731,7 +731,7 @@ namespace Utils
       integer const     nc{ this->num_columns() };
       integer const     padding_LR{ m_Style.padding_left() + m_Style.padding_right() };
 
-      for ( integer i{ 0 }; i < nc; ++i )
+      for ( integer i = 0; i < nc; ++i )
       {
         string junction_char;
         if ( i == 0 )
@@ -794,11 +794,11 @@ namespace Utils
       std::stringstream ss;
 
       // Calculate total width for title
-      integer       innerWidth{ 0 };
+      integer       innerWidth = 0;
       integer const nc{ this->num_columns() };
       integer const padding_LR{ m_Style.padding_left() + m_Style.padding_right() };
 
-      for ( integer c{ 0 }; c < nc; ++c )
+      for ( integer c = 0; c < nc; ++c )
       {
         innerWidth += this->column_width( c ) + padding_LR;
         if ( c < nc - 1 ) innerWidth += 1;  // For vertical borders

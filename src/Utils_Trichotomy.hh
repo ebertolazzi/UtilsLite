@@ -765,24 +765,31 @@ namespace Utils
     // Internal state variables
     // =================================================================
 
-    Integer m_num_iter_done{ 0 };          ///< Iterations performed in last call
-    Integer m_num_fun_eval{ 0 };           ///< Function evaluations performed
-    Integer m_max_iteration{ 100 };        ///< Maximum iteration limit
-    Integer m_max_fun_evaluation{ 1000 };  ///< Maximum evaluation limit
-    Real    m_tolerance{ 0 };              ///< Convergence tolerance
+    Integer m_num_iter_done      = 0;     ///< Iterations performed in last call
+    Integer m_num_fun_eval       = 0;     ///< Function evaluations performed
+    Integer m_max_iteration      = 100;   ///< Maximum iteration limit
+    Integer m_max_fun_evaluation = 1000;  ///< Maximum evaluation limit
+    Real    m_tolerance          = 0;     ///< Convergence tolerance
 
-    bool m_converged{ false };  ///< Convergence flag
+    bool m_converged = false;  ///< Convergence flag
 
     // Interval state and function values
-    Real m_a{ 0 }, m_fa{ 0 };   ///< Left bound and f(a)
-    Real m_b{ 0 }, m_fb{ 0 };   ///< Right bound and f(b)
-    Real m_x1{ 0 }, m_f1{ 0 };  ///< First interior point and f(x1)
-    Real m_x2{ 0 }, m_f2{ 0 };  ///< Second interior point and f(x2)
-    Real m_x3{ 0 }, m_f3{ 0 };  ///< Third interior point (best estimate) and f(x3)
-    Real m_x4{ 0 }, m_f4{ 0 };  ///< Fourth interior point and f(x4)
-    Real m_x5{ 0 }, m_f5{ 0 };  ///< Fifth interior point and f(x5)
+    Real m_a  = 0;
+    Real m_fa = 0;  ///< Left bound and f(a)
+    Real m_b  = 0;
+    Real m_fb = 0;  ///< Right bound and f(b)
+    Real m_x1 = 0;
+    Real m_f1 = 0;  ///< First interior point and f(x1)
+    Real m_x2 = 0;
+    Real m_f2 = 0;  ///< Second interior point and f(x2)
+    Real m_x3 = 0;
+    Real m_f3 = 0;  ///< Third interior point (best estimate) and f(x3)
+    Real m_x4 = 0;
+    Real m_f4 = 0;  ///< Fourth interior point and f(x4)
+    Real m_x5 = 0;
+    Real m_f5 = 0;  ///< Fifth interior point and f(x5)
 
-    Trichotomy_base_fun<Real> * m_function{ nullptr };  ///< Pointer to function to minimize
+    Trichotomy_base_fun<Real> * m_function = nullptr;  ///< Pointer to function to minimize
 
     // =================================================================
     // Private helper methods

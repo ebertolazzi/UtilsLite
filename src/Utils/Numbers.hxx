@@ -198,7 +198,7 @@ namespace Utils
   //! \return True if a NaN value is found, otherwise false.
   static inline bool found_NaN( double const * pv, int const DIM )
   {
-    for ( int i{ 0 }; i < DIM; ++i )
+    for ( int i = 0; i < DIM; ++i )
       if ( !is_finite( pv[i] ) ) return true;
     return false;
   }
@@ -210,7 +210,7 @@ namespace Utils
   //! \return True if a NaN value is found, otherwise false.
   static inline bool found_NaN( float const * pv, int const DIM )
   {
-    for ( int i{ 0 }; i < DIM; ++i )
+    for ( int i = 0; i < DIM; ++i )
       if ( !is_finite( pv[i] ) ) return true;
     return false;
   }

@@ -86,7 +86,7 @@ public:
     x_vec.resize( 1 );
     auto & x0{ x_vec[0] };
     x0.resize( n );
-    for ( integer i{ 0 }; i < n; i += 2 )
+    for ( integer i = 0; i < n; i += 2 )
     {
       x0( i )     = -1.2;
       x0( i + 1 ) = 1;

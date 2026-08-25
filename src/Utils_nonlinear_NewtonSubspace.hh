@@ -60,29 +60,29 @@ namespace Utils
     using integer      = Eigen::Index;
 
   private:
-    int    m_max_inner_iter{ 10 };
-    Scalar m_inner_tol{ 1e-4 };
-    Scalar m_inner_lambda{ 1e-6 };
-    Scalar m_lambda_min{ 1e-10 };
-    Scalar m_lambda_max{ 1e10 };
-    bool   m_use_linesearch{ true };
-    int    m_verbose{ 0 };
+    int    m_max_inner_iter = 10;
+    Scalar m_inner_tol      = 1e-4;
+    Scalar m_inner_lambda   = 1e-6;
+    Scalar m_lambda_min     = 1e-10;
+    Scalar m_lambda_max     = 1e10;
+    bool   m_use_linesearch = true;
+    int    m_verbose        = 0;
 
     // Lazy Jacobian parameters
-    bool m_lazy_jacobian{ true };
-    int  m_lazy_update_freq{ 3 };
+    bool m_lazy_jacobian    = true;
+    int  m_lazy_update_freq = 3;
 
     // Counters
-    int m_total_inner_iter{ 0 };
-    int m_inner_feval{ 0 };
-    int m_inner_jeval{ 0 };
+    int m_total_inner_iter = 0;
+    int m_inner_feval      = 0;
+    int m_inner_jeval      = 0;
 
     // Adaptive damping parameters
-    bool   m_adaptive_damping{ true };
-    Scalar m_damping_increase_factor{ 2.0 };
-    Scalar m_damping_decrease_factor{ 0.5 };
-    int    m_max_consecutive_rejects{ 3 };
-    int    m_consecutive_rejects{ 0 };
+    bool   m_adaptive_damping        = true;
+    Scalar m_damping_increase_factor = 2.0;
+    Scalar m_damping_decrease_factor = 0.5;
+    int    m_max_consecutive_rejects = 3;
+    int    m_consecutive_rejects     = 0;
 
   public:
     SubspaceInnerSolver() = default;
@@ -459,40 +459,40 @@ namespace Utils
     };
 
   private:
-    int               m_max_outer_iter{ 100 };
-    Scalar            m_outer_tol{ 1e-8 };
-    int               m_block_size{ 1 };
+    int               m_max_outer_iter = 100;
+    Scalar            m_outer_tol      = 1e-8;
+    int               m_block_size     = 1;
     SelectionStrategy m_strategy{ SCALED_GRADIENT };
-    int               m_verbose{ 0 };
+    int               m_verbose = 0;
 
     SubspaceInnerSolver m_inner_solver;
     std::mt19937        m_rng{ std::random_device{}() };
-    int                 m_cyclic_index{ 0 };
-    int                 m_outer_iter{ 0 };
+    int                 m_cyclic_index = 0;
+    int                 m_outer_iter   = 0;
 
     // Stats tracking for Outer Loop
-    int    m_outer_jeval{ 0 };
-    Scalar m_final_residual{ 0.0 };
+    int    m_outer_jeval    = 0;
+    Scalar m_final_residual = 0;
 
     SparseMatrix m_cached_jacobian;
-    bool         m_jacobian_valid{ false };
+    bool         m_jacobian_valid = false;
 
     // Stagnation detection
     std::vector<Scalar> m_residual_history;
     std::deque<int>     m_selection_history;
-    int                 m_stagnation_counter{ 0 };
-    int                 m_max_stagnation_before_reset{ 10 };
-    Scalar              m_stagnation_tolerance{ 1e-3 };
-    bool                m_adaptive_block_size{ true };
-    int                 m_min_block_size{ 1 };
-    int                 m_max_block_size{ 50 };
-    Scalar              m_progress_threshold{ 0.1 };
+    int                 m_stagnation_counter          = 0;
+    int                 m_max_stagnation_before_reset = 10;
+    Scalar              m_stagnation_tolerance        = 1e-3;
+    bool                m_adaptive_block_size         = true;
+    int                 m_min_block_size              = 1;
+    int                 m_max_block_size              = 50;
+    Scalar              m_progress_threshold          = 0.1;
     FallbackStrategy    m_fallback_strategy{ INCREASE_BLOCK };
 
     // Adaptive strategy switching
-    bool   m_adaptive_strategy{ true };
-    int    m_strategy_switch_frequency{ 5 };
-    Scalar m_current_progress{ 0.0 };
+    bool   m_adaptive_strategy         = true;
+    int    m_strategy_switch_frequency = 5;
+    Scalar m_current_progress          = 0;
 
   public:
     TwoLevelSubspaceNewton()

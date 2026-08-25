@@ -747,7 +747,7 @@ namespace Utils
     nonlinear_system_tests.push_back( new ZeroJacobianFunction( 50 ) );
     nonlinear_system_tests.push_back( new ZeroJacobianFunction( 101 ) );
 
-    for ( unsigned i{ 0 }; i < unsigned( nonlinear_system_tests_map.size() ); ++i )
+    for ( unsigned i = 0; i < unsigned( nonlinear_system_tests_map.size() ); ++i )
     {
       nonlinear_system_tests_map[nonlinear_system_tests[i]->title()] = i;
     }

@@ -65,36 +65,36 @@ namespace Utils
     Malloc<integer> m_imem{ "AABBtree_integer" };
 
     // AABBtree structure
-    integer m_dim{ 0 };
-    integer m_2dim{ 0 };
-    integer m_num_objects{ 0 };
-    integer m_num_tree_nodes{ 0 };
+    integer m_dim            = 0;
+    integer m_2dim           = 0;
+    integer m_num_objects    = 0;
+    integer m_num_tree_nodes = 0;
 
-    integer * m_father{ nullptr };     // m_nmax
-    integer * m_child{ nullptr };      // m_nmax
-    integer * m_ptr_nodes{ nullptr };  // m_nmax
-    integer * m_num_nodes{ nullptr };  // m_nmax
-    integer * m_id_nodes{ nullptr };   // m_num_objects
-    Real *    m_bbox_tree{ nullptr };  // m_nmax*m_2dim
-    Real *    m_bbox_objs{ nullptr };  // m_num_objects*m_2dim
+    integer * m_father    = nullptr;  // m_nmax
+    integer * m_child     = nullptr;  // m_nmax
+    integer * m_ptr_nodes = nullptr;  // m_nmax
+    integer * m_num_nodes = nullptr;  // m_nmax
+    integer * m_id_nodes  = nullptr;  // m_num_objects
+    Real *    m_bbox_tree = nullptr;  // m_nmax*m_2dim
+    Real *    m_bbox_objs = nullptr;  // m_num_objects*m_2dim
 
     mutable std::vector<integer> m_stack;
 
-    integer m_nmax{ 0 };
+    integer m_nmax = 0;
 
     // parameters
-    integer m_max_num_objects_per_node{ 16 };
-    Real    m_bbox_long_edge_ratio{ Real( 0.8 ) };
-    Real    m_bbox_overlap_tolerance{ Real( 0.1 ) };
-    Real    m_bbox_min_size_tolerance{ Real( 0 ) };
+    integer m_max_num_objects_per_node = 16;
+    Real    m_bbox_long_edge_ratio     = 0.8;
+    Real    m_bbox_overlap_tolerance   = 0.1;
+    Real    m_bbox_min_size_tolerance  = 0;
 
     // statistic
     mutable integer m_num_check = 0;
 
     using OVERLAP_FUN = bool ( * )( Real const bbox1[], Real const bbox2[], integer dim );
 
-    OVERLAP_FUN m_check_overlap{ nullptr };
-    OVERLAP_FUN m_check_overlap_with_point{ nullptr };
+    OVERLAP_FUN m_check_overlap            = nullptr;
+    OVERLAP_FUN m_check_overlap_with_point = nullptr;
 
     static bool overlap1( Real const bbox1[], Real const bbox2[], integer )
     { return bbox1[0] <= bbox2[1] && bbox1[1] >= bbox2[0]; }
@@ -194,8 +194,8 @@ namespace Utils
 
     static bool check_overlap( Real const bb1[], Real const bb2[], integer dim )
     {
-      bool    overlap{ false };
-      integer k{ dim % 4 };
+      bool    overlap = false;
+      integer k       = dim % 4;
       switch ( k )
       {
         case 1: overlap = bb1[0] <= bb2[dim] && bb1[dim] >= bb2[0]; break;
@@ -223,8 +223,8 @@ namespace Utils
 
     static bool check_overlap_with_point( Real const pnt[], Real const bb2[], integer dim )
     {
-      bool    overlap{ false };
-      integer k{ dim % 4 };
+      bool    overlap = false;
+      integer k       = dim % 4;
       switch ( k )
       {
         case 1: overlap = pnt[0] <= bb2[dim] && pnt[0] >= bb2[0]; break;
@@ -436,7 +436,7 @@ namespace Utils
       m_id_nodes  = m_imem( m_num_objects );
 
       // initialize id nodes, will be reordered during the tree build
-      for ( integer i{ 0 }; i < m_num_objects; ++i ) m_id_nodes[i] = i;
+      for ( integer i = 0; i < m_num_objects; ++i ) m_id_nodes[i] = i;
 
       // setup root node
       m_father[0]      = -1;
@@ -564,9 +564,9 @@ namespace Utils
         Real const * father_min = m_bbox_tree + id_father * m_2dim;
         Real const * father_max = father_min + m_dim;
 
-        integer idim{ 0 };
+        integer idim = 0;
         Real    mx{ father_max[0] - father_min[0] };
-        for ( integer i{ 1 }; i < m_dim; ++i )
+        for ( integer i = 1; i < m_dim; ++i )
         {
           Real mx1 = father_max[i] - father_min[i];
           if ( mx < mx1 )
@@ -580,11 +580,11 @@ namespace Utils
         if ( mx < m_bbox_min_size_tolerance ) continue;
 
         Real tol_len{ m_bbox_long_edge_ratio * mx };
-        Real sp{ 0 };
+        Real sp = 0;
 
         // separate short/long and accumulate short baricenter
-        integer n_long{ 0 };
-        integer n_short{ 0 };
+        integer n_long  = 0;
+        integer n_short = 0;
         while ( n_long + n_short < num )
         {
           integer id = ptr[n_long];
@@ -618,8 +618,8 @@ namespace Utils
         sp /= 2 * n_short;
 
         // partition based on centers
-        integer n_left{ 0 };
-        integer n_right{ 0 };
+        integer n_left  = 0;
+        integer n_right = 0;
 
         while ( n_long + n_left + n_right < num )
         {
@@ -642,8 +642,8 @@ namespace Utils
         if ( n_left == 0 || n_right == 0 ) continue;
 
         // child indexing
-        integer id_left{ m_num_tree_nodes + 0 };
-        integer id_right{ m_num_tree_nodes + 1 };
+        integer id_left  = m_num_tree_nodes + 0;
+        integer id_right = m_num_tree_nodes + 1;
 
         Utils::Check(
           id_right < m_nmax,
@@ -654,7 +654,7 @@ namespace Utils
         // compute bbox of left and right child
         Real * bb_left_min{ m_bbox_tree + id_left * m_2dim };
         Real * bb_left_max{ bb_left_min + m_dim };
-        for ( integer i{ 0 }; i < n_left; ++i )
+        for ( integer i = 0; i < n_left; ++i )
         {
           integer id{ ptr[n_long + i] };
           Utils::Check(
@@ -667,7 +667,7 @@ namespace Utils
           if ( i == 0 ) { std::copy_n( bb_id_min, m_2dim, bb_left_min ); }
           else
           {
-            for ( integer j{ 0 }; j < m_dim; ++j )
+            for ( integer j = 0; j < m_dim; ++j )
             {
               if ( bb_left_min[j] > bb_id_min[j] ) bb_left_min[j] = bb_id_min[j];
               if ( bb_left_max[j] < bb_id_max[j] ) bb_left_max[j] = bb_id_max[j];
@@ -702,10 +702,10 @@ namespace Utils
         if ( n_left < m_max_num_objects_per_node || n_right < m_max_num_objects_per_node )
         {
           // few nodes, check if improve volume
-          Real vo{ 1 };
-          Real vL{ 1 };
-          Real vR{ 1 };
-          for ( integer j{ 0 }; j < m_dim; ++j )
+          Real vo = 1;
+          Real vL = 1;
+          Real vR = 1;
+          for ( integer j = 0; j < m_dim; ++j )
           {
             Real Lmin{ bb_left_min[j] };
             Real Lmax{ bb_left_max[j] };
@@ -891,11 +891,11 @@ namespace Utils
           // For each object in node root1, add all objects in node root2 as candidates
           integer const * ptr1{ this->m_id_nodes + this->m_ptr_nodes[root1] };
           integer const * ptr2{ aabb.m_id_nodes + aabb.m_ptr_nodes[root2] };
-          for ( integer ii{ 0 }; ii < nn1; ++ii )
+          for ( integer ii = 0; ii < nn1; ++ii )
           {
             integer    s1{ ptr1[ii] };
             AABB_SET & BB{ bb_index[s1] };
-            for ( integer jj{ 0 }; jj < nn2; ++jj ) { BB.insert( ptr2[jj] ); }
+            for ( integer jj = 0; jj < nn2; ++jj ) { BB.insert( ptr2[jj] ); }
           }
         }
 
@@ -983,7 +983,7 @@ namespace Utils
         // refine candidate
         integer const   num{ this->m_num_nodes[id_father] };
         integer const * ptr{ this->m_id_nodes + this->m_ptr_nodes[id_father] };
-        for ( integer ii{ 0 }; ii < num; ++ii )
+        for ( integer ii = 0; ii < num; ++ii )
         {
           integer      s{ ptr[ii] };
           Real const * bb_s{ m_bbox_objs + s * m_2dim };
@@ -1038,7 +1038,7 @@ namespace Utils
         // refine candidate
         integer const   num{ this->m_num_nodes[id_father] };
         integer const * ptr{ this->m_id_nodes + this->m_ptr_nodes[id_father] };
-        for ( integer ii{ 0 }; ii < num; ++ii )
+        for ( integer ii = 0; ii < num; ++ii )
         {
           integer      s{ ptr[ii] };
           Real const * bb_s{ m_bbox_objs + ptr[ii] * m_2dim };
@@ -1104,12 +1104,12 @@ namespace Utils
           // construct list of intersecting candidated
           integer const * ptr1{ this->m_id_nodes + this->m_ptr_nodes[root1] };
           integer const * ptr2{ aabb.m_id_nodes + aabb.m_ptr_nodes[root2] };
-          for ( integer ii{ 0 }; ii < nn1; ++ii )
+          for ( integer ii = 0; ii < nn1; ++ii )
           {
             integer      s1{ ptr1[ii] };
             Real const * bb_s1{ m_bbox_objs + s1 * m_2dim };
             AABB_SET &   BB{ bb_index[s1] };
-            for ( integer jj{ 0 }; jj < nn2; ++jj )
+            for ( integer jj = 0; jj < nn2; ++jj )
             {
               integer      s2{ ptr2[jj] };
               Real const * bb_s2{ aabb.m_bbox_objs + s2 * m_2dim };
@@ -1303,8 +1303,8 @@ namespace Utils
     //!
     integer num_tree_nodes( integer const nmin ) const
     {
-      integer n{ 0 };
-      for ( integer i{ 0 }; i < m_num_tree_nodes; ++i )
+      integer n = 0;
+      for ( integer i = 0; i < m_num_tree_nodes; ++i )
         if ( m_num_nodes[i] >= nmin ) ++n;
       return n;
     }

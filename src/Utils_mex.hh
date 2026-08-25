@@ -532,7 +532,7 @@ namespace Utils
     arg = mxCreateCellMatrix( static_cast<mwSize>( str_vec.size() ), 1 );
 
     // Fill the cell array with C++ strings
-    for ( size_t i{ 0 }; i < str_vec.size(); ++i )
+    for ( size_t i = 0; i < str_vec.size(); ++i )
     {
       mxArray * str{ mxCreateString( str_vec[i].data() ) };  // Create a MATLAB string from C++ string
       mxSetCell( arg, static_cast<int>( i ), str );          // Set the string in the correct position
@@ -553,9 +553,9 @@ namespace Utils
   //!
   template <typename base> class mex_class_handle
   {
-    uint32_t m_signature{ CLASS_HANDLE_SIGNATURE };  ///< Signature used to verify handle validity
-    base *   m_ptr{ nullptr };                       ///< Pointer to the managed C++ object
-    string   m_name;                                 ///< Name of the C++ class type (RTTI)
+    uint32_t m_signature = CLASS_HANDLE_SIGNATURE;  ///< Signature used to verify handle validity
+    base *   m_ptr       = nullptr;                 ///< Pointer to the managed C++ object
+    string   m_name;                                ///< Name of the C++ class type (RTTI)
 
   public:
     /// Deleted copy assignment operator to prevent copying

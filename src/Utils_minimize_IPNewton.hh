@@ -131,28 +131,28 @@ namespace Utils
 
     // Results
     Status  m_status{ Status::NOT_STARTED };
-    integer m_outer_iterations{ 0 };
-    integer m_total_inner_iterations{ 0 };
-    integer m_function_evals{ 0 };
-    integer m_hessian_evals{ 0 };
-    Scalar  m_final_f{ 0 };
-    Scalar  m_initial_f{ 0 };
-    Scalar  m_final_mu{ 0 };
-    Scalar  m_duality_gap{ 0 };
-    Scalar  m_primal_infeasibility{ 0 };
-    Scalar  m_dual_infeasibility{ 0 };
-    Scalar  m_gradient_norm{ 0 };
+    integer m_outer_iterations       = 0;
+    integer m_total_inner_iterations = 0;
+    integer m_function_evals         = 0;
+    integer m_hessian_evals          = 0;
+    Scalar  m_final_f                = 0;
+    Scalar  m_initial_f              = 0;
+    Scalar  m_final_mu               = 0;
+    Scalar  m_duality_gap            = 0;
+    Scalar  m_primal_infeasibility   = 0;
+    Scalar  m_dual_infeasibility     = 0;
+    Scalar  m_gradient_norm          = 0;
     Vector  m_x;
     Vector  m_lambda_lower;
     Vector  m_lambda_upper;
-    integer m_newton_steps{ 0 };
-    integer m_gradient_steps{ 0 };
-    integer m_centering_steps{ 0 };
+    integer m_newton_steps    = 0;
+    integer m_gradient_steps  = 0;
+    integer m_centering_steps = 0;
 
     // Best point tracking
     Vector m_best_x;
-    Scalar m_best_f{ std::numeric_limits<Scalar>::max() };
-    Scalar m_last_df{ 0 };
+    Scalar m_best_f  = std::numeric_limits<Scalar>::max();
+    Scalar m_last_df = 0;
 
     void reset_results()
     {

@@ -60,14 +60,14 @@ struct FunctionStats
 {
   std::string name;
   int         dimension;
-  size_t      total_tests{ 0 };
-  size_t      successful_tests{ 0 };
-  size_t      total_iterations{ 0 };
-  size_t      total_evaluations{ 0 };
-  real_type   average_iterations{ 0.0 };
-  real_type   success_rate{ 0.0 };
-  real_type   min_final_value{ std::numeric_limits<real_type>::max() };
-  real_type   max_final_value{ std::numeric_limits<real_type>::lowest() };
+  size_t      total_tests        = 0;
+  size_t      successful_tests   = 0;
+  size_t      total_iterations   = 0;
+  size_t      total_evaluations  = 0;
+  real_type   average_iterations = 0;
+  real_type   success_rate       = 0;
+  real_type   min_final_value    = std::numeric_limits<real_type>::max();
+  real_type   max_final_value    = std::numeric_limits<real_type>::lowest();
 };
 
 // Collettore globale dei risultati

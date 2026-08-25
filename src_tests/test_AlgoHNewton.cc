@@ -36,8 +36,8 @@ static inline real_type power4( real_type const x )
 static inline real_type power5( real_type const x )
 { return power4( x ) * x; }
 
-static int ntest{ 0 };
-static int nfuneval{ 0 };
+static int ntest    = 0;
+static int nfuneval = 0;
 
 // Struct to hold test results
 struct TestResult
@@ -271,15 +271,15 @@ class FUN1 : public Utils::AlgoHNewton_base_fun<real_type>
 public:
   real_type eval( real_type const x ) const override
   {
-    real_type res{ 0 };
-    for ( int i{ 1 }; i <= 20; ++i ) { res += power2( 2 * i - 5 ) / power3( x - i * i ); }
+    real_type res = 0;
+    for ( int i = 1; i <= 20; ++i ) { res += power2( 2 * i - 5 ) / power3( x - i * i ); }
     return -2 * res;
   }
 
   real_type D( real_type const x ) const override
   {
-    real_type res{ 0 };
-    for ( int i{ 1 }; i <= 20; ++i ) { res += power2( 2 * i - 5 ) / power4( x - i * i ); }
+    real_type res = 0;
+    for ( int i = 1; i <= 20; ++i ) { res += power2( 2 * i - 5 ) / power4( x - i * i ); }
     return 6 * res;
   }
 };
@@ -640,24 +640,24 @@ int main()
   do_solve( -1, 4, &fun11, "FUN11: x*exp(-1/x²)", "Special Functions" );
 
   // Tests: FUN12
-  for ( int i{ 1 }; i <= 8; ++i )
+  for ( int i = 1; i <= 8; ++i )
   {
     FUN12 f( i );
     do_solve( -1e4, m_pi / 2, &f, fmt::format( "FUN12: n={}", i ), "Trigonometric / Power" );
   }
-  for ( int i{ 0 }; i <= 40; i += 10 )
+  for ( int i = 0; i <= 40; i += 10 )
   {
     FUN12 f( i );
     do_solve( -1e4, m_pi / 2, &f, fmt::format( "FUN12: n={}", i ), "Trigonometric / Power" );
   }
 
   // Tests: FUN13
-  for ( int i{ 20 }; i <= 40; ++i )
+  for ( int i = 20; i <= 40; ++i )
   {
     FUN13 f( i );
     do_solve( -1e4, 1e-4, &f, fmt::format( "FUN13: n={}", i ), "Complex Roots / Special" );
   }
-  for ( int i{ 100 }; i <= 1000; i += 100 )
+  for ( int i = 100; i <= 1000; i += 100 )
   {
     FUN13 f( i );
     do_solve( -1e4, 1e-4, &f, fmt::format( "FUN13: n={}", i ), "Complex Roots / Special" );

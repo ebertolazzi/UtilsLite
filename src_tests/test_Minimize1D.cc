@@ -38,11 +38,11 @@ namespace
 {
   struct TestStatistics
   {
-    int tests{ 0 };
-    int failures{ 0 };
-    int iterations{ 0 };
-    int function_evaluations{ 0 };
-    int derivative_evaluations{ 0 };
+    int tests                  = 0;
+    int failures               = 0;
+    int iterations             = 0;
+    int function_evaluations   = 0;
+    int derivative_evaluations = 0;
   };
 
   class MinFunction final : public Minimize1D_base_fun<real_type>
@@ -187,7 +187,7 @@ namespace
 
   void run_iteration_limit_tests( TestStatistics & stats )
   {
-    real_type const inf{ std::numeric_limits<real_type>::infinity() };
+    real_type const       inf{ std::numeric_limits<real_type>::infinity() };
     Minimize1D<real_type> solver;
     solver.set_max_iterations( 3 );
 
@@ -213,11 +213,7 @@ namespace
     fmt::print( "  state reset/reuse: {} (iter={}, x={})\n", ok ? "PASS" : "FAIL", solver.used_iter(), x );
 
     solver.set_max_iterations( 12 );
-    x = solver.eval2(
-      -inf,
-      inf,
-      []( real_type t ) { return t; },
-      []( real_type ) { return real_type( 1 ); } );
+    x  = solver.eval2( -inf, inf, []( real_type t ) { return t; }, []( real_type ) { return real_type( 1 ); } );
     ok = !solver.converged() && solver.used_iter() == 12 && solver.num_fun_eval() == 1;
     ++stats.tests;
     if ( !ok ) ++stats.failures;
@@ -251,7 +247,7 @@ int main()
   build_1dmin_list( problems );
 
   TestStatistics stats;
-  for ( size_t i{ 0 }; i < problems.size(); ++i ) run_dataset_test( *problems[i], i % 2 == 0, stats );
+  for ( size_t i = 0; i < problems.size(); ++i ) run_dataset_test( *problems[i], i % 2 == 0, stats );
 
   run_iteration_limit_tests( stats );
 

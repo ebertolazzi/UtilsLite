@@ -63,9 +63,9 @@ class BlockMult
   Utils::ThreadPool5     Pool5{ 5 };
   Utils::ThreadPoolEigen PoolEigen{ 5 };
 
-  const std::vector<integer> * m_i_block{ nullptr };
-  const std::vector<integer> * m_j_block{ nullptr };
-  const std::vector<integer> * m_k_block{ nullptr };
+  const std::vector<integer> * m_i_block = nullptr;
+  const std::vector<integer> * m_j_block = nullptr;
+  const std::vector<integer> * m_k_block = nullptr;
 
   void Compute_C_block( const mat & A, const mat & B, mat & C, integer i, integer j ) const;
 
@@ -89,7 +89,7 @@ void BlockMult::Compute_C_block( const mat & A, const mat & B, mat & C, integer 
   auto const II = Eigen::seqN( ( *m_i_block )[i - 1], ( *m_i_block )[i] - ( *m_i_block )[i - 1] );
   auto const JJ = Eigen::seqN( ( *m_j_block )[j - 1], ( *m_j_block )[j] - ( *m_j_block )[j - 1] );
 
-  for ( size_t k{ 1 }; k < m_k_block->size(); ++k )
+  for ( size_t k = 1; k < m_k_block->size(); ++k )
   {
     auto KK = Eigen::seqN( ( *m_k_block )[k - 1], ( *m_k_block )[k] - ( *m_k_block )[k - 1] );
     C( II, JJ ) += A( II, KK ) * B( KK, JJ );
@@ -124,9 +124,9 @@ bool BlockMult::multiply(
   C.setZero();
 
 #define THE_TASK( POOL )                                                                                \
-  for ( integer i{ 1 }; i < static_cast<integer>( i_block.size() ); ++i )                               \
+  for ( integer i = 1; i < static_cast<integer>( i_block.size() ); ++i )                                \
   {                                                                                                     \
-    for ( integer j{ 1 }; j < static_cast<integer>( j_block.size() ); ++j )                             \
+    for ( integer j = 1; j < static_cast<integer>( j_block.size() ); ++j )                              \
     {                                                                                                   \
       POOL.run( &BlockMult::Compute_C_block, this, std::ref( A ), std::ref( B ), std::ref( C ), i, j ); \
     }                                                                                                   \

@@ -115,8 +115,8 @@ namespace Utils
       std::vector<TaskData *> m_queue_data;
 
       unsigned m_size, m_capacity;
-      unsigned m_push_ptr{ 0 };
-      unsigned m_pop_ptr{ 0 };
+      unsigned m_push_ptr = 0;
+      unsigned m_pop_ptr  = 0;
 
       TaskData * pop_nolock()
       {

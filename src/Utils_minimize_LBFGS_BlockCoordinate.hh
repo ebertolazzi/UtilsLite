@@ -247,33 +247,33 @@ namespace Utils
     struct Options
     {
       // Block configuration
-      integer block_size{ 20 };      ///< Base block size
-      double  overlap_ratio{ 0.3 };  ///< Fraction of block overlap (0-1)
-      integer min_block_size{ 5 };   ///< Minimum block size
-      integer max_block_size{ 15 };  ///< Maximum block size
+      integer block_size     = 20;   ///< Base block size
+      double  overlap_ratio  = 0.3;  ///< Fraction of block overlap (0-1)
+      integer min_block_size = 5;    ///< Minimum block size
+      integer max_block_size = 15;   ///< Maximum block size
 
       // Outer loop control
-      integer max_outer_iterations{ 50 };
-      integer max_inner_iterations{ 200 };
-      Scalar  outer_tolerance{ 1e-6 };
+      integer max_outer_iterations = 50;
+      integer max_inner_iterations = 200;
+      Scalar  outer_tolerance      = 1e-6;
 
       // Inner L-BFGS options
-      integer lbfgs_m{ 10 };
-      Scalar  lbfgs_g_tol{ 1e-6 };
-      Scalar  lbfgs_f_tol{ 1e-12 };  // Much tighter for inner convergence
+      integer lbfgs_m     = 10;
+      Scalar  lbfgs_g_tol = 1e-6;
+      Scalar  lbfgs_f_tol = 1e-12;  // Much tighter for inner convergence
 
       // Adaptive parameters
-      bool   adaptive_block_size{ true };
-      Scalar progress_threshold{ 1e-6 };            // Relative threshold for block acceptance
-      Scalar absolute_progress_threshold{ 1e-12 };  // Absolute threshold for tiny improvements
+      bool   adaptive_block_size         = true;
+      Scalar progress_threshold          = 1e-6;   // Relative threshold for block acceptance
+      Scalar absolute_progress_threshold = 1e-12;  // Absolute threshold for tiny improvements
 
       // Convergence control
-      integer max_stagnation_count{ 3 };
-      Scalar  relative_stagnation_tol{ 1e-8 };  // Tighter relative tolerance
+      integer max_stagnation_count    = 3;
+      Scalar  relative_stagnation_tol = 1e-8;  // Tighter relative tolerance
 
       // Verbosity (enhanced)
-      integer verbosity_level{ 1 };  // 0: quiet, 1: outer stats, 2: inner progress, 3: detailed
-      bool    use_unicode_borders{ true };
+      integer verbosity_level     = 1;  // 0: quiet, 1: outer stats, 2: inner progress, 3: detailed
+      bool    use_unicode_borders = true;
     };
 
   private:
@@ -283,26 +283,26 @@ namespace Utils
 
     // Optimization results storage
     Status  m_status{ Status::FAILED };
-    Scalar  m_final_function_value{ 0 };
-    Scalar  m_initial_function_value{ 0 };
-    integer m_outer_iterations{ 0 };
-    integer m_inner_iterations{ 0 };
-    integer m_total_iterations{ 0 };
-    integer m_outer_evaluations{ 0 };
-    integer m_inner_evaluations{ 0 };
-    integer m_total_evaluations{ 0 };
-    integer m_blocks_processed{ 0 };
-    Scalar  m_max_block_improvement{ 0 };
+    Scalar  m_final_function_value   = 0;
+    Scalar  m_initial_function_value = 0;
+    integer m_outer_iterations       = 0;
+    integer m_inner_iterations       = 0;
+    integer m_total_iterations       = 0;
+    integer m_outer_evaluations      = 0;
+    integer m_inner_evaluations      = 0;
+    integer m_total_evaluations      = 0;
+    integer m_blocks_processed       = 0;
+    Scalar  m_max_block_improvement  = 0;
 
-    integer m_outer_iteration_count{ 0 };
+    integer m_outer_iteration_count = 0;
 
     // Random number generation
     std::random_device m_rd;
     std::mt19937       m_gen;
 
     // Progress tracking
-    Scalar  m_previous_best{ std::numeric_limits<Scalar>::max() };
-    integer m_stagnation_count{ 0 };
+    Scalar  m_previous_best    = std::numeric_limits<Scalar>::max();
+    integer m_stagnation_count = 0;
 
     string m_indent{ "" };  // For consistent indentation
 

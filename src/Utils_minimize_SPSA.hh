@@ -184,16 +184,16 @@ namespace Utils
       Vector delta(n);
       Scalar y_plus, y_minus;
 
-      size_t eval_count{0};
+      size_t eval_count = 0;
 
-      for ( size_t rep{0}; rep < m_opts.repeats; ++rep ) {
+      for ( size_t rep = 0; rep < m_opts.repeats; ++rep ) {
 
         // Sample delta
         if ( m_opts.use_rademacher ) {
-          for ( size_t i{0}; i < n; ++i )
+          for ( size_t i = 0; i < n; ++i )
             delta[i] = (rademacher_dist(rng) ? Scalar(1) : Scalar(-1));
         } else {
-          for ( size_t i{0}; i < n; ++i ) {
+          for ( size_t i = 0; i < n; ++i ) {
             Scalar d = gaussian_dist(rng);
             // Prevent too small delta (rare for Gaussian, but useful)
             if ( abs(d) < m_opts.min_delta_abs )
@@ -215,7 +215,7 @@ namespace Utils
         const Scalar denom_factor = Scalar(0.5); // Multiply by (y+ - y-) * 0.5 / (c_i * delta_i)
         Scalar diff = (y_plus - y_minus);
 
-        for (size_t i{0}; i < n; ++i) {
+        for (size_t i = 0; i < n; ++i) {
           Scalar di = delta[i];
           // Safety: if delta very close to zero (only possible with Gaussian), skip or use fallback
           if (std::abs(di) < m_opts.min_delta_abs) {
@@ -287,28 +287,28 @@ namespace Utils
      */
     struct Options
     {
-      size_t max_iter{ 1000 };        ///< Maximum iterations
-      size_t gradient_avg{ 2 };       ///< SPSA averages for gradient (reduces variance)
-      Scalar a0{ 0.3 };               ///< Base learning rate
-      Scalar c0{ 0.05 };              ///< Perturbation amplitude
-      Scalar alpha{ 0.602 };          ///< Learning rate decay exponent (standard SPSA)
-      Scalar gamma{ 0.101 };          ///< Perturbation decay exponent (standard SPSA)
-      bool   use_projection{ true };  ///< Enable projection to bounds
-      bool   verbose{ false };        ///< Verbose output
-      size_t print_every{ 100 };
+      size_t max_iter       = 1000;   ///< Maximum iterations
+      size_t gradient_avg   = 2;      ///< SPSA averages for gradient (reduces variance)
+      Scalar a0             = 0.3;    ///< Base learning rate
+      Scalar c0             = 0.05;   ///< Perturbation amplitude
+      Scalar alpha          = 0.602;  ///< Learning rate decay exponent (standard SPSA)
+      Scalar gamma          = 0.101;  ///< Perturbation decay exponent (standard SPSA)
+      bool   use_projection = true;   ///< Enable projection to bounds
+      bool   verbose        = false;  ///< Verbose output
+      size_t print_every    = 100;
 
       // Convergence criteria
-      Scalar tol_grad{ 1e-8 };          ///< Gradient norm tolerance
-      size_t tol_grad_patience{ 100 };  ///< Iterations without improvement before stop
-      Scalar tol_f{ 1e-10 };            ///< Function change tolerance
-      size_t tol_f_patience{ 100 };     ///< Iterations without improvement before stop
-      size_t patience{ 100 };           ///< Iterations without improvement before stop
+      Scalar tol_grad          = 1e-8;   ///< Gradient norm tolerance
+      size_t tol_grad_patience = 100;    ///< Iterations without improvement before stop
+      Scalar tol_f             = 1e-10;  ///< Function change tolerance
+      size_t tol_f_patience    = 100;    ///< Iterations without improvement before stop
+      size_t patience          = 100;    ///< Iterations without improvement before stop
 
       // Adaptive step size control
-      bool   use_backtracking{ true };  ///< Enable backtracking line search
-      size_t max_backtrack{ 10 };       ///< Maximum backtracking steps
-      Scalar backtrack_factor{ 0.5 };   ///< Step size reduction factor
-      Scalar max_step_ratio{ 10.0 };    ///< Maximum step size ratio for clipping
+      bool   use_backtracking = true;  ///< Enable backtracking line search
+      size_t max_backtrack    = 10;    ///< Maximum backtracking steps
+      Scalar backtrack_factor = 0.5;   ///< Step size reduction factor
+      Scalar max_step_ratio   = 10.0;  ///< Maximum step size ratio for clipping
     };
 
   private:
@@ -318,13 +318,13 @@ namespace Utils
     std::mt19937 rng{ std::random_device{}() };  ///< Random generator
 
     // Results storage
-    Scalar m_final_f{ 0 };              ///< Final function value
-    Scalar m_grad_norm{ 0 };            ///< Final gradient norm
-    size_t m_iterations{ 0 };           ///< Number of iterations performed
-    Vector m_final_x;                   ///< Final point
-    bool   m_converged{ false };        ///< True if convergence reached
-    size_t m_f_eval_count{ 0 };         ///< Number of function evaluations
-    string m_message{ "Not run yet" };  ///< Termination message
+    Scalar m_final_f    = 0;                ///< Final function value
+    Scalar m_grad_norm  = 0;                ///< Final gradient norm
+    size_t m_iterations = 0;                ///< Number of iterations performed
+    Vector m_final_x;                       ///< Final point
+    bool   m_converged    = false;          ///< True if convergence reached
+    size_t m_f_eval_count = 0;              ///< Number of function evaluations
+    string m_message      = "Not run yet";  ///< Termination message
 
   public:
     /**
@@ -402,7 +402,7 @@ namespace Utils
 
       Scalar a_temp = a_k;
       // Try up to max_backtrack reduced step sizes
-      for ( size_t backtrack{ 0 }; backtrack < m_opts.max_backtrack; ++backtrack )
+      for ( size_t backtrack = 0; backtrack < m_opts.max_backtrack; ++backtrack )
       {
         a_temp *= m_opts.backtrack_factor;
         Vector x_temp = x - a_temp * g;
@@ -532,7 +532,7 @@ namespace Utils
 
       if ( m_opts.verbose ) fmt::print( "[SPSA] Starting optimization, dimension: {}, initial f: {}\n", n, f );
 
-      for ( size_t k{ 0 }; k < m_opts.max_iter; ++k )
+      for ( size_t k = 0; k < m_opts.max_iter; ++k )
       {
         // Calculate learning rate and perturbation with standard SPSA decay
         Scalar a_k = m_opts.a0 / pow( Scalar( k + 1 ), m_opts.alpha );
@@ -543,7 +543,7 @@ namespace Utils
         // ============================
         //   SPSA GRADIENT ESTIMATION
         // ============================
-        for ( size_t rep{ 0 }; rep < m_opts.gradient_avg; ++rep )
+        for ( size_t rep = 0; rep < m_opts.gradient_avg; ++rep )
         {
           // Generate random perturbations
           rademacher( delta );

@@ -804,8 +804,8 @@ namespace Utils
     //!
     Integer sign_variations() const
     {
-      Integer sign_var{ 0 };
-      Integer last_sign{ 0 };
+      Integer sign_var  = 0;
+      Integer last_sign = 0;
       for ( Integer i = 0; i < m_order; ++i )
       {
         Real v = this->coeff( i );
@@ -1175,8 +1175,8 @@ namespace Utils
     vector<Poly_t>   m_sturm;      ///< Sturm sequence polynomials
     vector<Interval> m_intervals;  ///< Isolated intervals containing roots
     dvec_t           m_roots;      ///< Refined roots
-    Real             m_a{ 0 };     ///< Left bound of search interval
-    Real             m_b{ 0 };     ///< Right bound of search interval
+    Real             m_a = 0;      ///< Left bound of search interval
+    Real             m_b = 0;      ///< Right bound of search interval
 
   public:
     Sturm() = default;
@@ -1209,7 +1209,7 @@ namespace Utils
       m_sturm.back().adjust_degree();
       m_sturm.emplace_back( DP );
       m_sturm.back().adjust_degree();
-      Integer ns{ 1 };
+      Integer ns = 1;
       while ( true )
       {
         divide( m_sturm[ns - 1], m_sturm[ns], M, R );
@@ -1218,7 +1218,7 @@ namespace Utils
         ++ns;
       }
       // divide by GCD
-      for ( Integer i{ 0 }; i < ns; ++i )
+      for ( Integer i = 0; i < ns; ++i )
       {
         divide( m_sturm[i], m_sturm.back(), M, R );
         M.normalize();
@@ -1317,8 +1317,8 @@ namespace Utils
     Integer sign_variations( Real x, bool & on_root ) const
     {
       Integer const npoly{ static_cast<Integer>( m_sturm.size() ) };
-      Integer       sign_var{ 0 };
-      Integer       last_sign{ 0 };
+      Integer       sign_var  = 0;
+      Integer       last_sign = 0;
       Real          v{ m_sturm[0].eval( x ) };
       on_root = false;
       if ( v > 0 )
@@ -1330,7 +1330,7 @@ namespace Utils
         on_root   = true;
         last_sign = 0;
       }
-      for ( Integer i{ 1 }; i < npoly; ++i )
+      for ( Integer i = 1; i < npoly; ++i )
       {
         v = m_sturm[i].eval( x );
         if ( v > 0 )
@@ -1641,7 +1641,7 @@ namespace Utils
     {
       m_fun.setup( &m_sturm[0] );
       m_roots.resize( m_intervals.size() );
-      Integer n{ 0 };
+      Integer n = 0;
       for ( auto & I : m_intervals )
       {
         Real & r{ m_roots.coeffRef( n++ ) };
@@ -1820,8 +1820,8 @@ namespace Utils
   {
     using Integer = typename Poly<Real>::Integer;
     Poly<Real> prd( a.order() + b.order() - 1 );  // nuovo polinomio contenente il risultato
-    for ( Integer i{ 0 }; i < a.order(); ++i )
-      for ( Integer j{ 0 }; j < b.order(); ++j ) prd.coeffRef( i + j ) += a.coeff( i ) * b.coeff( j );
+    for ( Integer i = 0; i < a.order(); ++i )
+      for ( Integer j = 0; j < b.order(); ++j ) prd.coeffRef( i + j ) += a.coeff( i ) * b.coeff( j );
     return prd;
   }
 

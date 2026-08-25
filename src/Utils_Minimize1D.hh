@@ -60,9 +60,10 @@ namespace Utils
     PFUN_D m_fun_D;
 
   public:
-    template <typename F, typename FD>
-    Minimize1D_fun( F && fun, FD && fun_D ) : m_fun( std::forward<F>( fun ) ), m_fun_D( std::forward<FD>( fun_D ) )
-    {}
+    template <typename F, typename FD> Minimize1D_fun( F && fun, FD && fun_D )
+      : m_fun( std::forward<F>( fun ) ), m_fun_D( std::forward<FD>( fun_D ) )
+    {
+    }
 
     Real eval( Real x ) const override { return m_fun( x ); }
     Real D( Real x ) const override { return m_fun_D( x ); }
@@ -101,25 +102,25 @@ namespace Utils
   private:
     using Limits = std::numeric_limits<Real>;
 
-    Minimize1D_base_fun<Real> const * m_function{ nullptr };
+    Minimize1D_base_fun<Real> const * m_function = nullptr;
     AlgoBracket<Real>                 m_bracket;
 
-    Integer m_max_iteration{ 200 };
-    Integer m_iteration_count{ 0 };
-    Integer m_fun_evaluation_count{ 0 };
-    Integer m_fun_D_evaluation_count{ 0 };
+    Integer m_max_iteration          = 200;
+    Integer m_iteration_count        = 0;
+    Integer m_fun_evaluation_count   = 0;
+    Integer m_fun_D_evaluation_count = 0;
 
-    bool m_converged{ false };
-    bool m_hit_max_iterations{ false };
-    Real m_x_min{ 0 };
-    Real m_f_min{ 0 };
-    Real m_Df_min{ 0 };
-    Real m_bracket_a{ 0 };
-    Real m_bracket_b{ 0 };
+    bool m_converged          = false;
+    bool m_hit_max_iterations = false;
+    Real m_x_min              = 0;
+    Real m_f_min              = 0;
+    Real m_Df_min             = 0;
+    Real m_bracket_a          = 0;
+    Real m_bracket_b          = 0;
 
     static Real smallest_positive()
     {
-      Real tol{ Limits::denorm_min() };
+      Real tol = Limits::denorm_min();
       if ( !( tol > 0 ) ) tol = Limits::min();
       return tol;
     }
@@ -127,7 +128,7 @@ namespace Utils
     Real evaluate( Real x )
     {
       ++m_fun_evaluation_count;
-      Real fx{ m_function->eval( x ) };
+      Real fx = m_function->eval( x );
       Utils::Check( !std::isnan( fx ), "Minimize1D::eval(), f({}) is NaN\n", x );
       return fx;
     }
@@ -135,7 +136,7 @@ namespace Utils
     Real evaluate_D( Real x )
     {
       ++m_fun_D_evaluation_count;
-      Real dfx{ m_function->D( x ) };
+      Real dfx = m_function->D( x );
       Utils::Check( !std::isnan( dfx ), "Minimize1D::eval(), f'({}) is NaN\n", x );
       return dfx;
     }
@@ -151,18 +152,18 @@ namespace Utils
 
     static Real initial_step( Real x, Real direction )
     {
-      Real limit{ direction > 0 ? Limits::max() : Limits::lowest() };
-      Real near_x{ std::nextafter( x, limit ) };
-      Real spacing{ std::abs( near_x - x ) };
+      Real limit   = direction > 0 ? Limits::max() : Limits::lowest();
+      Real near_x  = std::nextafter( x, limit );
+      Real spacing = std::abs( near_x - x );
       return std::max( Real( 1 ), spacing );
     }
 
     static Real expanded_point( Real x, Real direction, Real step )
     {
-      Real limit{ direction > 0 ? Limits::max() : Limits::lowest() };
+      Real limit = direction > 0 ? Limits::max() : Limits::lowest();
       if ( x == limit ) return x;
 
-      Real next{ direction > 0 ? x + step : x - step };
+      Real next = direction > 0 ? x + step : x - step;
       if ( !std::isfinite( next ) ) next = limit;
 
       if ( direction > 0 )
@@ -178,8 +179,8 @@ namespace Utils
 
     static void double_step( Real & step )
     {
-      Real max_value{ Limits::max() };
-      step = step > max_value / 2 ? max_value : 2 * step;
+      Real max_value = Limits::max();
+      step           = step > max_value / 2 ? max_value : 2 * step;
     }
 
     Real solve_bracket( Real a, Real Da, Real b, Real Db )
@@ -191,14 +192,13 @@ namespace Utils
       // algorithm starts.  A perfectly valid derivative can overflow far
       // from the minimizer, so first move every infinite endpoint inward
       // while retaining the negative-to-positive bracket.
-      while (
-        ( !std::isfinite( Da ) || !std::isfinite( Db ) || !std::isfinite( b - a ) ) &&
-        m_iteration_count < m_max_iteration )
+      while ( ( !std::isfinite( Da ) || !std::isfinite( Db ) || !std::isfinite( b - a ) ) &&
+              m_iteration_count < m_max_iteration )
       {
-        Real c{ std::midpoint( a, b ) };
+        Real c = std::midpoint( a, b );
         if ( c == a || c == b ) break;
 
-        Real Dc{ evaluate_D( c ) };
+        Real Dc = evaluate_D( c );
         ++m_iteration_count;
         if ( Dc == 0 )
         {
@@ -220,8 +220,8 @@ namespace Utils
         m_bracket_b = b;
       }
 
-      Integer remaining{ m_max_iteration - m_iteration_count };
-      bool    budget_exhausted{ remaining <= 0 };
+      Integer remaining        = m_max_iteration - m_iteration_count;
+      bool    budget_exhausted = remaining <= 0;
       if ( budget_exhausted || !std::isfinite( Da ) || !std::isfinite( Db ) || !std::isfinite( b - a ) )
       {
         if ( budget_exhausted ) m_hit_max_iterations = true;
@@ -245,26 +245,26 @@ namespace Utils
       // without evaluating the derivative again at the returned x.  Evaluate
       // it explicitly so derivative() always reports the true user function
       // value and the derivative counter remains exact.
-      Real Dx{ evaluate_D( x ) };
+      Real Dx = evaluate_D( x );
       if ( !m_bracket.converged() && m_bracket.used_iter() >= remaining ) m_hit_max_iterations = true;
       return finish( x, Dx, m_bracket.converged() );
     }
 
     Real expand_and_solve( Real x, Real Dx, Real direction )
     {
-      Real step{ initial_step( x, direction ) };
-      bool budget_exhausted{ true };
+      Real step             = initial_step( x, direction );
+      bool budget_exhausted = true;
 
       while ( m_iteration_count < m_max_iteration )
       {
-        Real next{ expanded_point( x, direction, step ) };
+        Real next = expanded_point( x, direction, step );
         if ( next == x )
         {
           budget_exhausted = false;  // expansion saturated at the domain limit, not the iteration cap
           break;
         }
 
-        Real Dnext{ evaluate_D( next ) };
+        Real Dnext = evaluate_D( next );
         ++m_iteration_count;
 
         if ( direction > 0 )
@@ -320,11 +320,11 @@ namespace Utils
       m_bracket_a = a;
       m_bracket_b = b;
 
-      bool finite_a{ std::isfinite( a ) };
-      bool finite_b{ std::isfinite( b ) };
+      bool finite_a = std::isfinite( a );
+      bool finite_b = std::isfinite( b );
 
-      Real Da{ 0 };
-      Real Db{ 0 };
+      Real Da = 0;
+      Real Db = 0;
 
       // KKT at the lower bound: f'(a) >= 0.
       if ( finite_a )
@@ -357,8 +357,8 @@ namespace Utils
       if ( finite_b ) return expand_and_solve( b, Db, Real( -1 ) );
 
       // On the whole real line zero is a neutral, deterministic initial point.
-      Real x{ 0 };
-      Real Dx{ evaluate_D( x ) };
+      Real x  = 0;
+      Real Dx = evaluate_D( x );
       if ( Dx == 0 )
       {
         m_bracket_a = m_bracket_b = x;
@@ -368,7 +368,7 @@ namespace Utils
     }
 
   public:
-    Minimize1D() = default;
+    Minimize1D()  = default;
     ~Minimize1D() = default;
 
     Minimize1D( Minimize1D const & )             = delete;
@@ -387,7 +387,8 @@ namespace Utils
     template <typename PFUN, typename PFUN_D> Real eval2( Real a, Real b, PFUN && fun, PFUN_D && fun_D )
     {
       Minimize1D_fun<Real, std::decay_t<PFUN>, std::decay_t<PFUN_D>> wrapped(
-        std::forward<PFUN>( fun ), std::forward<PFUN_D>( fun_D ) );
+        std::forward<PFUN>( fun ),
+        std::forward<PFUN_D>( fun_D ) );
       m_function = &wrapped;
       return eval_impl( a, b );
     }

@@ -201,12 +201,12 @@ void print_summary_table()
     global_test_results.end(),
     []( const TestResult & r ) { return r.status == Status::CONVERGED || r.status == Status::GRADIENT_TOO_SMALL; } );
 
-  integer accumulated_iter{ 0 };
-  integer accumulated_evals{ 0 };
-  integer accumulated_hess_evals{ 0 };
-  integer accumulated_qp_solves{ 0 };
-  integer accumulated_line_searches{ 0 };
-  integer accumulated_active{ 0 };
+  integer accumulated_iter          = 0;
+  integer accumulated_evals         = 0;
+  integer accumulated_hess_evals    = 0;
+  integer accumulated_qp_solves     = 0;
+  integer accumulated_line_searches = 0;
+  integer accumulated_active        = 0;
 
   for ( auto const & r : global_test_results )
   {

@@ -162,13 +162,13 @@ namespace Utils
   {
     using Integer = int;
 
-    Integer m_max_fun_evaluation{ 200 };  //!< Max function evaluations
-    Integer m_max_iteration{ 100 };       //!< Max iterations
-    Real    m_tolerance{ pow( machine_eps<Real>(), Real( 2. / 3. ) ) };
-    bool    m_converged{ false };
+    Integer m_max_fun_evaluation = 200;  //!< Max function evaluations
+    Integer m_max_iteration      = 100;  //!< Max iterations
+    Real    m_tolerance          = pow( machine_eps<Real>(), Real( 2. / 3. ) );
+    bool    m_converged          = false;
 
-    mutable Integer m_iteration_count{ 0 };
-    mutable Integer m_fun_evaluation_count{ 0 };
+    mutable Integer m_iteration_count      = 0;
+    mutable Integer m_fun_evaluation_count = 0;
 
     // Static failure value
     static constexpr Real FAILURE_VALUE = numeric_limits<Real>::quiet_NaN();

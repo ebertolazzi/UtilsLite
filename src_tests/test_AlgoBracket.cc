@@ -26,12 +26,12 @@ using Utils::AlgoBracket;
 
 #include "1D_fun.cxx"
 
-constexpr int NA{ 8 };
+constexpr int NA = 8;
 
-static int ntest{ 0 };
-static int nfuneval[NA]{ 0, 0, 0, 0, 0, 0, 0, 0 };
-static int niter[NA]{ 0, 0, 0, 0, 0, 0, 0, 0 };
-static int nconv[NA]{ 0, 0, 0, 0, 0, 0, 0, 0 };
+static int ntest        = 0;
+static int nfuneval[NA] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+static int niter[NA]    = { 0, 0, 0, 0, 0, 0, 0, 0 };
+static int nconv[NA]    = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 template <typename FUN> void do_solve( string_view name, real_type a, real_type b, FUN f )
 {

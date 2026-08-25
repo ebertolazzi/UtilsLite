@@ -44,9 +44,9 @@ public:
     J.resize( n, n );
     J.setZero();
     real_type bf = real_type( 2 ) / static_cast<real_type>( n );
-    for ( integer i{ 0 }; i < n; ++i )
+    for ( integer i = 0; i < n; ++i )
     {
-      for ( integer j{ 0 }; j < n; ++j )
+      for ( integer j = 0; j < n; ++j )
       {
         real_type tmp = -bf;
         if ( i == j ) tmp += 1;

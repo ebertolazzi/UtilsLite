@@ -68,12 +68,12 @@ struct TestResult
 struct LineSearchStats
 {
   std::string name;
-  integer     total_tests{ 0 };
-  integer     successful_tests{ 0 };
-  integer     total_iterations{ 0 };
-  integer     total_function_evals{ 0 };
-  Scalar      avg_iterations{ 0.0 };
-  Scalar      success_rate{ 0.0 };
+  integer     total_tests          = 0;
+  integer     successful_tests     = 0;
+  integer     total_iterations     = 0;
+  integer     total_function_evals = 0;
+  Scalar      avg_iterations       = 0;
+  Scalar      success_rate         = 0;
 };
 
 // Collettore globale

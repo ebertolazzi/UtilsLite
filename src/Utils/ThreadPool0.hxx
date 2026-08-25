@@ -54,7 +54,7 @@ namespace Utils
   class ThreadPool0 : public ThreadPoolBase
   {
     using ThreadPoolBase::FUN;
-    unsigned n_thread{ 1 };
+    unsigned n_thread = 1;
 
   public:
     //!

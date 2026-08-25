@@ -49,8 +49,8 @@ namespace Utils
   {
     using TYPE = std::function<void( void )>;
 
-    std::atomic_int  m_jobs_left{ 0 };
-    std::atomic_bool m_running{ true };
+    std::atomic_int  m_jobs_left = 0;
+    std::atomic_bool m_running   = true;
 
     std::condition_variable m_job_available_var;
     std::condition_variable m_wait_var;
@@ -106,7 +106,7 @@ namespace Utils
     {
       m_threads.clear();
       m_threads.reserve( nthread );
-      for ( unsigned i{ 0 }; i < nthread; ++i ) m_threads.emplace_back( [this] { this->Task(); } );
+      for ( unsigned i = 0; i < nthread; ++i ) m_threads.emplace_back( [this] { this->Task(); } );
     }
 
     //!

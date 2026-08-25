@@ -55,13 +55,13 @@ namespace Utils
     Utils::Check( w > 3, "fmt_table_row( width={}, ... ) no space to print\n", width );
     string const FMT{ fmt::format( "{}{{:{}{}{}}}{}", F, F, align, w - 2, F ) };
     string       res{ L };
-    unsigned     k{ 0 };
+    unsigned     k = 0;
     while ( k < r2 )
     {
       res += ' ';
       ++k;
     }
-    unsigned i{ 0 };
+    unsigned i = 0;
     for ( auto n : names )
     {
       res += fmt::format( fmt::runtime( FMT ), n );
@@ -91,16 +91,16 @@ namespace Utils
     Utils::Check( w > 3, "fmt_table_row( width={}, ... ) no space to print\n", width );
 
     string str;
-    for ( unsigned i{ 0 }; i < w; ++i ) str += F;
+    for ( unsigned i = 0; i < w; ++i ) str += F;
 
     string   res{ L };
-    unsigned k{ 0 };
+    unsigned k = 0;
     while ( k < r2 )
     {
       res += F;
       ++k;
     }
-    for ( unsigned i{ 1 }; i <= N; ++i )
+    for ( unsigned i = 1; i <= N; ++i )
     {
       res += str;
       if ( i != N ) res += C;

@@ -48,9 +48,7 @@ namespace Utils
     //! position and percentage together, so every progress-bar variant
     //! agrees on where the bar ends and what percentage it reports.
     //!
-    inline void progress_bar_metrics(
-      double const progress, int const width, int & pos, int & pct
-    )
+    inline void progress_bar_metrics( double const progress, int const width, int & pos, int & pct )
     {
       double const p{ std::clamp( progress, 0.0, 1.0 ) };
       // std::round (not a raw static_cast<int>) avoids floating point
@@ -81,7 +79,7 @@ namespace Utils
     int pos, pct;
     detail::progress_bar_metrics( progress, width, pos, pct );
     string res{ "[" };
-    for ( int i{ 0 }; i < width; ++i )
+    for ( int i = 0; i < width; ++i )
     {
       if ( i < pos )
         res += '=';
@@ -112,12 +110,12 @@ namespace Utils
   inline string progress_bar2( double const progress, int const width, string_view const msg )
   {
     static std::vector<string> const ch{ ".", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█" };
-    double const p{ std::clamp( progress, 0.0, 1.0 ) };
-    double const              ww{ width * p };
-    int const                 pos{ static_cast<int>( floor( ww ) ) };
-    int const                 frac8{ static_cast<int>( round( 8 * ( ww - pos ) ) ) };
-    std::string               res = "[";
-    for ( int i{ 0 }; i < width; ++i )
+    double const                     p{ std::clamp( progress, 0.0, 1.0 ) };
+    double const                     ww{ width * p };
+    int const                        pos{ static_cast<int>( floor( ww ) ) };
+    int const                        frac8{ static_cast<int>( round( 8 * ( ww - pos ) ) ) };
+    std::string                      res = "[";
+    for ( int i = 0; i < width; ++i )
     {
       if ( i < pos )
         res += ch.back();
@@ -148,9 +146,7 @@ namespace Utils
   //! \param msg      An optional message to display alongside the progress bar.
   //!
   inline void progress_bar( ostream_type & s, double const progress, int const width, string_view const msg )
-  {
-    s << progress_bar( progress, width ) << ' ' << msg << "\033[K\r" << std::flush;
-  }
+  { s << progress_bar( progress, width ) << ' ' << msg << "\033[K\r" << std::flush; }
 
   //!
   //! \brief Outputs an enhanced text-based progress bar to the specified output
@@ -170,9 +166,7 @@ namespace Utils
   //! \param msg      An optional message to display alongside the progress bar.
   //!
   inline void progress_bar2( ostream_type & s, double const progress, int const width, string_view const msg )
-  {
-    s << progress_bar2( progress, width, msg ) << "\033[K\r" << std::flush;
-  }
+  { s << progress_bar2( progress, width, msg ) << "\033[K\r" << std::flush; }
 
 }  // namespace Utils
 

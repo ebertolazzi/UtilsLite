@@ -168,7 +168,7 @@ namespace Utils
     }
     else
     {
-      for ( size_t i{ 0 }; i < max_size - 3; ++i ) tmp += fmt::format( "{}, ", v[i] );
+      for ( size_t i = 0; i < max_size - 3; ++i ) tmp += fmt::format( "{}, ", v[i] );
       tmp.pop_back();
       tmp += "..., ";
       for ( size_t i{ v_size - 3 }; i < v_size; ++i ) tmp += fmt::format( "{}, ", v[i] );

@@ -288,8 +288,8 @@ static void test_thread_safety()
 
   mem_info( "IN", fmt::color::yellow );
 
-  constexpr int num_threads = 4;
-  int           allocs_per_thread{ 100 };
+  constexpr int num_threads       = 4;
+  int           allocs_per_thread = 100;
 
   auto worker = [allocs_per_thread]( int thread_id )
   {

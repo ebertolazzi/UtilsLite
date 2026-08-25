@@ -186,14 +186,14 @@ namespace Utils
     {
       integer start_row;
       integer size;
-      bool    is_dense{ true };
+      bool    is_dense = true;
 
       DiagonalBlock( integer sr, integer sz, bool dense = true ) : start_row( sr ), size( sz ), is_dense( dense ) {}
     };
 
     struct Partitioning
     {
-      bool                       is_purely_diagonal{ false };
+      bool                       is_purely_diagonal = false;
       std::vector<DiagonalBlock> diagonal_blocks;
 
       bool has_partitioning() const { return is_purely_diagonal || !diagonal_blocks.empty(); }

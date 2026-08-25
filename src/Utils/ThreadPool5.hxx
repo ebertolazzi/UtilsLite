@@ -71,7 +71,7 @@ namespace Utils
     class Worker
     {
       FUN             m_push_worker;
-      bool            m_active{ true };  //!< Indicates if the worker is active.
+      bool            m_active = true;   //!< Indicates if the worker is active.
       UTILS_SEMAPHORE m_is_running;      //!< Semaphore to manage task execution.
       std::thread     m_running_thread;  //!< The thread that runs the worker loop.
       FUN             m_job;             //!< Function to be executed by the worker.
@@ -195,7 +195,7 @@ namespace Utils
     {
       m_queue.clear();
       m_workers.reserve( size_t( nthread ) );
-      for ( unsigned id{ 0 }; id < nthread; ++id ) { m_workers.emplace_back( std::make_unique<Worker>( this, id ) ); }
+      for ( unsigned id = 0; id < nthread; ++id ) { m_workers.emplace_back( std::make_unique<Worker>( this, id ) ); }
       // Workers add themselves to the queue once they are ready.
       // No need to push them here: worker_loop() calls push_worker().
     }

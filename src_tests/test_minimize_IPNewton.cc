@@ -72,22 +72,22 @@ struct TestResult
   Vector  final_solution;
   integer dimension;
   Status  status;
-  Scalar  final_gradient_norm{ 0 };
+  Scalar  final_gradient_norm = 0;
 
   // Dati ora ottenuti dal minimizer
-  integer outer_iterations{ 0 };
-  integer total_inner_iterations{ 0 };
-  integer function_evals{ 0 };
-  integer hessian_evals{ 0 };
-  Scalar  final_f{ 0 };
-  Scalar  initial_f{ 0 };
-  Scalar  final_mu{ 0 };
-  Scalar  duality_gap{ 0 };
-  Scalar  primal_infeasibility{ 0 };
-  Scalar  dual_infeasibility{ 0 };
-  integer newton_steps{ 0 };
-  integer gradient_steps{ 0 };
-  integer centering_steps{ 0 };
+  integer outer_iterations       = 0;
+  integer total_inner_iterations = 0;
+  integer function_evals         = 0;
+  integer hessian_evals          = 0;
+  Scalar  final_f                = 0;
+  Scalar  initial_f              = 0;
+  Scalar  final_mu               = 0;
+  Scalar  duality_gap            = 0;
+  Scalar  primal_infeasibility   = 0;
+  Scalar  dual_infeasibility     = 0;
+  integer newton_steps           = 0;
+  integer gradient_steps         = 0;
+  integer centering_steps        = 0;
 };
 
 vector<TestResult> global_test_results;
@@ -309,12 +309,12 @@ void print_summary_table()
     global_test_results.end(),
     []( const TestResult & r ) { return r.status == Status::CONVERGED; } );
 
-  integer accumulated_outer_iter{ 0 };
-  integer accumulated_inner_iter{ 0 };
-  integer accumulated_evals{ 0 };
-  integer accumulated_hess_evals{ 0 };
-  integer accumulated_newton_steps{ 0 };
-  integer accumulated_gradient_steps{ 0 };
+  integer accumulated_outer_iter     = 0;
+  integer accumulated_inner_iter     = 0;
+  integer accumulated_evals          = 0;
+  integer accumulated_hess_evals     = 0;
+  integer accumulated_newton_steps   = 0;
+  integer accumulated_gradient_steps = 0;
 
   for ( auto const & r : global_test_results )
   {

@@ -133,7 +133,7 @@ namespace Utils
 
     mutable bool              m_must_reset = true;  //!< Flag indicating tables need rebuilding
     mutable std::mutex        m_mutex;              //!< Protects concurrent access to internal state
-    mutable std::atomic<bool> m_ready{ false };
+    mutable std::atomic<bool> m_ready = false;
 
     /**
      * @brief Compute relative epsilon for floating point comparisons

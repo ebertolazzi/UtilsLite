@@ -100,7 +100,7 @@ namespace Test
       pf.size(),
       pf.raw_size(),
       pf.empty() );
-    int count{ 0 };
+    int count = 0;
     pf.for_each_alive(
       [&]( auto const & e )
       {

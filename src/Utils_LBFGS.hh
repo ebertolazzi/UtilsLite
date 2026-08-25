@@ -126,19 +126,19 @@ namespace Utils
     using Matrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
 
   private:
-    size_t m_capacity;           ///< Maximum number of correction pairs (m)
-    size_t m_dimension;          ///< Problem dimension (n)
-    Matrix m_S;                  ///< Storage for s vectors (n × m matrix, each column is s_i)
-    Matrix m_Y;                  ///< Storage for y vectors (n × m matrix, each column is y_i)
-    Vector m_rho;                ///< Storage for ρ_i = 1/(y_i^T s_i) values
-    size_t m_current_size{ 0 };  ///< Current number of stored pairs
-    size_t m_oldest_index{ 0 };  ///< Circular buffer index of oldest pair
-    size_t m_newest_index{ 0 };  ///< Circular buffer index where next pair will be stored
+    size_t m_capacity;          ///< Maximum number of correction pairs (m)
+    size_t m_dimension;         ///< Problem dimension (n)
+    Matrix m_S;                 ///< Storage for s vectors (n × m matrix, each column is s_i)
+    Matrix m_Y;                 ///< Storage for y vectors (n × m matrix, each column is y_i)
+    Vector m_rho;               ///< Storage for ρ_i = 1/(y_i^T s_i) values
+    size_t m_current_size = 0;  ///< Current number of stored pairs
+    size_t m_oldest_index = 0;  ///< Circular buffer index of oldest pair
+    size_t m_newest_index = 0;  ///< Circular buffer index where next pair will be stored
 
     /* Robustness parameters */
-    bool   m_enable_damping{ true };    ///< Enable Powell-style damping by default
-    Scalar m_h0_min{ Scalar( 1e-6 ) };  ///< Minimum allowed initial H0 scaling
-    Scalar m_h0_max{ Scalar( 1e6 ) };   ///< Maximum allowed initial H0 scaling
+    bool   m_enable_damping = true;  ///< Enable Powell-style damping by default
+    Scalar m_h0_min         = 1e-6;  ///< Minimum allowed initial H0 scaling
+    Scalar m_h0_max         = 1e6;   ///< Maximum allowed initial H0 scaling
 
     /* Temporary workspace vectors (mutable for const methods) */
     mutable Vector m_alpha;  ///< Workspace for α_i values in two-loop recursion
@@ -395,7 +395,7 @@ namespace Utils
       // Second loop: Process pairs from oldest to newest
       // =====================================================================
       idx = m_oldest_index;
-      for ( size_t k{ 0 }; k < m_current_size; ++k )
+      for ( size_t k = 0; k < m_current_size; ++k )
       {
         Scalar beta = m_rho( idx ) * m_Y.col( idx ).dot( m_r );
         m_r += m_S.col( idx ) * ( m_alpha( k ) - beta );

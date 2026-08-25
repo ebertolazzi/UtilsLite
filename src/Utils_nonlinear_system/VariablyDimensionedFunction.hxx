@@ -83,6 +83,6 @@ public:
     x_vec.resize( 1 );
     auto & x0{ x_vec[0] };
     x0.resize( n );
-    for ( integer k{ 0 }; k < n; ++k ) x0( k ) = 1 - real_type( k + 1 ) / real_type( n );
+    for ( integer k = 0; k < n; ++k ) x0( k ) = 1 - real_type( k + 1 ) / real_type( n );
   }
 };

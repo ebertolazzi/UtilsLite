@@ -229,7 +229,7 @@ public:
     x0.resize( n );
     x1.resize( n );
     x2.resize( n );
-    for ( integer k{ 0 }; k < n; ++k ) x0( k ) = 1 / real_type( n );
+    for ( integer k = 0; k < n; ++k ) x0( k ) = 1 / real_type( n );
     x1.setZero();
     x2.fill( 0.3 );
   }

@@ -285,7 +285,7 @@ namespace Utils
   {
     if ( !ok ) throw Utils::Runtime_Error( std::string{ msg }, loc.file_name(), loc.line() );
   }
-  
+
   /**
    * @brief Checks a runtime condition and throws an exception if it evaluates to false.
    *
@@ -524,9 +524,12 @@ namespace Utils
   {
     // Empty implementation - all debug checks are removed in release builds
   }
-  inline void Debug( bool /*ok */, std::string_view /* msg */, std::source_location loc = std::source_location::current() )
+  inline void Debug(
+    bool /*ok */,
+    std::string_view /* msg */,
+    std::source_location loc = std::source_location::current() )
   {
-    (void)loc;
+    (void) loc;
     // Empty implementation - all debug checks are removed in release builds
   }
 
@@ -564,7 +567,7 @@ namespace Utils
 #endif
 
 #ifndef UTILS_ERROR
-#define UTILS_ERROR( ... ) Utils::Error(__VA_ARGS__)
+#define UTILS_ERROR( ... ) Utils::Error( __VA_ARGS__ )
 #endif
 
 #ifndef UTILS_ASSERT

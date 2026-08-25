@@ -162,24 +162,27 @@ namespace Utils
 
   private:
     // Algorithm parameters
-    Real m_tolerance{ pow( machine_eps<Real>(), Real( 2. / 3. ) ) };  ///< Convergence tolerance
-    bool m_converged{ false };                                        ///< Convergence flag
-    Real m_kappa{ 0.05 };                                             ///< Safety parameter for step bounds
+    Real m_tolerance = pow( machine_eps<Real>(), Real( 2. / 3. ) );  ///< Convergence tolerance
+    bool m_converged = false;                                        ///< Convergence flag
+    Real m_kappa     = 0.05;                                         ///< Safety parameter for step bounds
 
     // Iteration state
-    Real m_a{ 0 }, m_fa{ 0 };  ///< Left endpoint and function value
-    Real m_b{ 0 }, m_fb{ 0 };  ///< Right endpoint and function value
-    Real m_c{ 0 }, m_fc{ 0 };  ///< Intermediate point and function value
-    Real m_ba{ 0 };            ///< Current interval width (b - a)
+    Real m_a  = 0;
+    Real m_fa = 0;  ///< Left endpoint and function value
+    Real m_b  = 0;
+    Real m_fb = 0;  ///< Right endpoint and function value
+    Real m_c  = 0;
+    Real m_fc = 0;  ///< Intermediate point and function value
+    Real m_ba = 0;  ///< Current interval width (b - a)
 
     // Function interface
-    AlgoHNewton_base_fun<Real> const * m_function{ nullptr };  ///< Pointer to user function
+    AlgoHNewton_base_fun<Real> const * m_function = nullptr;  ///< Pointer to user function
 
     // Counters
-    Integer         m_max_iteration{ 200 };         ///< Maximum allowed iterations
-    mutable Integer m_iteration_count{ 0 };         ///< Iterations used in last computation
-    mutable Integer m_fun_evaluation_count{ 0 };    ///< Function evaluations count
-    mutable Integer m_fun_D_evaluation_count{ 0 };  ///< Derivative evaluations count
+    Integer         m_max_iteration          = 200;  ///< Maximum allowed iterations
+    mutable Integer m_iteration_count        = 0;    ///< Iterations used in last computation
+    mutable Integer m_fun_evaluation_count   = 0;    ///< Function evaluations count
+    mutable Integer m_fun_D_evaluation_count = 0;    ///< Derivative evaluations count
 
     /**
      * @brief Evaluate function at x with counter increment
@@ -491,27 +494,27 @@ namespace Utils
   template <typename Real> Real AlgoHNewton<Real>::invp_zero2() const
   {
     // Function values (f coordinates)
-    Real x0{ m_fa };
-    Real x1{ m_fb };
-    Real x2{ m_fc };
+    Real x0 = m_fa;
+    Real x1 = m_fb;
+    Real x2 = m_fc;
 
     // x coordinates (normalized)
-    Real D0{ 0 };                     // x at f=fa (normalized a = 0)
-    Real D1{ 1 };                     // x at f=fb (normalized b = 1)
-    Real D2{ ( m_c - m_a ) / m_ba };  // x at f=fc (normalized c position)
+    Real D0 = 0;                     // x at f=fa (normalized a = 0)
+    Real D1 = 1;                     // x at f=fb (normalized b = 1)
+    Real D2 = ( m_c - m_a ) / m_ba;  // x at f=fc (normalized c position)
 
     // Divided differences
-    Real D01{ ( D0 - D1 ) / ( x0 - x1 ) };     // First order: f[a,b]
-    Real D12{ ( D1 - D2 ) / ( x1 - x2 ) };     // First order: f[b,c]
-    Real D012{ ( D01 - D12 ) / ( x0 - x2 ) };  // Second order: f[a,b,c]
+    Real D01  = ( D0 - D1 ) / ( x0 - x1 );    // First order: f[a,b]
+    Real D12  = ( D1 - D2 ) / ( x1 - x2 );    // First order: f[b,c]
+    Real D012 = ( D01 - D12 ) / ( x0 - x2 );  // Second order: f[a,b,c]
 
     // Newton polynomial evaluation at f=0
-    Real O1{ 0 - x0 };           // (0 - fa)
-    Real O2{ ( 0 - x1 ) * O1 };  // (0 - fb)*(0 - fa)
+    Real O1 = 0 - x0;           // (0 - fa)
+    Real O2 = ( 0 - x1 ) * O1;  // (0 - fb)*(0 - fa)
 
-    Real P0{ D0 };              // Constant term
-    Real P1{ P0 + D01 * O1 };   // Linear term
-    Real P2{ P1 + D012 * O2 };  // Quadratic term
+    Real P0 = D0;              // Constant term
+    Real P1 = P0 + D01 * O1;   // Linear term
+    Real P2 = P1 + D012 * O2;  // Quadratic term
 
     // Safety check
     Utils::Check(

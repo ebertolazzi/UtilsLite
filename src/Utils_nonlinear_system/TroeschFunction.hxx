@@ -62,6 +62,6 @@ public:
     x_vec.resize( 1 );
     auto & x0{ x_vec[0] };
     x0.resize( n );
-    for ( integer i{ 0 }; i < n; ++i ) x0( i ) = ( ( 123 * i ) % 1001 ) / 1000.0;
+    for ( integer i = 0; i < n; ++i ) x0( i ) = ( ( 123 * i ) % 1001 ) / 1000.0;
   }
 };

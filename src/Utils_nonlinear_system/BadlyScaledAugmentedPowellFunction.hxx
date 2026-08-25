@@ -90,7 +90,7 @@ public:
     x_vec.resize( 1 );
     auto & x0{ x_vec[0] };
     x0.resize( n );
-    for ( integer k{ 0 }; k < n; k += 3 )
+    for ( integer k = 0; k < n; k += 3 )
     {
       x0( k + 0 ) = 0.109815932969981745568376164563E-4;
       x0( k + 1 ) = 9.10614673986652401094671049032;
@@ -105,7 +105,7 @@ public:
     auto & x1{ x_vec[1] };
     x0.resize( n );
     x1.resize( n );
-    for ( integer k{ 0 }; k < n; k += 3 )
+    for ( integer k = 0; k < n; k += 3 )
     {
       x0( k + 0 ) = 0;
       x0( k + 1 ) = 1;

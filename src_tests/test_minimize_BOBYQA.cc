@@ -31,18 +31,18 @@ struct TestResult
   Scalar      final_f;
   Vector      final_x;
   size_t      dimension;
-  Scalar      estimated_gradient_norm{ 0.0 };  // NUOVO: stima norma gradiente
+  Scalar      estimated_gradient_norm = 0;  // NUOVO: stima norma gradiente
 };
 
 // Struttura per statistiche
 struct LineSearchStats
 {
   std::string name;
-  size_t      total_tests{ 0 };
-  size_t      successful_tests{ 0 };
-  size_t      total_iterations{ 0 };
-  size_t      total_function_evals{ 0 };
-  Scalar      avg_gradient_norm{ 0.0 };  // NUOVO: media norma gradiente stimata
+  size_t      total_tests          = 0;
+  size_t      successful_tests     = 0;
+  size_t      total_iterations     = 0;
+  size_t      total_function_evals = 0;
+  Scalar      avg_gradient_norm    = 0;  // NUOVO: media norma gradiente stimata
 };
 
 // Collettore globale
@@ -110,7 +110,7 @@ inline std::string format_reduced_vector( Vector const & v, size_t max_size = 10
   }
   else
   {
-    for ( size_t i{ 0 }; i < max_size - 3; ++i ) tmp += fmt::format( "{:.4f}, ", v( static_cast<integer>( i ) ) );
+    for ( size_t i = 0; i < max_size - 3; ++i ) tmp += fmt::format( "{:.4f}, ", v( static_cast<integer>( i ) ) );
     tmp += "..., ";
     for ( integer i{ v_size - 3 }; i < v_size; ++i ) tmp += fmt::format( "{:.4f}, ", v( i ) );
   }
@@ -317,9 +317,9 @@ void print_line_search_statistics()
     global_test_results.end(),
     []( const TestResult & r ) { return r.converged; } ) );
 
-  size_t accumulated_evals{ 0 };
-  Scalar total_grad_norm{ 0.0 };
-  size_t grad_count{ 0 };
+  size_t accumulated_evals = 0;
+  Scalar total_grad_norm   = 0;
+  size_t grad_count        = 0;
 
   for ( auto const & r : global_test_results )
   {

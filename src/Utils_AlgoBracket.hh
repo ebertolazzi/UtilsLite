@@ -243,25 +243,27 @@ namespace Utils
     using Integer = int;
 
     // Tolerances
-    Real m_tolerance_x{ 10 * machine_eps<Real>() }; /*!< Tolerance on x */
-    Real m_tolerance_f{ 10 * machine_eps<Real>() }; /*!< Tolerance on f(x) */
-    bool m_converged{ false };                      /*!< Convergence flag */
+    Real m_tolerance_x = 10 * machine_eps<Real>(); /*!< Tolerance on x */
+    Real m_tolerance_f = 10 * machine_eps<Real>(); /*!< Tolerance on f(x) */
+    bool m_converged   = false;                    /*!< Convergence flag */
 
     // Interval and function values
-    Real   m_a{ 0 }, m_fa{ 0 };              /*!< Left endpoint and its function value */
-    Real   m_b{ 0 }, m_fb{ 0 };              /*!< Right endpoint and its function value */
+    Real   m_a  = 0;
+    Real   m_fa = 0; /*!< Left endpoint and its function value */
+    Real   m_b  = 0;
+    Real   m_fb = 0;                         /*!< Right endpoint and its function value */
     Method m_select{ Method::CHANDRUPATLA }; /*!< Selected algorithm */
 
     // Function to solve
-    Bracket_base_fun<Real> * m_function{ nullptr }; /*!< Pointer to function object */
+    Bracket_base_fun<Real> * m_function = nullptr; /*!< Pointer to function object */
 
     // Limits
-    Integer m_max_fun_evaluation{ 1000 }; /*!< Max function evaluations */
-    Integer m_max_iteration{ 200 };       /*!< Max iterations */
+    Integer m_max_fun_evaluation = 1000; /*!< Max function evaluations */
+    Integer m_max_iteration      = 200;  /*!< Max iterations */
 
     // Counters
-    mutable Integer m_iteration_count{ 0 };      /*!< Iteration counter */
-    mutable Integer m_fun_evaluation_count{ 0 }; /*!< Function evaluation counter */
+    mutable Integer m_iteration_count      = 0; /*!< Iteration counter */
+    mutable Integer m_fun_evaluation_count = 0; /*!< Function evaluation counter */
 
     /*!
      * \brief Evaluate function with counter increment
@@ -312,25 +314,25 @@ namespace Utils
      */
     Real invp_zero2( Real d, Real fd ) const
     {
-      Real x0{ m_fa };
-      Real x1{ m_fb };
-      Real x2{ fd };
+      Real x0 = m_fa;
+      Real x1 = m_fb;
+      Real x2 = fd;
 
-      Real D0{ 0 };
-      Real D1{ 1 };
-      Real D2{ ( d - m_a ) / ( m_b - m_a ) };
+      Real D0 = 0;
+      Real D1 = 1;
+      Real D2 = ( d - m_a ) / ( m_b - m_a );
 
-      Real D01{ ( D0 - D1 ) / ( x0 - x1 ) };
-      Real D12{ ( D1 - D2 ) / ( x1 - x2 ) };
+      Real D01 = ( D0 - D1 ) / ( x0 - x1 );
+      Real D12 = ( D1 - D2 ) / ( x1 - x2 );
 
-      Real D012{ ( D01 - D12 ) / ( x0 - x2 ) };
+      Real D012 = ( D01 - D12 ) / ( x0 - x2 );
 
-      Real O1{ 0 - x0 };
-      Real O2{ ( 0 - x1 ) * O1 };
+      Real O1 = 0 - x0;
+      Real O2 = ( 0 - x1 ) * O1;
 
-      Real P0{ D0 };
-      Real P1{ P0 + D01 * O1 };
-      Real P2{ P1 + D012 * O2 };
+      Real P0 = D0;
+      Real P1 = P0 + D01 * O1;
+      Real P2 = P1 + D012 * O2;
 
       Utils::Check(
         is_finite( P2 ),
@@ -358,33 +360,33 @@ namespace Utils
      */
     Real invp_zero3( Real d, Real fd, Real e, Real fe ) const
     {
-      Real x0{ m_fa };
-      Real x1{ m_fb };
-      Real x2{ fd };
-      Real x3{ fe };
+      Real x0 = m_fa;
+      Real x1 = m_fb;
+      Real x2 = fd;
+      Real x3 = fe;
 
-      Real D0{ 0 };
-      Real D1{ 1 };
-      Real D2{ ( d - m_a ) / ( m_b - m_a ) };
-      Real D3{ ( e - m_a ) / ( m_b - m_a ) };
+      Real D0 = 0;
+      Real D1 = 1;
+      Real D2 = ( d - m_a ) / ( m_b - m_a );
+      Real D3 = ( e - m_a ) / ( m_b - m_a );
 
-      Real D01{ ( D0 - D1 ) / ( x0 - x1 ) };
-      Real D12{ ( D1 - D2 ) / ( x1 - x2 ) };
-      Real D23{ ( D2 - D3 ) / ( x2 - x3 ) };
+      Real D01 = ( D0 - D1 ) / ( x0 - x1 );
+      Real D12 = ( D1 - D2 ) / ( x1 - x2 );
+      Real D23 = ( D2 - D3 ) / ( x2 - x3 );
 
-      Real D012{ ( D01 - D12 ) / ( x0 - x2 ) };
-      Real D123{ ( D12 - D23 ) / ( x1 - x3 ) };
+      Real D012 = ( D01 - D12 ) / ( x0 - x2 );
+      Real D123 = ( D12 - D23 ) / ( x1 - x3 );
 
-      Real D0123{ ( D012 - D123 ) / ( x0 - x3 ) };
+      Real D0123 = ( D012 - D123 ) / ( x0 - x3 );
 
-      Real O1{ 0 - x0 };
-      Real O2{ ( 0 - x1 ) * O1 };
-      Real O3{ ( 0 - x2 ) * O2 };
+      Real O1 = 0 - x0;
+      Real O2 = ( 0 - x1 ) * O1;
+      Real O3 = ( 0 - x2 ) * O2;
 
-      Real P0{ D0 };
-      Real P1{ P0 + D01 * O1 };
-      Real P2{ P1 + D012 * O2 };
-      Real P3{ P2 + D0123 * O3 };
+      Real P0 = D0;
+      Real P1 = P0 + D01 * O1;
+      Real P2 = P1 + D012 * O2;
+      Real P3 = P2 + D0123 * O3;
 
       Utils::Check(
         is_finite( P3 ),
@@ -770,7 +772,8 @@ namespace Utils
       //
       // While f(left) or f(right) are infinite perform bisection
       //
-      bool ffa{ false }, ffb{ false };
+      bool ffa = false;
+      bool ffb = false;
       while ( ( ffa = !is_finite( fa ) ) || ( ffb = !is_finite( fb ) ) )
       {
         Utils::Check(
@@ -1250,15 +1253,15 @@ namespace Utils
       1276 (2023) 012010 doi:10.1088/1757-899X/1276/1/012010
       */
 
-      Integer side{ 0 };
+      Integer side = 0;
       // Integer N{ Integer(floor(1-log2( m_tolerance )/2)) };
 
-      Real & x1{ m_a };
-      Real & f1{ m_fa };
-      Real & x2{ m_b };
-      Real & f2{ m_fb };
+      Real & x1 = m_a;
+      Real & f1 = m_fa;
+      Real & x2 = m_b;
+      Real & f2 = m_fb;
 
-      bool bisection{ true };
+      bool bisection = true;
 
       while ( ++m_iteration_count < m_max_iteration )
       {
@@ -1498,8 +1501,8 @@ namespace Utils
           c = A2 * fa > 0 ? a : b;
 
           // Start the safeguarded newton steps.
-          bool ok{ true };
-          for ( Integer i{ 0 }; i < max_newton_iter && ok; ++i )
+          bool ok = true;
+          for ( Integer i = 0; i < max_newton_iter && ok; ++i )
           {
             Real PC  = A0 + ( A1 + A2 * ( c - b ) ) * ( c - a );
             Real PDC = A1 + A2 * ( ( 2 * c ) - ( a + b ) );

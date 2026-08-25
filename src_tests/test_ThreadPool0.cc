@@ -41,10 +41,10 @@ enum class RunMode
 
 struct Config
 {
-  int     num_threads{ 16 };
-  int     task_size{ 200 };
+  int     num_threads = 16;
+  int     task_size   = 200;
   RunMode mode{ RunMode::QUICK };
-  bool    export_csv{ false };
+  bool    export_csv = false;
 };
 
 // ===========================================================================

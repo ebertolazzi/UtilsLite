@@ -172,7 +172,7 @@ namespace Utils
     std::mt19937 m_rng{ std::random_device{}() };
 
     // Optimization results
-    bool   m_converged{ false };     ///< Whether optimization converged
+    bool   m_converged = false;      ///< Whether optimization converged
     string m_termination_message{};  ///< Termination message
 
   public:
@@ -499,7 +499,7 @@ namespace Utils
           m_mesh_size );
       }
 
-      for ( integer k{ 0 }; k < m_opts.max_iter; ++k )
+      for ( integer k = 0; k < m_opts.max_iter; ++k )
       {
         bool improvement = false;
 

@@ -478,7 +478,7 @@ namespace Utils
 
       // Simple bracketing with more aggressive extrapolation
 
-      for ( size_t iter{ 0 }; iter < m_max_iters && n_evals < m_max_evals; ++iter )
+      for ( size_t iter = 0; iter < m_max_iters && n_evals < m_max_evals; ++iter )
       {
         // Armijo condition failed or function not decreasing
         if ( phi > f0 + alpha * c1_Df0 || ( iter > 0 && phi >= phi_prev ) )
@@ -620,8 +620,8 @@ namespace Utils
         df                = m_g_new.dot( d );
       };
 
-      Scalar c1_Df0{ m_c1 * Df0 };
-      Scalar c2_Df0{ m_c2 * Df0 };
+      Scalar c1_Df0 = m_c1 * Df0;
+      Scalar c2_Df0 = m_c2 * Df0;
 
       // Initial trial
       Scalar alpha = alpha0;
@@ -814,7 +814,7 @@ namespace Utils
       Scalar armijo_bound    = f0 + m_c1 * alpha * Df0;
       Scalar goldstein_bound = f0 + ( 1 - m_c1 ) * alpha * Df0;
 
-      size_t iteration{ 0 };
+      size_t iteration = 0;
       for ( ; iteration < m_max_iters; ++iteration )
       {
         m_x_new.noalias() = x + alpha * d;
@@ -922,7 +922,7 @@ namespace Utils
       // relative collapse tolerance
       const auto rel_tol = [&]( Scalar a, Scalar b ) { return abs( a - b ) <= m_epsi * ( Scalar( 1 ) + abs( a ) ); };
 
-      for ( size_t iteration{ 0 }; iteration < m_max_iters; ++iteration )
+      for ( size_t iteration = 0; iteration < m_max_iters; ++iteration )
       {
         // Attempt cubic minimization using existing helper (assumed available).
         Scalar a_j = LS_detail::cubic_minimizer<Scalar>( a_lo, phi_lo, der_lo, a_hi, phi_hi, der_hi );
@@ -1058,7 +1058,7 @@ namespace Utils
       // Minimum step threshold to avoid pointless tiny steps
       const Scalar alpha_min_threshold = std::numeric_limits<Scalar>::epsilon() * Scalar( 100 );
 
-      for ( size_t iter{ 0 }; iter < m_max_iters && n_evals < m_max_evals; ++iter )
+      for ( size_t iter = 0; iter < m_max_iters && n_evals < m_max_evals; ++iter )
       {
         // Check Armijo (sufficient decrease) and curvature (Wolfe) conditions
         // Armijo: phi <= f0 + alpha * c1 * Df0
@@ -1202,8 +1202,8 @@ namespace Utils
         df                = m_g_new.dot( d );
       };
 
-      Scalar c1_Df0{ m_c1 * Df0 };
-      Scalar c2_Df0{ m_c2 * Df0 };
+      Scalar c1_Df0 = m_c1 * Df0;
+      Scalar c2_Df0 = m_c2 * Df0;
 
       // ----------------------------------------------------
       // FASE 1: Inizializzazione e ciclo principale (Bracketing & Zoom)
@@ -1229,7 +1229,7 @@ namespace Utils
       // Esegui la prima valutazione
       eval( alpha_curr, phi_curr, der_curr );
 
-      for ( size_t k{ 0 }; k < m_max_iters; ++k )
+      for ( size_t k = 0; k < m_max_iters; ++k )
       {
         // Check Strong Wolfe al passo corrente (MT è un raffinamento per SW)
         if ( phi_curr <= f0 + alpha_curr * c1_Df0 && abs( der_curr ) <= -c2_Df0 )

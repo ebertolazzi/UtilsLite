@@ -43,31 +43,30 @@
 namespace Utils::tinyad
 {
 
-template <int N, int I, int J, typename Function, typename... Args>
-[[nodiscard]] inline auto
-partial( Function && function, Args const &... args )
-{
-  static_assert( sizeof...( Args ) == N, "TinyAD derivative arity mismatch" );
-  using scalar_type = std::common_type_t<Args...>;
-  using dual_type   = TinyAD::Scalar<N, scalar_type>;
-
-  auto evaluate = [&]<std::size_t... K>( std::index_sequence<K...> )
+  template <int N, int I, int J, typename Function, typename... Args>
+  [[nodiscard]] inline auto partial( Function && function, Args const &... args )
   {
-    return std::invoke(
-      std::forward<Function>( function ),
-      dual_type( static_cast<scalar_type>( args ), static_cast<Eigen::Index>( K ) )... );
-  };
+    static_assert( sizeof...( Args ) == N, "TinyAD derivative arity mismatch" );
+    using scalar_type = std::common_type_t<Args...>;
+    using dual_type   = TinyAD::Scalar<N, scalar_type>;
 
-  const dual_type result = evaluate( std::make_index_sequence<N>{} );
-  if constexpr ( I < 0 )
-    return result.val;
-  else if constexpr ( J < 0 )
-    return result.grad[I];
-  else
-    return result.Hess( I, J );
-}
+    auto evaluate = [&]<std::size_t... K>( std::index_sequence<K...> )
+    {
+      return std::invoke(
+        std::forward<Function>( function ),
+        dual_type( static_cast<scalar_type>( args ), static_cast<Eigen::Index>( K ) )... );
+    };
 
-} // namespace Utils::tinyad
+    const dual_type result = evaluate( std::make_index_sequence<N>{} );
+    if constexpr ( I < 0 )
+      return result.val;
+    else if constexpr ( J < 0 )
+      return result.grad[I];
+    else
+      return result.Hess( I, J );
+  }
+
+}  // namespace Utils::tinyad
 
 #define _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, N, I, J, SUFFIX, PARAMS, ... ) \
   INLINE real_type CLASS PREFIX##SUFFIX( PARAMS ) CONST                                               \
@@ -81,24 +80,26 @@ partial( Function && function, Args const &... args )
 #define _UTILS_TINYAD_2ARG_PARAMS real_type const x, real_type const y
 #define _UTILS_TINYAD_3ARG_PARAMS real_type const x, real_type const y, real_type const z
 #define _UTILS_TINYAD_4ARG_PARAMS real_type const x, real_type const y, real_type const z, real_type const w
-#define _UTILS_TINYAD_5ARG_PARAMS real_type const x1, real_type const x2, real_type const x3, real_type const x4, real_type const x5
-#define _UTILS_TINYAD_6ARG_PARAMS real_type const x1, real_type const x2, real_type const x3, real_type const x4, real_type const x5, real_type const x6
+#define _UTILS_TINYAD_5ARG_PARAMS \
+  real_type const x1, real_type const x2, real_type const x3, real_type const x4, real_type const x5
+#define _UTILS_TINYAD_6ARG_PARAMS \
+  real_type const x1, real_type const x2, real_type const x3, real_type const x4, real_type const x5, real_type const x6
 
-#define UTILS_TINYAD_DERIV_1ARG( INLINE, CLASS, PREFIX, FUN, CONST ) \
+#define UTILS_TINYAD_DERIV_1ARG( INLINE, CLASS, PREFIX, FUN, CONST )                                         \
   _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 1, 0, -1, D, _UTILS_TINYAD_1ARG_PARAMS, x ) \
   _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 1, 0, 0, DD, _UTILS_TINYAD_1ARG_PARAMS, x )
 
-#define UTILS_TINYAD_DERIV_2ARG( INLINE, CLASS, PREFIX, FUN, CONST ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 2, 0, -1, D_1, _UTILS_TINYAD_2ARG_PARAMS, x, y ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 2, 1, -1, D_2, _UTILS_TINYAD_2ARG_PARAMS, x, y ) \
+#define UTILS_TINYAD_DERIV_2ARG( INLINE, CLASS, PREFIX, FUN, CONST )                                               \
+  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 2, 0, -1, D_1, _UTILS_TINYAD_2ARG_PARAMS, x, y )  \
+  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 2, 1, -1, D_2, _UTILS_TINYAD_2ARG_PARAMS, x, y )  \
   _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 2, 0, 0, D_1_1, _UTILS_TINYAD_2ARG_PARAMS, x, y ) \
   _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 2, 0, 1, D_1_2, _UTILS_TINYAD_2ARG_PARAMS, x, y ) \
   _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 2, 1, 1, D_2_2, _UTILS_TINYAD_2ARG_PARAMS, x, y )
 
-#define UTILS_TINYAD_DERIV_3ARG( INLINE, CLASS, PREFIX, FUN, CONST ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 3, 0, -1, D_1, _UTILS_TINYAD_3ARG_PARAMS, x, y, z ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 3, 1, -1, D_2, _UTILS_TINYAD_3ARG_PARAMS, x, y, z ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 3, 2, -1, D_3, _UTILS_TINYAD_3ARG_PARAMS, x, y, z ) \
+#define UTILS_TINYAD_DERIV_3ARG( INLINE, CLASS, PREFIX, FUN, CONST )                                                  \
+  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 3, 0, -1, D_1, _UTILS_TINYAD_3ARG_PARAMS, x, y, z )  \
+  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 3, 1, -1, D_2, _UTILS_TINYAD_3ARG_PARAMS, x, y, z )  \
+  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 3, 2, -1, D_3, _UTILS_TINYAD_3ARG_PARAMS, x, y, z )  \
   _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 3, 0, 0, D_1_1, _UTILS_TINYAD_3ARG_PARAMS, x, y, z ) \
   _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 3, 0, 1, D_1_2, _UTILS_TINYAD_3ARG_PARAMS, x, y, z ) \
   _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 3, 0, 2, D_1_3, _UTILS_TINYAD_3ARG_PARAMS, x, y, z ) \
@@ -107,71 +108,985 @@ partial( Function && function, Args const &... args )
   _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 3, 2, 2, D_3_3, _UTILS_TINYAD_3ARG_PARAMS, x, y, z )
 
 #define UTILS_TINYAD_DERIV_4ARG( INLINE, CLASS, PREFIX, FUN, CONST ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 4, 0, -1, D_1, _UTILS_TINYAD_4ARG_PARAMS, x, y, z, w ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 4, 1, -1, D_2, _UTILS_TINYAD_4ARG_PARAMS, x, y, z, w ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 4, 2, -1, D_3, _UTILS_TINYAD_4ARG_PARAMS, x, y, z, w ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 4, 3, -1, D_4, _UTILS_TINYAD_4ARG_PARAMS, x, y, z, w ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 4, 0, 0, D_1_1, _UTILS_TINYAD_4ARG_PARAMS, x, y, z, w ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 4, 0, 1, D_1_2, _UTILS_TINYAD_4ARG_PARAMS, x, y, z, w ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 4, 0, 2, D_1_3, _UTILS_TINYAD_4ARG_PARAMS, x, y, z, w ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 4, 0, 3, D_1_4, _UTILS_TINYAD_4ARG_PARAMS, x, y, z, w ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 4, 1, 1, D_2_2, _UTILS_TINYAD_4ARG_PARAMS, x, y, z, w ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 4, 1, 2, D_2_3, _UTILS_TINYAD_4ARG_PARAMS, x, y, z, w ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 4, 1, 3, D_2_4, _UTILS_TINYAD_4ARG_PARAMS, x, y, z, w ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 4, 2, 2, D_3_3, _UTILS_TINYAD_4ARG_PARAMS, x, y, z, w ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 4, 2, 3, D_3_4, _UTILS_TINYAD_4ARG_PARAMS, x, y, z, w ) \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    4,                                                               \
+    0,                                                               \
+    -1,                                                              \
+    D_1,                                                             \
+    _UTILS_TINYAD_4ARG_PARAMS,                                       \
+    x,                                                               \
+    y,                                                               \
+    z,                                                               \
+    w )                                                              \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    4,                                                               \
+    1,                                                               \
+    -1,                                                              \
+    D_2,                                                             \
+    _UTILS_TINYAD_4ARG_PARAMS,                                       \
+    x,                                                               \
+    y,                                                               \
+    z,                                                               \
+    w )                                                              \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    4,                                                               \
+    2,                                                               \
+    -1,                                                              \
+    D_3,                                                             \
+    _UTILS_TINYAD_4ARG_PARAMS,                                       \
+    x,                                                               \
+    y,                                                               \
+    z,                                                               \
+    w )                                                              \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    4,                                                               \
+    3,                                                               \
+    -1,                                                              \
+    D_4,                                                             \
+    _UTILS_TINYAD_4ARG_PARAMS,                                       \
+    x,                                                               \
+    y,                                                               \
+    z,                                                               \
+    w )                                                              \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    4,                                                               \
+    0,                                                               \
+    0,                                                               \
+    D_1_1,                                                           \
+    _UTILS_TINYAD_4ARG_PARAMS,                                       \
+    x,                                                               \
+    y,                                                               \
+    z,                                                               \
+    w )                                                              \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    4,                                                               \
+    0,                                                               \
+    1,                                                               \
+    D_1_2,                                                           \
+    _UTILS_TINYAD_4ARG_PARAMS,                                       \
+    x,                                                               \
+    y,                                                               \
+    z,                                                               \
+    w )                                                              \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    4,                                                               \
+    0,                                                               \
+    2,                                                               \
+    D_1_3,                                                           \
+    _UTILS_TINYAD_4ARG_PARAMS,                                       \
+    x,                                                               \
+    y,                                                               \
+    z,                                                               \
+    w )                                                              \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    4,                                                               \
+    0,                                                               \
+    3,                                                               \
+    D_1_4,                                                           \
+    _UTILS_TINYAD_4ARG_PARAMS,                                       \
+    x,                                                               \
+    y,                                                               \
+    z,                                                               \
+    w )                                                              \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    4,                                                               \
+    1,                                                               \
+    1,                                                               \
+    D_2_2,                                                           \
+    _UTILS_TINYAD_4ARG_PARAMS,                                       \
+    x,                                                               \
+    y,                                                               \
+    z,                                                               \
+    w )                                                              \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    4,                                                               \
+    1,                                                               \
+    2,                                                               \
+    D_2_3,                                                           \
+    _UTILS_TINYAD_4ARG_PARAMS,                                       \
+    x,                                                               \
+    y,                                                               \
+    z,                                                               \
+    w )                                                              \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    4,                                                               \
+    1,                                                               \
+    3,                                                               \
+    D_2_4,                                                           \
+    _UTILS_TINYAD_4ARG_PARAMS,                                       \
+    x,                                                               \
+    y,                                                               \
+    z,                                                               \
+    w )                                                              \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    4,                                                               \
+    2,                                                               \
+    2,                                                               \
+    D_3_3,                                                           \
+    _UTILS_TINYAD_4ARG_PARAMS,                                       \
+    x,                                                               \
+    y,                                                               \
+    z,                                                               \
+    w )                                                              \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    4,                                                               \
+    2,                                                               \
+    3,                                                               \
+    D_3_4,                                                           \
+    _UTILS_TINYAD_4ARG_PARAMS,                                       \
+    x,                                                               \
+    y,                                                               \
+    z,                                                               \
+    w )                                                              \
   _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 4, 3, 3, D_4_4, _UTILS_TINYAD_4ARG_PARAMS, x, y, z, w )
 
 #define UTILS_TINYAD_DERIV_5ARG( INLINE, CLASS, PREFIX, FUN, CONST ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 0, -1, D_1, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 1, -1, D_2, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 2, -1, D_3, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 3, -1, D_4, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 4, -1, D_5, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 0, 0, D_1_1, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 0, 1, D_1_2, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 0, 2, D_1_3, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 0, 3, D_1_4, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 0, 4, D_1_5, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 1, 1, D_2_2, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 1, 2, D_2_3, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 1, 3, D_2_4, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 1, 4, D_2_5, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 2, 2, D_3_3, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 2, 3, D_3_4, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 2, 4, D_3_5, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 3, 3, D_4_4, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 3, 4, D_4_5, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 5, 4, 4, D_5_5, _UTILS_TINYAD_5ARG_PARAMS, x1, x2, x3, x4, x5 )
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    0,                                                               \
+    -1,                                                              \
+    D_1,                                                             \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    1,                                                               \
+    -1,                                                              \
+    D_2,                                                             \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    2,                                                               \
+    -1,                                                              \
+    D_3,                                                             \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    3,                                                               \
+    -1,                                                              \
+    D_4,                                                             \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    4,                                                               \
+    -1,                                                              \
+    D_5,                                                             \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    0,                                                               \
+    0,                                                               \
+    D_1_1,                                                           \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    0,                                                               \
+    1,                                                               \
+    D_1_2,                                                           \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    0,                                                               \
+    2,                                                               \
+    D_1_3,                                                           \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    0,                                                               \
+    3,                                                               \
+    D_1_4,                                                           \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    0,                                                               \
+    4,                                                               \
+    D_1_5,                                                           \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    1,                                                               \
+    1,                                                               \
+    D_2_2,                                                           \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    1,                                                               \
+    2,                                                               \
+    D_2_3,                                                           \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    1,                                                               \
+    3,                                                               \
+    D_2_4,                                                           \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    1,                                                               \
+    4,                                                               \
+    D_2_5,                                                           \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    2,                                                               \
+    2,                                                               \
+    D_3_3,                                                           \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    2,                                                               \
+    3,                                                               \
+    D_3_4,                                                           \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    2,                                                               \
+    4,                                                               \
+    D_3_5,                                                           \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    3,                                                               \
+    3,                                                               \
+    D_4_4,                                                           \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    3,                                                               \
+    4,                                                               \
+    D_4_5,                                                           \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    5,                                                               \
+    4,                                                               \
+    4,                                                               \
+    D_5_5,                                                           \
+    _UTILS_TINYAD_5ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5 )
 
 #define UTILS_TINYAD_DERIV_6ARG( INLINE, CLASS, PREFIX, FUN, CONST ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 0, -1, D_1, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 1, -1, D_2, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 2, -1, D_3, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 3, -1, D_4, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 4, -1, D_5, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 5, -1, D_6, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 0, 0, D_1_1, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 0, 1, D_1_2, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 0, 2, D_1_3, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 0, 3, D_1_4, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 0, 4, D_1_5, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 0, 5, D_1_6, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 1, 1, D_2_2, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 1, 2, D_2_3, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 1, 3, D_2_4, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 1, 4, D_2_5, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 1, 5, D_2_6, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 2, 2, D_3_3, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 2, 3, D_3_4, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 2, 4, D_3_5, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 2, 5, D_3_6, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 3, 3, D_4_4, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 3, 4, D_4_5, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 3, 5, D_4_6, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 4, 4, D_5_5, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 4, 5, D_5_6, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 ) \
-  _UTILS_TINYAD_DEFINE_DERIV( INLINE, CLASS, PREFIX, FUN, CONST, 6, 5, 5, D_6_6, _UTILS_TINYAD_6ARG_PARAMS, x1, x2, x3, x4, x5, x6 )
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    0,                                                               \
+    -1,                                                              \
+    D_1,                                                             \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    1,                                                               \
+    -1,                                                              \
+    D_2,                                                             \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    2,                                                               \
+    -1,                                                              \
+    D_3,                                                             \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    3,                                                               \
+    -1,                                                              \
+    D_4,                                                             \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    4,                                                               \
+    -1,                                                              \
+    D_5,                                                             \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    5,                                                               \
+    -1,                                                              \
+    D_6,                                                             \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    0,                                                               \
+    0,                                                               \
+    D_1_1,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    0,                                                               \
+    1,                                                               \
+    D_1_2,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    0,                                                               \
+    2,                                                               \
+    D_1_3,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    0,                                                               \
+    3,                                                               \
+    D_1_4,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    0,                                                               \
+    4,                                                               \
+    D_1_5,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    0,                                                               \
+    5,                                                               \
+    D_1_6,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    1,                                                               \
+    1,                                                               \
+    D_2_2,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    1,                                                               \
+    2,                                                               \
+    D_2_3,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    1,                                                               \
+    3,                                                               \
+    D_2_4,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    1,                                                               \
+    4,                                                               \
+    D_2_5,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    1,                                                               \
+    5,                                                               \
+    D_2_6,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    2,                                                               \
+    2,                                                               \
+    D_3_3,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    2,                                                               \
+    3,                                                               \
+    D_3_4,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    2,                                                               \
+    4,                                                               \
+    D_3_5,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    2,                                                               \
+    5,                                                               \
+    D_3_6,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    3,                                                               \
+    3,                                                               \
+    D_4_4,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    3,                                                               \
+    4,                                                               \
+    D_4_5,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    3,                                                               \
+    5,                                                               \
+    D_4_6,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    4,                                                               \
+    4,                                                               \
+    D_5_5,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    4,                                                               \
+    5,                                                               \
+    D_5_6,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )                                                             \
+  _UTILS_TINYAD_DEFINE_DERIV(                                        \
+    INLINE,                                                          \
+    CLASS,                                                           \
+    PREFIX,                                                          \
+    FUN,                                                             \
+    CONST,                                                           \
+    6,                                                               \
+    5,                                                               \
+    5,                                                               \
+    D_6_6,                                                           \
+    _UTILS_TINYAD_6ARG_PARAMS,                                       \
+    x1,                                                              \
+    x2,                                                              \
+    x3,                                                              \
+    x4,                                                              \
+    x5,                                                              \
+    x6 )
 
 #define UTILS_TINYAD_PARAMS_1 real_type const x1
 #define UTILS_TINYAD_PARAMS_2 UTILS_TINYAD_PARAMS_1, real_type const x2
@@ -180,24 +1095,23 @@ partial( Function && function, Args const &... args )
 #define UTILS_TINYAD_PARAMS_5 UTILS_TINYAD_PARAMS_4, real_type const x5
 #define UTILS_TINYAD_PARAMS_6 UTILS_TINYAD_PARAMS_5, real_type const x6
 
-#define UTILS_TINYAD_DECLARE_DERIV( PREFIX, SUFFIX, PARAMS, CONST_QUAL ) \
-  real_type PREFIX##SUFFIX( PARAMS ) CONST_QUAL;
+#define UTILS_TINYAD_DECLARE_DERIV( PREFIX, SUFFIX, PARAMS, CONST_QUAL ) real_type PREFIX##SUFFIX( PARAMS ) CONST_QUAL;
 
-#define UTILS_TINYAD_FUN_1_VARS_DECL( PREFIX, CONST ) \
+#define UTILS_TINYAD_FUN_1_VARS_DECL( PREFIX, CONST )                   \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D, UTILS_TINYAD_PARAMS_1, CONST ) \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, DD, UTILS_TINYAD_PARAMS_1, CONST )
 
-#define UTILS_TINYAD_FUN_2_VARS_DECL( PREFIX, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1, UTILS_TINYAD_PARAMS_2, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_2, UTILS_TINYAD_PARAMS_2, CONST ) \
+#define UTILS_TINYAD_FUN_2_VARS_DECL( PREFIX, CONST )                       \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1, UTILS_TINYAD_PARAMS_2, CONST )   \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_2, UTILS_TINYAD_PARAMS_2, CONST )   \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1_1, UTILS_TINYAD_PARAMS_2, CONST ) \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1_2, UTILS_TINYAD_PARAMS_2, CONST ) \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_2_2, UTILS_TINYAD_PARAMS_2, CONST )
 
-#define UTILS_TINYAD_FUN_3_VARS_DECL( PREFIX, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1, UTILS_TINYAD_PARAMS_3, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_2, UTILS_TINYAD_PARAMS_3, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_3, UTILS_TINYAD_PARAMS_3, CONST ) \
+#define UTILS_TINYAD_FUN_3_VARS_DECL( PREFIX, CONST )                       \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1, UTILS_TINYAD_PARAMS_3, CONST )   \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_2, UTILS_TINYAD_PARAMS_3, CONST )   \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_3, UTILS_TINYAD_PARAMS_3, CONST )   \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1_1, UTILS_TINYAD_PARAMS_3, CONST ) \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1_2, UTILS_TINYAD_PARAMS_3, CONST ) \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1_3, UTILS_TINYAD_PARAMS_3, CONST ) \
@@ -205,11 +1119,11 @@ partial( Function && function, Args const &... args )
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_2_3, UTILS_TINYAD_PARAMS_3, CONST ) \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_3_3, UTILS_TINYAD_PARAMS_3, CONST )
 
-#define UTILS_TINYAD_FUN_4_VARS_DECL( PREFIX, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1, UTILS_TINYAD_PARAMS_4, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_2, UTILS_TINYAD_PARAMS_4, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_3, UTILS_TINYAD_PARAMS_4, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_4, UTILS_TINYAD_PARAMS_4, CONST ) \
+#define UTILS_TINYAD_FUN_4_VARS_DECL( PREFIX, CONST )                       \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1, UTILS_TINYAD_PARAMS_4, CONST )   \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_2, UTILS_TINYAD_PARAMS_4, CONST )   \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_3, UTILS_TINYAD_PARAMS_4, CONST )   \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_4, UTILS_TINYAD_PARAMS_4, CONST )   \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1_1, UTILS_TINYAD_PARAMS_4, CONST ) \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1_2, UTILS_TINYAD_PARAMS_4, CONST ) \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1_3, UTILS_TINYAD_PARAMS_4, CONST ) \
@@ -221,12 +1135,12 @@ partial( Function && function, Args const &... args )
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_3_4, UTILS_TINYAD_PARAMS_4, CONST ) \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_4_4, UTILS_TINYAD_PARAMS_4, CONST )
 
-#define UTILS_TINYAD_FUN_5_VARS_DECL( PREFIX, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1, UTILS_TINYAD_PARAMS_5, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_2, UTILS_TINYAD_PARAMS_5, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_3, UTILS_TINYAD_PARAMS_5, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_4, UTILS_TINYAD_PARAMS_5, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_5, UTILS_TINYAD_PARAMS_5, CONST ) \
+#define UTILS_TINYAD_FUN_5_VARS_DECL( PREFIX, CONST )                       \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1, UTILS_TINYAD_PARAMS_5, CONST )   \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_2, UTILS_TINYAD_PARAMS_5, CONST )   \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_3, UTILS_TINYAD_PARAMS_5, CONST )   \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_4, UTILS_TINYAD_PARAMS_5, CONST )   \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_5, UTILS_TINYAD_PARAMS_5, CONST )   \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1_1, UTILS_TINYAD_PARAMS_5, CONST ) \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1_2, UTILS_TINYAD_PARAMS_5, CONST ) \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1_3, UTILS_TINYAD_PARAMS_5, CONST ) \
@@ -243,13 +1157,13 @@ partial( Function && function, Args const &... args )
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_4_5, UTILS_TINYAD_PARAMS_5, CONST ) \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_5_5, UTILS_TINYAD_PARAMS_5, CONST )
 
-#define UTILS_TINYAD_FUN_6_VARS_DECL( PREFIX, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1, UTILS_TINYAD_PARAMS_6, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_2, UTILS_TINYAD_PARAMS_6, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_3, UTILS_TINYAD_PARAMS_6, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_4, UTILS_TINYAD_PARAMS_6, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_5, UTILS_TINYAD_PARAMS_6, CONST ) \
-  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_6, UTILS_TINYAD_PARAMS_6, CONST ) \
+#define UTILS_TINYAD_FUN_6_VARS_DECL( PREFIX, CONST )                       \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1, UTILS_TINYAD_PARAMS_6, CONST )   \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_2, UTILS_TINYAD_PARAMS_6, CONST )   \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_3, UTILS_TINYAD_PARAMS_6, CONST )   \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_4, UTILS_TINYAD_PARAMS_6, CONST )   \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_5, UTILS_TINYAD_PARAMS_6, CONST )   \
+  UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_6, UTILS_TINYAD_PARAMS_6, CONST )   \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1_1, UTILS_TINYAD_PARAMS_6, CONST ) \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1_2, UTILS_TINYAD_PARAMS_6, CONST ) \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_1_3, UTILS_TINYAD_PARAMS_6, CONST ) \
@@ -272,4 +1186,4 @@ partial( Function && function, Args const &... args )
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_5_6, UTILS_TINYAD_PARAMS_6, CONST ) \
   UTILS_TINYAD_DECLARE_DERIV( PREFIX, D_6_6, UTILS_TINYAD_PARAMS_6, CONST )
 
-#endif // UTILS_TINYAD_DOT_HH
+#endif  // UTILS_TINYAD_DOT_HH

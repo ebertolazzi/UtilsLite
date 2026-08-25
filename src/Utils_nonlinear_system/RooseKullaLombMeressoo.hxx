@@ -334,8 +334,8 @@ public:
     x_vec.resize( 1 );
     auto & x0{ x_vec[0] };
     x0.resize( n );
-    for ( integer k{ 0 }; k < n; k += 2 ) x0( k ) = -1.2;
-    for ( integer k{ 1 }; k < n; k += 2 ) x0( k ) = 1;
+    for ( integer k = 0; k < n; k += 2 ) x0( k ) = -1.2;
+    for ( integer k = 1; k < n; k += 2 ) x0( k ) = 1;
   }
 };
 
@@ -1611,7 +1611,7 @@ public:
     auto & x0{ x_vec[0] };
     x0.resize( n );
     real_type bf = 1.0 / static_cast<real_type>( n + 1 );
-    for ( integer k{ 0 }; k < n; ++k ) x0( k ) = bf * static_cast<real_type>( k + 1 );
+    for ( integer k = 0; k < n; ++k ) x0( k ) = bf * static_cast<real_type>( k + 1 );
   }
 
   virtual void check_if_admissible( Vector const & x ) const override
@@ -1829,7 +1829,7 @@ public:
     x_vec.resize( 1 );
     auto & x0{ x_vec[0] };
     x0.resize( n );
-    for ( integer k{ 0 }; k < n; ++k ) x0( k ) = t( k ) * ( t( k ) - 1 );
+    for ( integer k = 0; k < n; ++k ) x0( k ) = t( k ) * ( t( k ) - 1 );
   }
 
   string note() const { return "For any n all solutions are in the interval [-0.5,0]"; }
@@ -1952,6 +1952,6 @@ public:
     x_vec.resize( 1 );
     auto & x0{ x_vec[0] };
     x0.resize( n );
-    for ( integer k{ 0 }; k < n; ++k ) x0( k ) = t( k ) * ( t( k ) - 1 );
+    for ( integer k = 0; k < n; ++k ) x0( k ) = t( k ) * ( t( k ) - 1 );
   }
 };

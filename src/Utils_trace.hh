@@ -47,7 +47,8 @@
  * \param MSG The error message to display if condition is false
  */
 #ifndef UTILS_ASSERT_TRACE0
-#define UTILS_ASSERT_TRACE0( COND, MSG ) if ( !( COND ) ) UTILS_ERROR_TRACE0( MSG )
+#define UTILS_ASSERT_TRACE0( COND, MSG ) \
+  if ( !( COND ) ) UTILS_ERROR_TRACE0( MSG )
 #endif
 
 /**
@@ -360,7 +361,7 @@ namespace Utils
       if ( dladdr( callstack[i], &info ) )
       {
         const char * symname{ info.dli_sname };
-        int          status{ 0 };
+        int          status = 0;
         char *       demangled{ abi::__cxa_demangle( symname, nullptr, nullptr, &status ) };
 
         std::string symbol    = ( status == 0 && demangled ) ? demangled : symname;

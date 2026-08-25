@@ -156,22 +156,22 @@ namespace Utils
     struct Options
     {
       // Numerical differentiation for ∇²_xp if not provided analytically
-      bool   use_finite_differences{ false };
-      Scalar fd_epsilon{ 1e-7 };
+      bool   use_finite_differences = false;
+      Scalar fd_epsilon             = 1e-7;
 
       // Solver options for sensitivity system
-      Scalar solver_tolerance{ 1e-12 };
+      Scalar solver_tolerance = 1e-12;
 
       // Bound constraints
-      bool   has_bounds{ false };
-      Scalar active_set_tolerance{ 1e-8 };  // Tolerance for detecting active constraints
+      bool   has_bounds           = false;
+      Scalar active_set_tolerance = 1e-8;  // Tolerance for detecting active constraints
 
       // Regularization
-      bool   account_for_regularization{ false };
-      Scalar regularization_epsilon{ 0 };  // ε in f(x,p) + ε‖x‖²
+      bool   account_for_regularization = false;
+      Scalar regularization_epsilon     = 0;  // ε in f(x,p) + ε‖x‖²
 
       // Verbosity
-      size_t verbosity_level{ 1 };
+      size_t verbosity_level = 1;
     };
 
   private:
@@ -181,10 +181,10 @@ namespace Utils
     // Results storage
     Matrix      m_sensitivity;  // dx/dp, size n_x × n_p
     ActiveSet   m_active_set;   // Active constraints at optimum
-    Scalar      m_condition_number{ 0 };
-    bool        m_success{ false };
-    bool        m_active_set_changed{ false };  // Flag for potential discontinuity
-    std::string m_error_message{ "" };
+    Scalar      m_condition_number   = 0;
+    bool        m_success            = false;
+    bool        m_active_set_changed = false;  // Flag for potential discontinuity
+    std::string m_error_message;
 
     /**
      * @brief Identify active constraints at optimum
@@ -697,7 +697,7 @@ namespace Utils
     {
       typename Newton_minimizer<Scalar>::Options      optimizer_opts;
       typename ParametricSensitivity<Scalar>::Options sensitivity_opts;
-      bool                                            compute_sensitivity{ true };
+      bool                                            compute_sensitivity = true;
     };
 
   private:
@@ -708,13 +708,13 @@ namespace Utils
 
     // Storage for optimization results
     Vector  m_x_opt;
-    Scalar  m_f_opt{ 0 };
+    Scalar  m_f_opt = 0;
     Status  m_status;
-    integer m_iterations{ 0 };
-    integer m_function_evals{ 0 };
-    integer m_hessian_evals{ 0 };
-    Scalar  m_final_grad_norm{ 0 };
-    bool    m_optimization_success{ false };
+    integer m_iterations           = 0;
+    integer m_function_evals       = 0;
+    integer m_hessian_evals        = 0;
+    Scalar  m_final_grad_norm      = 0;
+    bool    m_optimization_success = false;
 
   public:
     ParametricNewtonMinimizer( Options opts = Options() )

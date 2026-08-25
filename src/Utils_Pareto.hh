@@ -118,11 +118,11 @@ namespace Utils
      */
     struct Entry
     {
-      Point_type   p;              ///< The N-dimensional point coordinates.
-      Payload_type payload;        ///< The auxiliary data associated with the point.
-      bool         alive{ true };  ///< Status flag: true if active, false if soft-deleted (tombstone).
-      size_t       id{ 0 };        ///< A unique identifier. Used for reliable
-                                   ///< deletion/payload retrieval.
+      Point_type   p;             ///< The N-dimensional point coordinates.
+      Payload_type payload;       ///< The auxiliary data associated with the point.
+      bool         alive = true;  ///< Status flag: true if active, false if soft-deleted (tombstone).
+      size_t       id    = 0;     ///< A unique identifier. Used for reliable
+                                  ///< deletion/payload retrieval.
     };
 
     /// @brief Type alias for a vector of point-payload pairs, representing the
@@ -135,9 +135,9 @@ namespace Utils
     std::vector<Entry> m_entries;
     /// @brief Counter for soft-deleted entries. When this reaches
     /// `RebuildThreshold`, a physical clean-up occurs.
-    size_t m_tombstones{ 0 };
+    size_t m_tombstones = 0;
     /// @brief Next unique ID to be assigned to a new entry.
-    size_t m_next_id{ 1 };
+    size_t m_next_id = 1;
 
     /**
      * @brief Checks for exact equality between two N-dimensional points.
@@ -147,7 +147,7 @@ namespace Utils
      */
     static bool equals( Point_type const & a, Point_type const & b )
     {
-      for ( size_t i{ 0 }; i < N; ++i )
+      for ( size_t i = 0; i < N; ++i )
         if ( a[i] != b[i] ) return false;
       return true;
     }
@@ -166,8 +166,8 @@ namespace Utils
      */
     bool dominates( Point_type const & a, Point_type const & b ) const
     {
-      bool any_strict{ false };
-      for ( size_t i{ 0 }; i < N; ++i )
+      bool any_strict = false;
+      for ( size_t i = 0; i < N; ++i )
       {
         if ( a[i] > b[i] ) return false;       // A is worse than B
         if ( a[i] < b[i] ) any_strict = true;  // A is strictly better
@@ -187,7 +187,7 @@ namespace Utils
      */
     bool dominates_weakly( Point_type const & a, Point_type const & b ) const
     {
-      for ( size_t i{ 0 }; i < N; ++i )
+      for ( size_t i = 0; i < N; ++i )
         if ( a[i] > b[i] ) return false;
       return true;
     }
@@ -255,7 +255,7 @@ namespace Utils
       // Calculate L1 norm
       T norm_a = T( 0 );
       T norm_b = T( 0 );
-      for ( size_t i{ 0 }; i < N; ++i )
+      for ( size_t i = 0; i < N; ++i )
       {
         norm_a += std::abs( a[i] );
         norm_b += std::abs( b[i] );
@@ -265,7 +265,7 @@ namespace Utils
       if ( norm_a != norm_b ) return norm_a < norm_b;
 
       // 2. Lexicographical ordering as a tie-breaker
-      for ( size_t i{ 0 }; i < N; ++i )
+      for ( size_t i = 0; i < N; ++i )
         if ( a[i] != b[i] ) return a[i] < b[i];
 
       // Points are identical
@@ -443,7 +443,7 @@ namespace Utils
       {
         if ( !e.alive ) continue;
         double d = 0.0;
-        for ( size_t i{ 0 }; i < N; ++i )
+        for ( size_t i = 0; i < N; ++i )
         {
           // Calculates squared Euclidean distance
           double diff = double( e.p[i] ) - double( p[i] );
@@ -513,11 +513,11 @@ namespace Utils
         Point_type const &   candidate_point   = pr.first;
         Payload_type const & candidate_payload = pr.second;
 
-        bool dominated{ false };
+        bool dominated = false;
 
         // 2a. Check if the candidate is dominated by any point in the current
         // partial front (F)
-        for ( size_t j{ 0 }; j < front.size(); ++j )
+        for ( size_t j = 0; j < front.size(); ++j )
         {
           if ( dominates_weakly( front[j].p, candidate_point ) )
           {
@@ -529,7 +529,7 @@ namespace Utils
 
         // 2b. Remove points from F that are strictly dominated by the candidate
         // (C)
-        for ( size_t j{ 0 }; j < front.size(); )
+        for ( size_t j = 0; j < front.size(); )
         {
           if ( dominates( candidate_point, front[j].p ) )
           {

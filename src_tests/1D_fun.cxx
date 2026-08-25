@@ -87,12 +87,12 @@ public:
   min1D() = delete;
 
   explicit min1D(
-    real_type  a,
-    real_type  b,
-    real_type  unconstrained_minimum,
+    real_type   a,
+    real_type   b,
+    real_type   unconstrained_minimum,
     string_view info,
-    FUN1D &&   fun,
-    FUN1D &&   fun_D )
+    FUN1D &&    fun,
+    FUN1D &&    fun_D )
     : m_a( a )
     , m_b( b )
     , m_x_min( std::clamp( unconstrained_minimum, a, b ) )
@@ -102,14 +102,14 @@ public:
   {
   }
 
-  real_type a() const { return m_a; }
-  real_type b() const { return m_b; }
-  real_type x_min() const { return m_x_min; }
-  real_type eval( real_type x ) const { return m_fun( x ); }
-  real_type D( real_type x ) const { return m_fun_D( x ); }
+  real_type      a() const { return m_a; }
+  real_type      b() const { return m_b; }
+  real_type      x_min() const { return m_x_min; }
+  real_type      eval( real_type x ) const { return m_fun( x ); }
+  real_type      D( real_type x ) const { return m_fun_D( x ); }
   string const & info() const { return m_info; }
-  FUN1D function() const { return m_fun; }
-  FUN1D derivative() const { return m_fun_D; }
+  FUN1D          function() const { return m_fun; }
+  FUN1D          derivative() const { return m_fun_D; }
 };
 
 class fun1 : public fun1D
@@ -122,8 +122,8 @@ public:
         "f(x) = -2*sum_{i=1}^20 (2*i-5)^2/(x-i^2)^3",
         []( real_type x ) -> real_type
         {
-          real_type res{ 0 };
-          for ( int i{ 1 }; i <= 20; ++i ) res += power2( 2 * i - 5 ) / power3( x - i * i );
+          real_type res = 0;
+          for ( int i = 1; i <= 20; ++i ) res += power2( 2 * i - 5 ) / power3( x - i * i );
           return -2 * res;
         } )
   {
@@ -397,7 +397,7 @@ public:
       "f(x) = x^n-a, n=8, a=1",
       []( real_type x ) -> real_type
       {
-        real_type n{ 8 }, a{ 1 };
+        real_type n{ 8 }, a = 1;
         return pow( x, n ) - a;
       } ) ) );
 
@@ -408,7 +408,7 @@ public:
       "f(x) = x^n-a, n=10, a=1",
       []( real_type x ) -> real_type
       {
-        real_type n{ 10 }, a{ 1 };
+        real_type n{ 10 }, a = 1;
         return pow( x, n ) - a;
       } ) ) );
 
@@ -419,7 +419,7 @@ public:
       "f(x) = x^n-a, n=12, a=1",
       []( real_type x ) -> real_type
       {
-        real_type n{ 12 }, a{ 1 };
+        real_type n{ 12 }, a = 1;
         return pow( x, n ) - a;
       } ) ) );
 
@@ -430,7 +430,7 @@ public:
       "f(x) = x^n-a, n=14, a=1",
       []( real_type x ) -> real_type
       {
-        real_type n{ 14 }, a{ 1 };
+        real_type n{ 14 }, a = 1;
         return pow( x, n ) - a;
       } ) ) );
 
@@ -511,7 +511,6 @@ public:
         } ) ) );
 
 
-
   // -----------------------------------------------------------------------
   // Additional classical/pathological scalar root-finding benchmarks.
   // The intervals are chosen to contain at least one zero.  The collection
@@ -520,9 +519,7 @@ public:
   // -----------------------------------------------------------------------
 
   auto add_zero = [&f_list]( real_type a, real_type b, string_view info, FUN1D fun )
-  {
-    f_list.emplace_back( std::unique_ptr<fun1D>( new fun1D( a, b, info, std::move( fun ) ) ) );
-  };
+  { f_list.emplace_back( std::unique_ptr<fun1D>( new fun1D( a, b, info, std::move( fun ) ) ) ); };
 
   add_zero( 0, 2, "Dekker-Brent: f(x)=x^3+x-1", []( real_type x ) { return power3( x ) + x - 1; } );
   add_zero( 0, 1, "f(x)=exp(-x)-x", []( real_type x ) { return std::exp( -x ) - x; } );
@@ -577,11 +574,7 @@ public:
       2,
       fmt::format( "bad scaling: exp({}*(x-1))-1", k ),
       [scale, k]( real_type x ) { return std::exp( k * ( x - 1 ) ) - 1; } );
-    add_zero(
-      0,
-      2,
-      fmt::format( "bad scaling: 1e{}*(x-1)", k ),
-      [scale]( real_type x ) { return scale * ( x - 1 ); } );
+    add_zero( 0, 2, fmt::format( "bad scaling: 1e{}*(x-1)", k ), [scale]( real_type x ) { return scale * ( x - 1 ); } );
   }
 
   // Oscillatory problems.  Brackets contain several roots on purpose.
@@ -744,7 +737,7 @@ public:
     []( real_type x ) { return std::exp( x ) - std::exp( -x ); } );
 
   // exp(x)+exp(-2x): exp(x)=2 exp(-2x), hence x*=log(2)/3.
-  real_type const exp_mix_min{ std::log( 2.0 ) / 3.0 };
+  real_type const exp_mix_min = std::log( 2.0 ) / 3.0;
   add_problem(
     "asymmetric exponential, exp(x)+exp(-2*x)",
     exp_mix_min,
@@ -839,7 +832,6 @@ public:
         return ( x - xmin ) / std::hypot( 1.0, d );
       } );
   }
-
 }
 
 // static

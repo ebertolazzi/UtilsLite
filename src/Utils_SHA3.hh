@@ -58,19 +58,19 @@ namespace Utils
     using string_view  = const std::string &;
 
     // Round state
-    uint8_t * m_buffer_location{ nullptr };  // used for writing and to know when to flush the buffer
+    uint8_t * m_buffer_location = nullptr;  // used for writing and to know when to flush the buffer
     uint64_t  m_state[5][5];
     uint64_t  m_message_buffer_64[1600 / 8];  // rate bits wide, defined during
                                               // construction
 
-    int m_digest_size{ 0 };  // bytes
+    int m_digest_size = 0;  // bytes
 
     // Digest-length specific Values
-    int m_sponge_capacity{ 0 };
-    int m_sponge_rate{ 0 };
+    int m_sponge_capacity = 0;
+    int m_sponge_rate     = 0;
 
     // Track if we've already processed the final block
-    bool m_finalized{ false };
+    bool m_finalized = false;
 
     void m_reset()
     {
@@ -83,7 +83,7 @@ namespace Utils
     void m_absorb_buffer()
     {
       uint64_t const * x{ m_message_buffer_64 };
-      for ( int i{ 0 }; i * 64 < m_sponge_rate; ++i ) m_state[i / 5][i % 5] ^= x[i];  // TODO: unroll
+      for ( int i = 0; i * 64 < m_sponge_rate; ++i ) m_state[i / 5][i % 5] ^= x[i];  // TODO: unroll
       m_perform_rounds( ROUNDS );
     }
 
@@ -94,7 +94,7 @@ namespace Utils
       uint64_t c[5];
       uint64_t d[5];
 
-      for ( int i{ 0 }; i < rounds; i++ )
+      for ( int i = 0; i < rounds; i++ )
       {
         // CHANGE: For loops change to pre-determined steps, reduces branching
 
@@ -233,15 +233,15 @@ namespace Utils
     {
       auto const m_messageBuffer{ reinterpret_cast<uint8_t const *>( m_message_buffer_64 ) };
       stream << "mb = [ ";
-      for ( int i{ 0 }; i < m_sponge_rate / 8; ++i ) stream << static_cast<int>( m_messageBuffer[i] ) << ' ';
+      for ( int i = 0; i < m_sponge_rate / 8; ++i ) stream << static_cast<int>( m_messageBuffer[i] ) << ' ';
       stream << "]\n";
     }
 
     void m_print_sponge( ostream_type & stream ) const
     {
       stream << "s = [ " << std::hex;
-      for ( int i{ 0 }; i < 5; ++i )
-        for ( int j{ 0 }; j < 5; ++j ) stream << m_state[i][j] << ' ';
+      for ( int i = 0; i < 5; ++i )
+        for ( int j = 0; j < 5; ++j ) stream << m_state[i][j] << ' ';
       stream << std::dec << "]\n";
     }
 
@@ -319,7 +319,7 @@ namespace Utils
     {
       if ( m_finalized ) { m_reset(); }
 
-      int byte{ 0 };
+      int byte = 0;
       while ( str[byte] != '\0' )
       {
         int f{ str[byte] };

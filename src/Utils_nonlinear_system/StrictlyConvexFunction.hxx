@@ -62,7 +62,7 @@ public:
     x_vec.resize( 1 );
     auto & x0{ x_vec[0] };
     x0.resize( n );
-    for ( integer i{ 0 }; i < n; ++i ) x0( i ) = ( static_cast<real_type>( i ) + 1.0 ) / static_cast<real_type>( n );
+    for ( integer i = 0; i < n; ++i ) x0( i ) = ( static_cast<real_type>( i ) + 1.0 ) / static_cast<real_type>( n );
   }
 };
 
