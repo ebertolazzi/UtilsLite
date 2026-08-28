@@ -18,13 +18,13 @@
 \*--------------------------------------------------------------------------*/
 
 //
-// file: Utils_TrustRegion.hh
+// file: Utils_minimize_TrustRegion.hh
 //
 
 #pragma once
 
-#ifndef UTILS_THRUST_REGION_dot_HH
-#define UTILS_THRUST_REGION_dot_HH
+#ifndef UTILS_MINIMIZE_TRUST_REGION_dot_HH
+#define UTILS_MINIMIZE_TRUST_REGION_dot_HH
 
 #include "Utils_fmt.hh"
 #include "Utils_ssolver.hh"

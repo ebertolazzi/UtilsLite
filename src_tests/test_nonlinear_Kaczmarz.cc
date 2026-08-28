@@ -23,7 +23,7 @@
 \*--------------------------------------------------------------------------*/
 
 #include "Utils_fmt.hh"
-#include "Utils_nonlinear_Kaczmarz.hh"
+#include "Utils_nonlinear_system_Kaczmarz.hh"
 #include "Utils_nonlinear_system.hh"
 #include "Utils_progress_bar.hh"
 

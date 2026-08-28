@@ -37,7 +37,7 @@
  * output with Unicode characters and ANSI colors for improved readability.
  */
 
-#include "Utils_TrustRegion.hh"
+#include "Utils_minimize_TrustRegion.hh"
 #include "Utils_fmt.hh"
 #include "Utils.hh"
 #include "Utils_TicToc.hh"

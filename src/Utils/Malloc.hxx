@@ -60,32 +60,61 @@ namespace Utils
   inline int64_t MaximumAllocatedBytes = 0;
   inline bool    MallocDebug           = false;
 
-  //! Utility function to convert byte size into a human-readable format.
+  //! Convert a byte count to a compact human-readable representation.
   /*!
-   * \param nb The number of bytes.
-   * \return A string representing the size in human-readable format (KB, MB,
-   * etc.).
+   * \tparam INT Integral type used to represent the byte count.
+   *
+   * \param nb Number of bytes.
+   *
+   * \return A string representing the byte count using binary units:
+   *         bytes, KiB, MiB, or GiB.
+   *
+   * \note One KiB is 1024 bytes, one MiB is 1024 KiB, and one GiB is
+   *       1024 MiB.
+   *
+   * \note Negative values, when a signed integer type is used, are not
+   *       meaningful and are rejected.
    */
-  inline string out_bytes( size_t nb )
+  template <std::integral INT>
+  inline std::string
+  out_bytes( INT nb )
   {
-    size_t const Kb = nb >> 10;
-    size_t const Mb = Kb >> 10;
-    if ( size_t const Gb = Mb >> 10; Gb > 0 )
+    if constexpr ( std::signed_integral<INT> )
     {
-      size_t const mb = ( 100 * ( Mb & 0x3FF ) ) / 1024;
-      return std::format( "{}Gb(+{}Mb)", Gb, mb );
-    }
-    if ( Mb > 0 )
+      if ( nb < 0 )
+        return std::format( "{} bytes", nb );
+    }  
+
+    using uint_type = std::make_unsigned_t<INT>;  
+
+    uint_type const n = static_cast<uint_type>( nb );  
+
+    constexpr uint_type K = 1024;
+    constexpr uint_type M = K * K;
+    constexpr uint_type G = M * K;  
+
+    if ( n >= G )
     {
-      size_t const kb = ( 100 * ( Kb & 0x3FF ) ) / 1024;
-      return std::format( "{}Mb(+{}Kb)", Mb, kb );
-    }
-    if ( Kb > 0 )
+      uint_type const gb = n / G;
+      uint_type const mb = ( n % G ) / M;
+      return std::format( "{} GiB (+{} MiB)", gb, mb );
+    }  
+
+    if ( n >= M )
     {
-      size_t const b = ( 100 * ( nb & 0x3FF ) ) / 1024;
-      return std::format( "{}Kb(+{}b)", Kb, b );
-    }
-    return std::format( "{}bytes", nb );
+      uint_type const mb = n / M;
+      uint_type const kb = ( n % M ) / K;
+      return std::format( "{} MiB (+{} KiB)", mb, kb );
+    }  
+
+    if ( n >= K )
+    {
+      uint_type const kb = n / K;
+      uint_type const b  = n % K;
+      return std::format( "{} KiB (+{} bytes)", kb, b );
+    }  
+
+    return std::format( "{} bytes", n );
   }
 
   /*\

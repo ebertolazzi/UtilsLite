@@ -69,9 +69,9 @@
 #ifndef UTILS_MINIMIZE_NEWTON_HH
 #define UTILS_MINIMIZE_NEWTON_HH
 
-#include "Utils_minimize.hh"
+#include "Utils_minimize_BBOX.hh"
 #include "Utils_ssolver.hh"
-#include "Utils_Linesearch.hh"
+#include "Utils_minimize_linesearch.hh"
 
 namespace Utils
 {

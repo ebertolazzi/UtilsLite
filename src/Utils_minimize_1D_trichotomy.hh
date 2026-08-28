@@ -18,7 +18,7 @@
 \*--------------------------------------------------------------------------*/
 
 /**
- * \file Utils_Trichotomy.hh
+ * \file Utils_minimize_1D_trichotomy.hh
  * \brief Implementation of the trichotomy method for 1D minimization
  *
  * This file contains the complete implementation of the trichotomy algorithm,
@@ -31,8 +31,8 @@
 
 #pragma once
 
-#ifndef UTILS_TRICHOTOMY_dot_HH
-#define UTILS_TRICHOTOMY_dot_HH
+#ifndef UTILS_MINIMIZE_1D_TRICHOTOMY_dot_HH
+#define UTILS_MINIMIZE_1D_TRICHOTOMY_dot_HH
 
 #include "Utils.hh"
 
@@ -206,7 +206,7 @@ namespace Utils
    *
    * \par Complete Example:
    * \code{.cpp}
-   * #include "Utils_Trichotomy.hh"
+   * #include "Utils_minimize_1D_trichotomy.hh"
    * #include <iostream>
    * #include <cmath>
    *
@@ -1189,8 +1189,8 @@ namespace Utils
 
 }  // namespace Utils
 
-#endif  // UTILS_TRICHOTOMY_dot_HH
+#endif  // UTILS_MINIMIZE_1D_TRICHOTOMY_dot_HH
 
 //
-// eof: Utils_Trichotomy.hh
+// eof: Utils_minimize_1D_trichotomy.hh
 //

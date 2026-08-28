@@ -18,15 +18,15 @@
 \*--------------------------------------------------------------------------*/
 
 //
-// file: Utils_Linesearch.hh
+// file: Utils_minimize_linesearch.hh
 //
 
 #pragma once
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-#ifndef UTILS_LINESEARCH_dot_HH
-#define UTILS_LINESEARCH_dot_HH
+#ifndef UTILS_MINIMIZE_LINESEARCH_dot_HH
+#define UTILS_MINIMIZE_LINESEARCH_dot_HH
 
 #include "Utils.hh"
 #include "Utils_eigen.hh"
@@ -1331,4 +1331,4 @@ namespace Utils
 #endif
 
 //
-// eof: Utils_Linesearch.hh
+// eof: Utils_minimize_linesearch.hh

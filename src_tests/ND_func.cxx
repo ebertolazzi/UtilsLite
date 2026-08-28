@@ -24,7 +24,16 @@
  |  Updated adaptation with verbose output and final x saving               |
 \*--------------------------------------------------------------------------*/
 
-using std::string;
+#include <Eigen/Core>
+#include <Eigen/Sparse>
+#include <Eigen/SparseCore>
+#include <cmath>
+#include <string>
+#include <vector>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 template <typename T> class NDbase
 {
@@ -36,6 +45,7 @@ public:
 
   using Vector       = Eigen::Matrix<T, Eigen::Dynamic, 1>;
   using SparseMatrix = Eigen::SparseMatrix<T>;
+  using Triplet      = Eigen::Triplet<double>;
 
   virtual Vector lower() const = 0;
   virtual Vector upper() const = 0;
@@ -838,7 +848,7 @@ public:
   T operator()( Vector const & x ) const override
   {
     T x1 = x[0], x2 = x[1];
-    T pi = Utils::m_pi;
+    T pi = M_PI;
 
     T R        = std::sqrt( x1 * x1 + x2 * x2 );
     T arg_exp  = std::abs( 100.0 - R / pi );
@@ -855,7 +865,7 @@ public:
   Vector gradient( Vector const & x ) const override
   {
     T x1 = x[0], x2 = x[1];
-    T pi  = Utils::m_pi;
+    T pi  = M_PI;
     T eps = 1e-8;  // Per evitare divisione per zero a (0,0)
 
     // Termini intermedi
@@ -2854,7 +2864,7 @@ public:
   T operator()( Vector const & x ) const override
   {
     T x1 = x[0], x2 = x[1];
-    T pi = Utils::m_pi;
+    T pi = M_PI;
 
     T R       = std::sqrt( x1 * x1 + x2 * x2 );
     T exp_arg = std::abs( 1.0 - R / pi );
@@ -2869,7 +2879,7 @@ public:
   Vector gradient( Vector const & x ) const override
   {
     T x1 = x[0], x2 = x[1];
-    T pi = Utils::m_pi;
+    T pi = M_PI;
 
     // Compute intermediate values
     T R = std::sqrt( x1 * x1 + x2 * x2 );
@@ -2919,7 +2929,7 @@ public:
   SparseMatrix hessian( Vector const & x ) const override
   {
     T x1 = x[0], x2 = x[1];
-    T pi = Utils::m_pi;
+    T pi = M_PI;
 
     // Compute intermediate values
     T R = std::sqrt( x1 * x1 + x2 * x2 );
@@ -3284,7 +3294,7 @@ public:
   T operator()( Vector const & x ) const override
   {
     T sum_outer = 0.0;
-    T pi        = Utils::m_pi;
+    T pi        = M_PI;
 
     for ( int i = 0; i < m; ++i )
     {
@@ -3310,7 +3320,7 @@ public:
   Vector gradient( Vector const & x ) const override
   {
     Vector g  = Vector::Zero( dim );
-    T      pi = Utils::m_pi;
+    T      pi = M_PI;
 
     for ( int i = 0; i < m; ++i )
     {
@@ -3351,7 +3361,7 @@ public:
     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> H_dense( dim, dim );
     H_dense.setZero();
 
-    T pi        = Utils::m_pi;
+    T pi        = M_PI;
     T pi_sq     = pi * pi;
     T inv_pi_sq = 1.0 / pi_sq;
 
@@ -3652,7 +3662,7 @@ public:
   {
     T x1 = x[0];
     T x2 = x[1];
-    T pi = Utils::m_pi;
+    T pi = M_PI;
 
     T sin3x = std::sin( 3.0 * pi * x1 );
     T sin3y = std::sin( 3.0 * pi * x2 );
@@ -3672,7 +3682,7 @@ public:
   {
     T x1 = x[0];
     T x2 = x[1];
-    T pi = Utils::m_pi;
+    T pi = M_PI;
 
     // Termini comuni
     // T sin3x = std::sin(3.0 * pi * x1);
@@ -3713,7 +3723,7 @@ public:
   {
     T x1 = x[0];
     T x2 = x[1];
-    T pi = Utils::m_pi;
+    T pi = M_PI;
 
     T x_minus_1 = x1 - 1.0;
     T y_minus_1 = x2 - 1.0;

@@ -26,7 +26,7 @@
 #ifndef UTILS_IPNEWTON_HH
 #define UTILS_IPNEWTON_HH
 
-#include "Utils_minimize.hh"
+#include "Utils_minimize_BBOX.hh"
 #include "Utils_LBFGS.hh"
 #include "Utils_minimize_Newton.hh"
 #include <random>

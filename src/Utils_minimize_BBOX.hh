@@ -27,14 +27,14 @@
 
 #pragma once
 
-#ifndef UTILS_MINIMIZE_dot_HH
-#define UTILS_MINIMIZE_dot_HH
+#ifndef UTILS_MINIMIZE_BBOX_dot_HH
+#define UTILS_MINIMIZE_BBOX_dot_HH
 
 #include <set>
 #include <optional>
 #include <limits>
 #include "Utils_fmt.hh"
-#include "Utils_Linesearch.hh"
+#include "Utils_minimize_linesearch.hh"
 
 namespace Utils
 {

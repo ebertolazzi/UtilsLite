@@ -17,7 +17,7 @@
  |                                                                          |
 \*--------------------------------------------------------------------------*/
 
-#include "Utils_Trichotomy.hh"
+#include "Utils_minimize_1D_trichotomy.hh"
 #include "Utils_fmt.hh"
 
 #if defined( __clang__ )

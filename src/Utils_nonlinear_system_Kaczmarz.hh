@@ -23,8 +23,8 @@
 
 #pragma once
 
-#ifndef UTILS_NONLINEAR_KACZMARZ_dot_HH
-#define UTILS_NONLINEAR_KACZMARZ_dot_HH
+#ifndef UTILS_NONLINEAR_SYSTEM_KACZMARZ_dot_HH
+#define UTILS_NONLINEAR_SYSTEM_KACZMARZ_dot_HH
 
 #include <algorithm>
 #include <chrono>

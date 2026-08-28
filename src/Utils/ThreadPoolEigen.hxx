@@ -23,6 +23,10 @@
 
 #pragma once
 
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#endif
+
 #include "3rd/Eigen/ThreadPool"
 
 namespace Utils

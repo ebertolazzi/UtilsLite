@@ -68,7 +68,12 @@ namespace Utils
     //! Provides options for aligning content inside table cells to the LEFT,
     //! RIGHT, or CENTER.
     //!
-    using Alignment = enum class Table_align : integer { LEFT, RIGHT, CENTER };
+    using Alignment = enum class Table_align : integer
+    {
+      LEFT,
+      RIGHT,
+      CENTER
+    };
 
     // =============================================================
     // Junction resolution

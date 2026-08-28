@@ -24,9 +24,9 @@
 #ifndef UTILS_MINIMIZE_LBFGS_HH
 #define UTILS_MINIMIZE_LBFGS_HH
 
-#include "Utils_minimize.hh"
+#include "Utils_minimize_BBOX.hh"
 #include "Utils_LBFGS.hh"
-#include "Utils_Linesearch.hh"
+#include "Utils_minimize_linesearch.hh"
 
 /**
  * @file Utils_minimize_LBFGS.hh

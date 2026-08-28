@@ -157,7 +157,8 @@ namespace Utils
 
     using bobyqa_objfun = std::function<Scalar( Vector const & x )>;
 
-    using Status = enum class Status : int {
+    using Status = enum class Status : int
+    {
       BOBYQA_SUCCESS              = 0,   // algorithm converged
       BOBYQA_BAD_NPT              = -1,  // NPT is not in the required interval
       BOBYQA_TOO_CLOSE            = -2,  // insufficient space between the bounds

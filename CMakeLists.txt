@@ -207,15 +207,24 @@ option(
 set(UTILS_IPO_SUPPORTED FALSE)
 set(UTILS_IPO_STATUS "disabled")
 if(UTILS_ENABLE_LTO)
-  check_ipo_supported(
-    RESULT UTILS_IPO_SUPPORTED
-    OUTPUT UTILS_IPO_ERROR
-    LANGUAGES CXX
-  )
-  if(UTILS_IPO_SUPPORTED)
-    set(UTILS_IPO_STATUS "enabled")
+  # AppleClang can compile universal ThinLTO objects, but ranlib indexes the
+  # resulting static archive for only one architecture.  Linking the other
+  # slice then reports that the archive members have the wrong architecture.
+  # Keep LTO enabled for ordinary builds and disable it only for Apple fat
+  # binaries, where correctness of both slices takes precedence.
+  if(UTILS_APPLE_MULTI_ARCH)
+    set(UTILS_IPO_STATUS "disabled for Apple universal binaries")
   else()
-    set(UTILS_IPO_STATUS "not supported: ${UTILS_IPO_ERROR}")
+    check_ipo_supported(
+      RESULT UTILS_IPO_SUPPORTED
+      OUTPUT UTILS_IPO_ERROR
+      LANGUAGES CXX
+    )
+    if(UTILS_IPO_SUPPORTED)
+      set(UTILS_IPO_STATUS "enabled")
+    else()
+      set(UTILS_IPO_STATUS "not supported: ${UTILS_IPO_ERROR}")
+    endif()
   endif()
 endif()
 

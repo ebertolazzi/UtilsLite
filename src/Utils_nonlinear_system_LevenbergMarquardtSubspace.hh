@@ -23,8 +23,8 @@
 
 #pragma once
 
-#ifndef UTILS_INCREMENTAL_LEVENBERG_MARQUARDT_dot_HH
-#define UTILS_INCREMENTAL_LEVENBERG_MARQUARDT_dot_HH
+#ifndef UTILS_NONLINEAR_SYSTEM_LEVENBERG_MARQUARDT_SUBSPACE_dot_HH
+#define UTILS_NONLINEAR_SYSTEM_LEVENBERG_MARQUARDT_SUBSPACE_dot_HH
 
 #include <algorithm>
 #include <chrono>
@@ -77,12 +77,12 @@ namespace Utils
     real_type         m_good_reduction;  // Soglia per riduzione buona (aumenta trust region)
     real_type         m_bad_reduction;   // Soglia per riduzione cattiva (riduce trust region)
     SelectionStrategy m_strategy;
-    integer           m_block_size;  // Dimensione del blocco (numero di equazioni per
-                                     // iterazione)
-    bool      m_adaptive_lambda;     // Adatta lambda automaticamente
-    bool      m_use_line_search;     // Usa line search per ottimizzare il passo
-    real_type m_line_search_beta;    // Parametro di riduzione per line search
-    real_type m_line_search_c1;      // Condizione di Armijo
+    integer           m_block_size;        // Dimensione del blocco (numero di equazioni per
+                                           // iterazione)
+    bool              m_adaptive_lambda;   // Adatta lambda automaticamente
+    bool              m_use_line_search;   // Usa line search per ottimizzare il passo
+    real_type         m_line_search_beta;  // Parametro di riduzione per line search
+    real_type         m_line_search_c1;    // Condizione di Armijo
 
     // Controllo output
     integer m_verbose_level;    // 0=silent, 1=summary, 2=detailed, 3=debug

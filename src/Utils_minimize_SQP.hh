@@ -42,7 +42,7 @@
 #ifndef UTILS_MINIMIZE_SQP_HH
 #define UTILS_MINIMIZE_SQP_HH
 
-#include "Utils_minimize.hh"
+#include "Utils_minimize_BBOX.hh"
 #include "Utils_ssolver.hh"
 
 namespace Utils

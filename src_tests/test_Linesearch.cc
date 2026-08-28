@@ -14,7 +14,7 @@
 \*--------------------------------------------------------------------------*/
 
 #include "Utils_eigen.hh"
-#include "Utils_Linesearch.hh"
+#include "Utils_minimize_linesearch.hh"
 #include "Utils_TicToc.hh"
 
 namespace fmt

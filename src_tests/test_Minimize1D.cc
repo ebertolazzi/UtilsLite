@@ -17,7 +17,7 @@
  |                                                                          |
 \*--------------------------------------------------------------------------*/
 
-#include "Utils_Minimize1D.hh"
+#include "Utils_minimize_BBOX_1D.hh"
 #include "Utils_fmt.hh"
 
 #include <cmath>

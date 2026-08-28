@@ -18,15 +18,15 @@
 \*--------------------------------------------------------------------------*/
 
 /**
- * @file Utils_Minimize1D.hh
+ * @file Utils_minimize_BBOX_1D.hh
  * @brief Header-only minimization of a differentiable scalar function on an
  *        interval whose endpoints may be infinite.
  */
 
 #pragma once
 
-#ifndef UTILS_MINIMIZE_1D_dot_HH
-#define UTILS_MINIMIZE_1D_dot_HH
+#ifndef UTILS_MINIMIZE_BBOX_1D_dot_HH
+#define UTILS_MINIMIZE_BBOX_1D_dot_HH
 
 #include "Utils_AlgoBracket.hh"
 
@@ -426,4 +426,4 @@ namespace Utils
 
 #endif
 
-// EOF: Utils_Minimize1D.hh
+// EOF: Utils_minimize_BBOX_1D.hh

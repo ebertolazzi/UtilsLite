@@ -88,7 +88,7 @@
 #ifndef UTILS_MINIMIZE_PARAMETRIC_SENSITIVITY_dot_HH
 #define UTILS_MINIMIZE_PARAMETRIC_SENSITIVITY_dot_HH
 
-#include "Utils_minimize.hh"
+#include "Utils_minimize_BBOX.hh"
 #include "Utils_minimize_Newton.hh"
 #include "Utils_fmt.hh"
 
