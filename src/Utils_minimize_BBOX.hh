@@ -18,12 +18,8 @@
 \*--------------------------------------------------------------------------*/
 
 //
-// file: Utils_minimize_Newton.hh
+// file: Utils_minimize_BBOX.hh
 //
-/*--------------------------------------------------------------------------*\
- |  Improved Newton Minimizer with Enhanced Recovery Mechanisms             |
- |  Based on: Nocedal & Wright, "Numerical Optimization", 2nd Ed.           |
-\*--------------------------------------------------------------------------*/
 
 #pragma once
 

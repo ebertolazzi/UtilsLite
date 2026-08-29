@@ -206,7 +206,7 @@ namespace Utils
    *     Utils::AlgoBracket<double> solver;
    *
    *     // Set tolerances and algorithm
-   *     solver.select(3); // Brent's method
+   *     solver.select(Utils::AlgoBracket<double>::Method::BRENT);
    *
    *     // Use custom function class
    *     MyFunction fun(0.5);
@@ -225,7 +225,7 @@ namespace Utils
    */
   template <typename Real> class AlgoBracket
   {
-  private:
+  public:
     /*!
      * \brief Enumeration of available root-finding algorithms
      */
@@ -240,6 +240,7 @@ namespace Utils
       ALGO748        /*!< Optimal Algorithm 748 */
     };
 
+  private:
     using Integer = int;
 
     // Tolerances
@@ -641,6 +642,12 @@ namespace Utils
     }
 
     /*!
+     * \brief Select a root-finding algorithm without numeric magic values.
+     * \param method Algorithm to use in subsequent calls.
+     */
+    void select( Method method ) { m_select = method; }
+
+    /*!
      * \brief Set tolerance on x (interval size)
      * \param tol_x New tolerance value (>0)
      */
@@ -960,9 +967,19 @@ namespace Utils
       while ( ++m_iteration_count < m_max_iteration )
       {
         Real dir{ b - a };
-        Real tol{ m_tolerance_x / ( 2 * abs( dir ) ) };
-        m_converged = tol >= 0.5;
+        Real width{ abs( dir ) };
+
+        // A tolerance smaller than the local floating-point spacing cannot
+        // produce a distinguishable abscissa.  Combine the requested value
+        // with a scale-aware roundoff floor; nextafter also detects exactly
+        // adjacent representable endpoints, including subnormal numbers.
+        Real scale{ max( Real( 1 ), max( abs( a ), abs( b ) ) ) };
+        Real roundoff_tol{ 4 * machine_eps<Real>() * scale };
+        Real x_tol{ max( m_tolerance_x, roundoff_tol ) };
+        m_converged = width <= x_tol || std::nextafter( a, b ) == b || std::nextafter( b, a ) == a;
         if ( m_converged ) break;
+
+        Real tol{ min( Real( 0.5 ), x_tol / ( 2 * width ) ) };
 
         Real abs_fa{ abs( fa ) };
         Real abs_fb{ abs( fb ) };

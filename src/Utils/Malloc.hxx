@@ -75,44 +75,41 @@ namespace Utils
    * \note Negative values, when a signed integer type is used, are not
    *       meaningful and are rejected.
    */
-  template <std::integral INT>
-  inline std::string
-  out_bytes( INT nb )
+  template <std::integral INT> inline std::string out_bytes( INT nb )
   {
     if constexpr ( std::signed_integral<INT> )
     {
-      if ( nb < 0 )
-        return std::format( "{} bytes", nb );
-    }  
+      if ( nb < 0 ) return std::format( "{} bytes", nb );
+    }
 
-    using uint_type = std::make_unsigned_t<INT>;  
+    using uint_type = std::make_unsigned_t<INT>;
 
-    uint_type const n = static_cast<uint_type>( nb );  
+    uint_type const n = static_cast<uint_type>( nb );
 
     constexpr uint_type K = 1024;
     constexpr uint_type M = K * K;
-    constexpr uint_type G = M * K;  
+    constexpr uint_type G = M * K;
 
     if ( n >= G )
     {
       uint_type const gb = n / G;
       uint_type const mb = ( n % G ) / M;
       return std::format( "{} GiB (+{} MiB)", gb, mb );
-    }  
+    }
 
     if ( n >= M )
     {
       uint_type const mb = n / M;
       uint_type const kb = ( n % M ) / K;
       return std::format( "{} MiB (+{} KiB)", mb, kb );
-    }  
+    }
 
     if ( n >= K )
     {
       uint_type const kb = n / K;
       uint_type const b  = n % K;
       return std::format( "{} KiB (+{} bytes)", kb, b );
-    }  
+    }
 
     return std::format( "{} bytes", n );
   }

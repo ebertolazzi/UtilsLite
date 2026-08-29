@@ -467,7 +467,8 @@ namespace Utils::MinimizeNewton
   public:
     CallableProblem( Obj obj, Grad grad, Hess hess )
       : m_obj( std::move( obj ) ), m_grad( std::move( grad ) ), m_hess( std::move( hess ) )
-    {}
+    {
+    }
 
     Real objective( ConstVectorRef<Real> x ) { return static_cast<Real>( m_obj( x ) ); }
     void gradient( ConstVectorRef<Real> x, VectorRef<Real> g ) { m_grad( x, g ); }
@@ -502,16 +503,16 @@ namespace Utils::MinimizeNewton
   {
     switch ( status )
     {
-      case Status::unknown:                  return "unknown";
-      case Status::converged:                return "converged";
-      case Status::max_iterations:           return "maximum iterations";
+      case Status::unknown: return "unknown";
+      case Status::converged: return "converged";
+      case Status::max_iterations: return "maximum iterations";
       case Status::max_function_evaluations: return "maximum function evaluations";
-      case Status::no_progress:              return "no acceptable projected Newton step";
-      case Status::non_finite_objective:     return "non-finite objective";
-      case Status::non_finite_gradient:      return "non-finite gradient";
-      case Status::non_finite_hessian:       return "non-finite Hessian";
-      case Status::eigensolver_failure:      return "linear solver failure";
-      case Status::user:                     return "user request";
+      case Status::no_progress: return "no acceptable projected Newton step";
+      case Status::non_finite_objective: return "non-finite objective";
+      case Status::non_finite_gradient: return "non-finite gradient";
+      case Status::non_finite_hessian: return "non-finite Hessian";
+      case Status::eigensolver_failure: return "linear solver failure";
+      case Status::user: return "user request";
     }
     return "unknown";
   }
@@ -546,14 +547,14 @@ namespace Utils::MinimizeNewton
 
     // Same adaptive cubic parameters as MinimizeNewtonCubic.
     Real hessian_lipschitz_initial = Real( 1 );
-    Real hessian_lipschitz_min     = std::sqrt( eps ); // compatibility
-    Real hessian_lipschitz_max     = Real( 1 ) / eps;  // compatibility
+    Real hessian_lipschitz_min     = std::sqrt( eps );  // compatibility
+    Real hessian_lipschitz_max     = Real( 1 ) / eps;   // compatibility
     Real regularization_increase   = Real( 2 );
     Real regularization_decrease   = Real( 1 ) / Real( 2 );
     Real factorization_increase    = Real( 10 );
     Real roundoff_factor           = Real( 16 );
-    Real linear_residual_factor    = Real( 128 ); // compatibility, deliberately unused
-    Real maximum_step_norm         = Real( 100 ); // compatibility, deliberately unused
+    Real linear_residual_factor    = Real( 128 );  // compatibility, deliberately unused
+    Real maximum_step_norm         = Real( 100 );  // compatibility, deliberately unused
 
     Real gradient_acceptance_factor = Real( 2 );
     Real decrease_factor            = Real( 2 ) / Real( 3 );
@@ -571,10 +572,10 @@ namespace Utils::MinimizeNewton
     int  max_gradient_rescue    = 20;
     Real gradient_rescue_shrink = Real( 1 ) / Real( 10 );
     Real gradient_rescue_armijo = Real( 1e-4 );
-    Real cauchy_expand           = Real( 10 );
-    Real cauchy_alpha_min        = std::sqrt( std::numeric_limits<Real>::denorm_min() );
-    Real cauchy_alpha_max        = Real( 1e8 );
-    Real cauchy_radius_factor     = Real( 2 );
+    Real cauchy_expand          = Real( 10 );
+    Real cauchy_alpha_min       = std::sqrt( std::numeric_limits<Real>::denorm_min() );
+    Real cauchy_alpha_max       = Real( 1e8 );
+    Real cauchy_radius_factor   = Real( 2 );
 
     // Primary semismooth-Newton candidate.  The generalized Jacobian is
     //
@@ -588,16 +589,16 @@ namespace Utils::MinimizeNewton
     // Hence a safe Newton candidate exists when the free Hessian H_FF is
     // numerically positive definite.  For an unbounded box D=I, F={1,...,n},
     // and this test/solve becomes the ordinary pure Newton step H d = g.
-    bool enable_primary_semismooth       = true;
-    Real primary_pd_factor               = Real( 256 );
-    Real primary_acceptance_threshold    = Real( 1e-4 );
-    int  max_primary_model_backtracking  = 12;
-    Real primary_model_shrink            = Real( 1 ) / Real( 2 );
+    bool enable_primary_semismooth      = true;
+    Real primary_pd_factor              = Real( 256 );
+    Real primary_acceptance_threshold   = Real( 1e-4 );
+    int  max_primary_model_backtracking = 12;
+    Real primary_model_shrink           = Real( 1 ) / Real( 2 );
 
     // If the cubic backtracking still cannot produce a step, retain the more
     // permissive semismooth rescue used by the previous revision.
-    bool enable_semismooth_rescue       = true;
-    int  semismooth_rescue_iterations   = 2;
+    bool enable_semismooth_rescue     = true;
+    int  semismooth_rescue_iterations = 2;
 
     // Use TRON's actual/predicted reduction ratio only to adapt M after a cubic
     // step has already passed the AdaN acceptance tests.  Thus it changes speed,
@@ -614,11 +615,11 @@ namespace Utils::MinimizeNewton
     int  max_polish_iterations     = 12;
     int  max_polish_backtracking   = 12;
     Real polish_trigger            = std::sqrt( std::sqrt( eps ) );
-    Real polish_tolerance          = Real( 0 ); // 0 -> 128*eps
+    Real polish_tolerance          = Real( 0 );  // 0 -> 128*eps
     Real polish_armijo             = Real( 1e-4 );
     Real projection_derivative_tol = Real( 64 ) * eps;
-    int  linear_refinement_steps   = 0;          // compatibility; off to preserve exact reduction
-    Real polish_bound_factor       = Real( 64 ); // compatibility
+    int  linear_refinement_steps   = 0;           // compatibility; off to preserve exact reduction
+    Real polish_bound_factor       = Real( 64 );  // compatibility
 
     int verbose = 0;
 
@@ -640,32 +641,32 @@ namespace Utils::MinimizeNewton
   template <typename Real = double> struct Result
   {
     Vector<Real> x;
-    Real objective                  = std::numeric_limits<Real>::quiet_NaN();
-    Real projected_gradient_norm    = std::numeric_limits<Real>::quiet_NaN();
-    Real projected_gradient_norm_inf= std::numeric_limits<Real>::quiet_NaN();
-    Real primal_feasibility         = Real( 0 );
-    Real step_norm                  = std::numeric_limits<Real>::infinity();
-    Real lambda                     = Real( 0 );
-    Real hessian_lipschitz_estimate = Real( 0 );
-    Real optimality_tolerance       = std::numeric_limits<Real>::quiet_NaN();
-    Real minimum_critical_eigenvalue   = std::numeric_limits<Real>::quiet_NaN();
-    Real effective_step_tolerance      = std::numeric_limits<Real>::quiet_NaN();
-    Real effective_curvature_tolerance = std::numeric_limits<Real>::quiet_NaN();
-    int  iterations                 = 0;
-    int  function_evaluations       = 0;
-    int  gradient_evaluations       = 0;
-    int  hessian_evaluations        = 0;
-    int  rejected_steps             = 0;
-    int  fallback_steps             = 0;
-    int  model_rejections           = 0;
-    int  gradient_rescue_steps      = 0;
-    int  primary_semismooth_attempts = 0;
-    int  primary_semismooth_steps    = 0;
-    int  primary_semismooth_rejected = 0;
-    int  semismooth_rescue_steps     = 0;
-    int  polish_iterations           = 0;
-    int  polish_backtracks          = 0;
-    Status status                   = Status::unknown;
+    Real         objective                     = std::numeric_limits<Real>::quiet_NaN();
+    Real         projected_gradient_norm       = std::numeric_limits<Real>::quiet_NaN();
+    Real         projected_gradient_norm_inf   = std::numeric_limits<Real>::quiet_NaN();
+    Real         primal_feasibility            = Real( 0 );
+    Real         step_norm                     = std::numeric_limits<Real>::infinity();
+    Real         lambda                        = Real( 0 );
+    Real         hessian_lipschitz_estimate    = Real( 0 );
+    Real         optimality_tolerance          = std::numeric_limits<Real>::quiet_NaN();
+    Real         minimum_critical_eigenvalue   = std::numeric_limits<Real>::quiet_NaN();
+    Real         effective_step_tolerance      = std::numeric_limits<Real>::quiet_NaN();
+    Real         effective_curvature_tolerance = std::numeric_limits<Real>::quiet_NaN();
+    int          iterations                    = 0;
+    int          function_evaluations          = 0;
+    int          gradient_evaluations          = 0;
+    int          hessian_evaluations           = 0;
+    int          rejected_steps                = 0;
+    int          fallback_steps                = 0;
+    int          model_rejections              = 0;
+    int          gradient_rescue_steps         = 0;
+    int          primary_semismooth_attempts   = 0;
+    int          primary_semismooth_steps      = 0;
+    int          primary_semismooth_rejected   = 0;
+    int          semismooth_rescue_steps       = 0;
+    int          polish_iterations             = 0;
+    int          polish_backtracks             = 0;
+    Status       status                        = Status::unknown;
 
     [[nodiscard]] bool solved() const noexcept { return status == Status::converged; }
   };
@@ -674,15 +675,14 @@ namespace Utils::MinimizeNewton
   {
     // P_[l,u](x).  This is the ONLY place where the box enters the globalized
     // cubic iteration.  For l=-inf,u=+inf the expression is exactly x.
-    template <typename Z, typename X, typename L, typename U>
-    void project(
+    template <typename Z, typename X, typename L, typename U> void project(
       Eigen::MatrixBase<Z> &       z,
       Eigen::MatrixBase<X> const & x,
       Eigen::MatrixBase<L> const & lower,
       Eigen::MatrixBase<U> const & upper )
     { z = x.cwiseMax( lower ).cwiseMin( upper ); }
 
-  } // namespace detail
+  }  // namespace detail
 
   /**
    * @brief Dense box-constrained Newton/cubic solver.
@@ -777,23 +777,23 @@ namespace Utils::MinimizeNewton
       ConstVectorRef<Real> upper,
       Callback &&          callback )
     {
-      constexpr Real eps = std::numeric_limits<Real>::epsilon();
-      auto const & options = m_options;
+      constexpr Real eps     = std::numeric_limits<Real>::epsilon();
+      auto const &   options = m_options;
 
       resize( x0.size() );
-      m_function_evaluations = 0;
-      m_gradient_evaluations = 0;
-      m_hessian_evaluations  = 0;
-      m_rejected_steps       = 0;
-      m_fallback_steps       = 0;
-      m_model_rejections     = 0;
+      m_function_evaluations        = 0;
+      m_gradient_evaluations        = 0;
+      m_hessian_evaluations         = 0;
+      m_rejected_steps              = 0;
+      m_fallback_steps              = 0;
+      m_model_rejections            = 0;
       m_gradient_rescue_steps       = 0;
       m_primary_semismooth_attempts = 0;
       m_primary_semismooth_steps    = 0;
       m_primary_semismooth_rejected = 0;
       m_semismooth_rescue_steps     = 0;
       m_polish_iterations           = 0;
-      m_polish_backtracks    = 0;
+      m_polish_backtracks           = 0;
 
       detail::project( m_x, x0, lower, upper );
 
@@ -807,30 +807,30 @@ namespace Utils::MinimizeNewton
       // Unbounded box: P=I => p(x)=g(x), identically.
       projected_gradient( m_x, m_gradient, lower, upper, m_projected_gradient );
 
-      Real projected_norm     = m_projected_gradient.norm();
-      Real projected_norm_inf = m_projected_gradient.template lpNorm<Eigen::Infinity>();
-      Real H_estimate         = std::max( options.hessian_lipschitz_initial, Real( 1 ) );
-      Real H_previous         = H_estimate;
-      Real lambda             = Real( 0 );
-      Real last_step_norm     = Real( 0 );
-      Real cauchy_alpha       = Real( 1 );
-      int  iteration          = 0;
+      Real projected_norm                = m_projected_gradient.norm();
+      Real projected_norm_inf            = m_projected_gradient.template lpNorm<Eigen::Infinity>();
+      Real H_estimate                    = std::max( options.hessian_lipschitz_initial, Real( 1 ) );
+      Real H_previous                    = H_estimate;
+      Real lambda                        = Real( 0 );
+      Real last_step_norm                = Real( 0 );
+      Real minimum_critical_eigenvalue   = std::numeric_limits<Real>::infinity();
+      Real effective_curvature_tolerance = Real( 0 );
+      Real cauchy_alpha                  = Real( 1 );
+      int  iteration                     = 0;
 
       Real const initial_scale = std::max( Real( 1 ), projected_norm_inf );
-      Real const tolerance = std::max(
+      Real const tolerance     = std::max(
         Real( 64 ) * eps,
         std::min( options.absolute_tolerance, options.relative_tolerance * initial_scale ) );
       Real const automatic_polish_tolerance = Real( 128 ) * eps;
-      Real const polish_tolerance = options.polish_tolerance > Real( 0 )
-                                      ? std::max( options.polish_tolerance, automatic_polish_tolerance )
-                                      : automatic_polish_tolerance;
-      Real const polish_entry = std::max( options.polish_trigger, tolerance );
+      Real const polish_tolerance           = options.polish_tolerance > Real( 0 )
+                                                ? std::max( options.polish_tolerance, automatic_polish_tolerance )
+                                                : automatic_polish_tolerance;
+      Real const polish_entry               = std::max( options.polish_trigger, tolerance );
 
       Result<Real> result;
-      auto bound_violation = [&]() -> Real
-      {
-        return ( lower - m_x ).cwiseMax( m_x - upper ).cwiseMax( Real( 0 ) ).norm();
-      };
+      auto         bound_violation = [&]() -> Real
+      { return ( lower - m_x ).cwiseMax( m_x - upper ).cwiseMax( Real( 0 ) ).norm(); };
 
       auto fill = [&]( Status status ) -> Result<Real> &
       {
@@ -843,25 +843,191 @@ namespace Utils::MinimizeNewton
         result.lambda                      = lambda;
         result.hessian_lipschitz_estimate  = H_estimate;
         result.optimality_tolerance        = tolerance;
-        result.iterations                  = iteration;
-        result.function_evaluations        = m_function_evaluations;
-        result.gradient_evaluations        = m_gradient_evaluations;
-        result.hessian_evaluations         = m_hessian_evaluations;
-        result.rejected_steps              = m_rejected_steps;
-        result.fallback_steps              = m_fallback_steps;
-        result.model_rejections            = m_model_rejections;
-        result.gradient_rescue_steps        = m_gradient_rescue_steps;
-        result.primary_semismooth_attempts = m_primary_semismooth_attempts;
-        result.primary_semismooth_steps    = m_primary_semismooth_steps;
-        result.primary_semismooth_rejected = m_primary_semismooth_rejected;
-        result.semismooth_rescue_steps     = m_semismooth_rescue_steps;
-        result.polish_iterations           = m_polish_iterations;
-        result.polish_backtracks           = m_polish_backtracks;
-        result.status                      = status;
+        result.minimum_critical_eigenvalue = minimum_critical_eigenvalue;
+        result.effective_step_tolerance    = std::max(
+          options.step_tolerance,
+          Real( 64 ) * eps * std::max( Real( 1 ), m_x.norm() ) );
+        result.effective_curvature_tolerance = effective_curvature_tolerance;
+        result.iterations                    = iteration;
+        result.function_evaluations          = m_function_evaluations;
+        result.gradient_evaluations          = m_gradient_evaluations;
+        result.hessian_evaluations           = m_hessian_evaluations;
+        result.rejected_steps                = m_rejected_steps;
+        result.fallback_steps                = m_fallback_steps;
+        result.model_rejections              = m_model_rejections;
+        result.gradient_rescue_steps         = m_gradient_rescue_steps;
+        result.primary_semismooth_attempts   = m_primary_semismooth_attempts;
+        result.primary_semismooth_steps      = m_primary_semismooth_steps;
+        result.primary_semismooth_rejected   = m_primary_semismooth_rejected;
+        result.semismooth_rescue_steps       = m_semismooth_rescue_steps;
+        result.polish_iterations             = m_polish_iterations;
+        result.polish_backtracks             = m_polish_backtracks;
+        result.status                        = status;
         return result;
       };
 
       if ( !callback( fill( Status::unknown ) ) ) return fill( Status::user );
+
+      enum class CertificateAction
+      {
+        certified,
+        escaped,
+        failed
+      };
+
+      // Certify second-order stationarity on the box critical cone, escape
+      // along feasible negative curvature, or report that neither was safe.
+      auto certify_or_escape = [&]() -> CertificateAction
+      {
+        evaluate_hessian( problem, m_x, m_H );
+        if ( !m_H.allFinite() ) return CertificateAction::failed;
+
+        std::vector<Eigen::Index> critical;
+        std::vector<int>          cone_sign;  // +1: d>=0, -1: d<=0, 0: free
+        critical.reserve( static_cast<std::size_t>( m_n ) );
+        cone_sign.reserve( static_cast<std::size_t>( m_n ) );
+
+        for ( Eigen::Index i = 0; i < m_n; ++i )
+        {
+          Real const scale = std::max(
+            { Real( 1 ),
+              std::abs( m_x[i] ),
+              std::abs( m_gradient[i] ),
+              std::isfinite( lower[i] ) ? std::abs( lower[i] ) : Real( 0 ),
+              std::isfinite( upper[i] ) ? std::abs( upper[i] ) : Real( 0 ) } );
+          Real const btol     = Real( 64 ) * eps * scale;
+          bool const at_lower = std::isfinite( lower[i] ) && m_x[i] <= lower[i] + btol;
+          bool const at_upper = std::isfinite( upper[i] ) && m_x[i] >= upper[i] - btol;
+
+          // Strict complementarity removes the component from the critical
+          // cone.  A weakly active component remains, with its feasible sign.
+          bool const strongly_lower = at_lower && m_gradient[i] > tolerance;
+          bool const strongly_upper = at_upper && m_gradient[i] < -tolerance;
+          if ( strongly_lower || strongly_upper ) continue;
+
+          critical.push_back( i );
+          cone_sign.push_back( at_lower ? +1 : ( at_upper ? -1 : 0 ) );
+        }
+
+        if ( critical.empty() )
+        {
+          minimum_critical_eigenvalue   = std::numeric_limits<Real>::infinity();
+          effective_curvature_tolerance = Real( 0 );
+          last_step_norm                = Real( 0 );
+          return CertificateAction::certified;
+        }
+
+        m_reduced_H = m_H( critical, critical );
+        // Users occasionally return a Hessian with roundoff-level asymmetry.
+        // The quadratic form depends only on its symmetric part.
+        m_reduced_H                   = Real( 0.5 ) * ( m_reduced_H + m_reduced_H.transpose() ).eval();
+        Real const hscale             = std::max( Real( 1 ), m_reduced_H.cwiseAbs().maxCoeff() );
+        effective_curvature_tolerance = std::max(
+          options.curvature_tolerance,
+          Real( 256 ) * eps * hscale * Real( std::max<Eigen::Index>( 1, m_reduced_H.rows() ) ) );
+
+        Eigen::SelfAdjointEigenSolver<Mat> eig( m_reduced_H );
+        if ( eig.info() != Eigen::Success )
+        {
+          minimum_critical_eigenvalue = -std::numeric_limits<Real>::infinity();
+          return CertificateAction::failed;
+        }
+
+        Eigen::Index const nc             = static_cast<Eigen::Index>( critical.size() );
+        Vec                best_direction = Vec::Zero( nc );
+        Real               best_curvature = std::numeric_limits<Real>::infinity();
+
+        auto consider = [&]( Vec direction )
+        {
+          // Orthogonal projection onto the tangent/critical cone.
+          for ( Eigen::Index k = 0; k < nc; ++k )
+          {
+            if ( cone_sign[static_cast<std::size_t>( k )] > 0 ) direction[k] = std::max( direction[k], Real( 0 ) );
+            if ( cone_sign[static_cast<std::size_t>( k )] < 0 ) direction[k] = std::min( direction[k], Real( 0 ) );
+          }
+          Real const norm = direction.norm();
+          if ( !( norm > Real( 0 ) ) ) return;
+          direction /= norm;
+          Real const curvature = direction.dot( m_reduced_H * direction );
+          if ( curvature < best_curvature )
+          {
+            best_curvature = curvature;
+            best_direction = direction;
+          }
+        };
+
+        // Both orientations matter because one-sided weakly active variables
+        // destroy the usual eigenvector sign symmetry.  Coordinate directions
+        // additionally detect negative diagonal curvature on every cone face.
+        for ( Eigen::Index j = 0; j < nc; ++j )
+        {
+          Vec v = eig.eigenvectors().col( j );
+          consider( v );
+          consider( -v );
+        }
+        for ( Eigen::Index j = 0; j < nc; ++j )
+        {
+          Vec e = Vec::Zero( nc );
+          e[j]  = cone_sign[static_cast<std::size_t>( j )] < 0 ? Real( -1 ) : Real( 1 );
+          consider( e );
+        }
+
+        minimum_critical_eigenvalue = best_curvature;
+        if ( best_curvature >= -effective_curvature_tolerance )
+        {
+          // The final Newton correction required by the first-order mapping is
+          // exactly zero.  Report that correction, not the previous outer step.
+          last_step_norm = Real( 0 );
+          return CertificateAction::certified;
+        }
+
+        // Lift the feasible negative-curvature direction to the full space and
+        // try the farthest feasible point first.  This is important when a
+        // stationary maximum lies on a weakly active bound: an infinitesimal
+        // step is easily hidden by objective roundoff, whereas the box boundary
+        // often gives the useful escape directly.
+        m_direction.setZero();
+        for ( Eigen::Index k = 0; k < nc; ++k )
+          m_direction[critical[static_cast<std::size_t>( k )]] = best_direction[k];
+
+        Real alpha_max = std::numeric_limits<Real>::infinity();
+        for ( Eigen::Index i = 0; i < m_n; ++i )
+        {
+          if ( m_direction[i] > Real( 0 ) && std::isfinite( upper[i] ) )
+            alpha_max = std::min( alpha_max, ( upper[i] - m_x[i] ) / m_direction[i] );
+          else if ( m_direction[i] < Real( 0 ) && std::isfinite( lower[i] ) )
+            alpha_max = std::min( alpha_max, ( lower[i] - m_x[i] ) / m_direction[i] );
+        }
+        Real alpha = std::isfinite( alpha_max ) ? alpha_max : Real( 1 );
+        if ( !( alpha > Real( 0 ) ) ) return CertificateAction::failed;
+
+        for ( int bt = 0; bt <= options.max_polish_backtracking; ++bt )
+        {
+          m_trial = m_x + alpha * m_direction;
+          detail::project( m_trial, m_trial, lower, upper );
+          m_step = m_trial - m_x;
+          if ( m_step.norm() <= Real( 64 ) * eps * std::max( Real( 1 ), m_x.norm() ) ) break;
+
+          Real const trial_objective = evaluate_objective( problem, m_trial );
+          if ( std::isfinite( trial_objective ) && trial_objective < objective )
+          {
+            evaluate_gradient( problem, m_trial, m_trial_gradient );
+            if ( !m_trial_gradient.allFinite() ) return CertificateAction::failed;
+            projected_gradient( m_trial, m_trial_gradient, lower, upper, m_trial_projected_gradient );
+            m_x                  = m_trial;
+            m_gradient           = m_trial_gradient;
+            m_projected_gradient = m_trial_projected_gradient;
+            objective            = trial_objective;
+            projected_norm       = m_projected_gradient.norm();
+            projected_norm_inf   = m_projected_gradient.template lpNorm<Eigen::Infinity>();
+            last_step_norm       = m_step.norm();
+            lambda               = Real( 0 );
+            return CertificateAction::escaped;
+          }
+          alpha *= Real( 0.5 );
+        }
+        return CertificateAction::failed;
+      };
 
       for ( iteration = 1; iteration <= options.max_iterations; ++iteration )
       {
@@ -870,16 +1036,33 @@ namespace Utils::MinimizeNewton
         if ( options.enable_polishing && projected_norm_inf <= polish_entry )
         {
           polish(
-            problem, lower, upper,
-            objective, projected_norm, projected_norm_inf,
-            last_step_norm, polish_tolerance, -1 );
-          if ( projected_norm_inf <= polish_tolerance ) return fill( Status::converged );
+            problem,
+            lower,
+            upper,
+            objective,
+            projected_norm,
+            projected_norm_inf,
+            last_step_norm,
+            polish_tolerance,
+            -1 );
+          if ( projected_norm_inf <= polish_tolerance )
+          {
+            CertificateAction const action = certify_or_escape();
+            if ( action == CertificateAction::certified ) return fill( Status::converged );
+            if ( action == CertificateAction::escaped ) continue;
+            return fill( m_H.allFinite() ? Status::no_progress : Status::non_finite_hessian );
+          }
         }
 
-        if ( projected_norm_inf <= tolerance ) return fill( Status::converged );
+        if ( projected_norm_inf <= tolerance )
+        {
+          CertificateAction const action = certify_or_escape();
+          if ( action == CertificateAction::certified ) return fill( Status::converged );
+          if ( action == CertificateAction::escaped ) continue;
+          return fill( m_H.allFinite() ? Status::no_progress : Status::non_finite_hessian );
+        }
 
-        if ( options.max_function_evaluations >= 0 &&
-             m_function_evaluations >= options.max_function_evaluations )
+        if ( options.max_function_evaluations >= 0 && m_function_evaluations >= options.max_function_evaluations )
           return fill( Status::max_function_evaluations );
 
         Real const forcing_norm = projected_norm;
@@ -892,9 +1075,7 @@ namespace Utils::MinimizeNewton
         // unnecessarily conservative.
         Real const M_min = std::max( Real( 32 ) * eps, options.hessian_lipschitz_min );
         Real const M_max = std::max( M_min, options.hessian_lipschitz_max );
-        H_estimate = std::clamp(
-          std::max( M_min, options.regularization_decrease * H_previous ),
-          M_min, M_max );
+        H_estimate       = std::clamp( std::max( M_min, options.regularization_decrease * H_previous ), M_min, M_max );
 
         // x is fixed through the whole backtracking loop.
         evaluate_hessian( problem, m_x, m_H );
@@ -903,7 +1084,7 @@ namespace Utils::MinimizeNewton
         bool accepted   = false;
         bool have_trial = false;
 
-        Vec best_x( m_n ), best_gradient( m_n ), best_projected_gradient( m_n );
+        Vec  best_x( m_n ), best_gradient( m_n ), best_projected_gradient( m_n );
         Real best_objective = objective;
         Real best_step_norm = Real( 0 );
         Real best_lambda    = Real( 0 );
@@ -928,31 +1109,32 @@ namespace Utils::MinimizeNewton
           m_direction.setZero();
           for ( Eigen::Index i = 0; i < m_n; ++i )
           {
-            Real const y = m_x[i] - m_gradient[i];
-            Real const scale = std::max( {
-              Real( 1 ), std::abs( m_x[i] ), std::abs( m_gradient[i] ),
-              std::isfinite( lower[i] ) ? std::abs( lower[i] ) : Real( 0 ),
-              std::isfinite( upper[i] ) ? std::abs( upper[i] ) : Real( 0 ) } );
-            Real const dtol = options.projection_derivative_tol * scale;
-            bool const interior =
-              ( !std::isfinite( lower[i] ) || y > lower[i] + dtol ) &&
-              ( !std::isfinite( upper[i] ) || y < upper[i] - dtol );
+            Real const y     = m_x[i] - m_gradient[i];
+            Real const scale = std::max(
+              { Real( 1 ),
+                std::abs( m_x[i] ),
+                std::abs( m_gradient[i] ),
+                std::isfinite( lower[i] ) ? std::abs( lower[i] ) : Real( 0 ),
+                std::isfinite( upper[i] ) ? std::abs( upper[i] ) : Real( 0 ) } );
+            Real const dtol       = options.projection_derivative_tol * scale;
+            bool const interior   = ( !std::isfinite( lower[i] ) || y > lower[i] + dtol ) &&
+                                    ( !std::isfinite( upper[i] ) || y < upper[i] - dtol );
             m_projection_slope[i] = interior ? Real( 1 ) : Real( 0 );
-            if ( interior ) m_free_indices.push_back( i );
-            else            m_direction[i] = m_projected_gradient[i];
+            if ( interior )
+              m_free_indices.push_back( i );
+            else
+              m_direction[i] = m_projected_gradient[i];
           }
 
-          bool primary_linear_ok = true;
-          Eigen::Index const nfree = static_cast<Eigen::Index>( m_free_indices.size() );
+          bool               primary_linear_ok = true;
+          Eigen::Index const nfree             = static_cast<Eigen::Index>( m_free_indices.size() );
           if ( nfree > 0 )
           {
             m_reduced_H = m_H( m_free_indices, m_free_indices );
             Eigen::LDLT<Mat> ldlt( m_reduced_H );
-            Real const hscale = std::max( Real( 1 ), m_reduced_H.cwiseAbs().maxCoeff() );
-            Real const pd_tol = options.primary_pd_factor * eps * hscale *
-                                Real( std::max<Eigen::Index>( 1, nfree ) );
-            primary_linear_ok = ldlt.info() == Eigen::Success && ldlt.isPositive() &&
-                                ldlt.vectorD().allFinite() &&
+            Real const       hscale = std::max( Real( 1 ), m_reduced_H.cwiseAbs().maxCoeff() );
+            Real const pd_tol = options.primary_pd_factor * eps * hscale * Real( std::max<Eigen::Index>( 1, nfree ) );
+            primary_linear_ok = ldlt.info() == Eigen::Success && ldlt.isPositive() && ldlt.vectorD().allFinite() &&
                                 ldlt.vectorD().minCoeff() > pd_tol;
 
             if ( primary_linear_ok )
@@ -964,16 +1146,14 @@ namespace Utils::MinimizeNewton
               for ( Eigen::Index k = 0; k < nfree; ++k )
               {
                 Eigen::Index const i = m_free_indices[static_cast<std::size_t>( k )];
-                m_reduced_rhs[k] = m_projected_gradient[i] - m_model_Hstep[i];
+                m_reduced_rhs[k]     = m_projected_gradient[i] - m_model_Hstep[i];
               }
               m_reduced_solution = ldlt.solve( m_reduced_rhs );
-              primary_linear_ok = ldlt.info() == Eigen::Success &&
-                                  m_reduced_solution.allFinite();
+              primary_linear_ok  = ldlt.info() == Eigen::Success && m_reduced_solution.allFinite();
               if ( primary_linear_ok )
               {
-                Real const rnorm = ( m_reduced_H * m_reduced_solution - m_reduced_rhs ).norm();
-                Real const rscale = Real( 1 ) + m_reduced_rhs.norm() +
-                                    hscale * m_reduced_solution.norm();
+                Real const rnorm  = ( m_reduced_H * m_reduced_solution - m_reduced_rhs ).norm();
+                Real const rscale = Real( 1 ) + m_reduced_rhs.norm() + hscale * m_reduced_solution.norm();
                 primary_linear_ok = rnorm <= Real( 512 ) * eps * rscale;
               }
               if ( primary_linear_ok )
@@ -986,10 +1166,10 @@ namespace Utils::MinimizeNewton
           {
             // SmallTRON-style projected model line-search: backtrack on the
             // frozen quadratic model only, then pay for one objective value.
-            Real alpha = Real( 1 );
-            bool model_ok = false;
+            Real alpha           = Real( 1 );
+            bool model_ok        = false;
             Real model_reduction = Real( 0 );
-            Real model_slope = Real( 0 );
+            Real model_slope     = Real( 0 );
             for ( int bt = 0; bt <= options.max_primary_model_backtracking; ++bt )
             {
               m_trial = m_x - alpha * m_direction;
@@ -998,14 +1178,12 @@ namespace Utils::MinimizeNewton
               if ( m_step.squaredNorm() == Real( 0 ) ) break;
 
               m_model_Hstep.noalias() = m_H * m_step;
-              model_slope = m_gradient.dot( m_step );
-              Real const qmodel = model_slope + Real( 0.5 ) * m_step.dot( m_model_Hstep );
-              model_reduction = -qmodel;
-              Real const mscale = std::max(
-                { Real( 1 ), std::abs( model_slope ), std::abs( qmodel ) } );
-              Real const mround = Real( 64 ) * eps * mscale;
-              model_ok = model_slope < Real( 0 ) &&
-                         qmodel <= options.model_armijo * model_slope + mround &&
+              model_slope             = m_gradient.dot( m_step );
+              Real const qmodel       = model_slope + Real( 0.5 ) * m_step.dot( m_model_Hstep );
+              model_reduction         = -qmodel;
+              Real const mscale       = std::max( { Real( 1 ), std::abs( model_slope ), std::abs( qmodel ) } );
+              Real const mround       = Real( 64 ) * eps * mscale;
+              model_ok = model_slope < Real( 0 ) && qmodel <= options.model_armijo * model_slope + mround &&
                          model_reduction > Real( 0 );
               if ( model_ok ) break;
               alpha *= options.primary_model_shrink;
@@ -1013,35 +1191,33 @@ namespace Utils::MinimizeNewton
 
             if ( model_ok )
             {
-              if ( options.max_function_evaluations >= 0 &&
-                   m_function_evaluations >= options.max_function_evaluations )
+              if ( options.max_function_evaluations >= 0 && m_function_evaluations >= options.max_function_evaluations )
                 return fill( Status::max_function_evaluations );
 
               Real const trial_objective = evaluate_objective( problem, m_trial );
               if ( std::isfinite( trial_objective ) )
               {
-                Real const ro = options.roundoff_factor * eps *
-                  std::max( { Real( 1 ), std::abs( objective ),
-                              std::abs( trial_objective ), std::abs( model_reduction ) } );
+                Real const ro =
+                  options.roundoff_factor * eps *
+                  std::max(
+                    { Real( 1 ), std::abs( objective ), std::abs( trial_objective ), std::abs( model_reduction ) } );
                 Real const actual = objective - trial_objective;
-                Real const ratio = ( actual + ro ) / ( model_reduction + ro );
+                Real const ratio  = ( actual + ro ) / ( model_reduction + ro );
 
                 if ( ratio >= options.primary_acceptance_threshold )
                 {
                   evaluate_gradient( problem, m_trial, m_trial_gradient );
-                  if ( !m_trial_gradient.allFinite() )
-                    return fill( Status::non_finite_gradient );
-                  projected_gradient(
-                    m_trial, m_trial_gradient, lower, upper, m_trial_projected_gradient );
+                  if ( !m_trial_gradient.allFinite() ) return fill( Status::non_finite_gradient );
+                  projected_gradient( m_trial, m_trial_gradient, lower, upper, m_trial_projected_gradient );
 
-                  m_x                    = m_trial;
-                  m_gradient             = m_trial_gradient;
-                  m_projected_gradient   = m_trial_projected_gradient;
-                  objective              = trial_objective;
-                  projected_norm         = m_projected_gradient.norm();
-                  projected_norm_inf     = m_projected_gradient.template lpNorm<Eigen::Infinity>();
-                  last_step_norm         = m_step.norm();
-                  lambda                 = Real( 0 );
+                  m_x                  = m_trial;
+                  m_gradient           = m_trial_gradient;
+                  m_projected_gradient = m_trial_projected_gradient;
+                  objective            = trial_objective;
+                  projected_norm       = m_projected_gradient.norm();
+                  projected_norm_inf   = m_projected_gradient.template lpNorm<Eigen::Infinity>();
+                  last_step_norm       = m_step.norm();
+                  lambda               = Real( 0 );
                   if ( ratio >= options.ratio_increase_threshold )
                     H_estimate = std::max( M_min, options.ratio_good_M_factor * H_estimate );
                   else if ( ratio < options.ratio_decrease_threshold )
@@ -1056,8 +1232,9 @@ namespace Utils::MinimizeNewton
           if ( !accepted ) ++m_primary_semismooth_rejected;
         }
 
-        int const cubic_trial_limit = std::max( 1, std::min(
-          options.max_sub_iterations, options.cubic_trials_before_rescue ) );
+        int const cubic_trial_limit = std::max(
+          1,
+          std::min( options.max_sub_iterations, options.cubic_trials_before_rescue ) );
         for ( int sub_iteration = 0; !accepted && sub_iteration < cubic_trial_limit; ++sub_iteration )
         {
           lambda = std::sqrt( H_estimate * forcing_norm );
@@ -1092,17 +1269,16 @@ namespace Utils::MinimizeNewton
           // Frozen quadratic model q(z), z=x_trial-x=-m_step.  Compute this
           // unconditionally: besides the cheap TRON prescreen it provides the
           // predicted reduction used to adapt M after a successful trial.
-          m_model_Hstep.noalias() = m_H * m_step;
-          Real const model_slope = -m_gradient.dot( m_step );
-          Real const qmodel = model_slope + Real( 0.5 ) * m_step.dot( m_model_Hstep );
+          m_model_Hstep.noalias()    = m_H * m_step;
+          Real const model_slope     = -m_gradient.dot( m_step );
+          Real const qmodel          = model_slope + Real( 0.5 ) * m_step.dot( m_model_Hstep );
           Real const model_reduction = -qmodel;
           if ( options.enable_model_safeguard )
           {
-            Real const model_scale = std::max(
-              { Real( 1 ), std::abs( model_slope ), std::abs( qmodel ) } );
+            Real const model_scale    = std::max( { Real( 1 ), std::abs( model_slope ), std::abs( qmodel ) } );
             Real const model_roundoff = Real( 64 ) * eps * model_scale;
-            bool const model_ok = model_slope < Real( 0 ) &&
-              qmodel <= options.model_armijo * model_slope + model_roundoff;
+            bool const model_ok       = model_slope < Real( 0 ) &&
+                                        qmodel <= options.model_armijo * model_slope + model_roundoff;
             if ( !model_ok )
             {
               ++m_rejected_steps;
@@ -1112,8 +1288,7 @@ namespace Utils::MinimizeNewton
             }
           }
 
-          if ( options.max_function_evaluations >= 0 &&
-               m_function_evaluations >= options.max_function_evaluations )
+          if ( options.max_function_evaluations >= 0 && m_function_evaluations >= options.max_function_evaluations )
             return fill( Status::max_function_evaluations );
 
           Real const trial_objective = evaluate_objective( problem, m_trial );
@@ -1127,7 +1302,8 @@ namespace Utils::MinimizeNewton
           // An objective ascent cannot pass the sufficient-decrease test and is
           // not eligible for the safe fallback.  Reject it before evaluating g.
           Real const objective_roundoff_early = options.roundoff_factor * eps *
-            std::max( { Real( 1 ), std::abs( objective ), std::abs( trial_objective ) } );
+                                                std::max(
+                                                  { Real( 1 ), std::abs( objective ), std::abs( trial_objective ) } );
           if ( trial_objective > objective + objective_roundoff_early )
           {
             ++m_rejected_steps;
@@ -1149,27 +1325,25 @@ namespace Utils::MinimizeNewton
           Real const roundoff  = options.roundoff_factor * eps *
                                  std::max( { Real( 1 ), std::abs( objective ), std::abs( trial_objective ) } );
 
-          bool const gradient_ok = np1 <= options.gradient_acceptance_factor * lr;
-          bool const decrease_ok = trial_objective <= objective - predicted + roundoff;
+          bool const gradient_ok      = np1 <= options.gradient_acceptance_factor * lr;
+          bool const decrease_ok      = trial_objective <= objective - predicted + roundoff;
           Real const actual_reduction = objective - trial_objective;
-          Real const ratio_roundoff = options.roundoff_factor * eps *
-            std::max( { Real( 1 ), std::abs( objective ), std::abs( trial_objective ),
-                        std::abs( model_reduction ) } );
+          Real const ratio_roundoff =
+            options.roundoff_factor * eps *
+            std::max( { Real( 1 ), std::abs( objective ), std::abs( trial_objective ), std::abs( model_reduction ) } );
           Real const agreement_ratio = model_reduction > Real( 0 )
-            ? ( actual_reduction + ratio_roundoff ) / ( model_reduction + ratio_roundoff )
-            : -std::numeric_limits<Real>::infinity();
+                                         ? ( actual_reduction + ratio_roundoff ) / ( model_reduction + ratio_roundoff )
+                                         : -std::numeric_limits<Real>::infinity();
 
-          Real const tiny = std::numeric_limits<Real>::min();
-          Real const grad_scale = std::max( options.gradient_acceptance_factor * lr, tiny );
-          Real const grad_ratio = np1 / grad_scale;
-          Real const decrease_violation = std::max(
-            Real( 0 ), trial_objective - ( objective - predicted + roundoff ) );
-          Real const decrease_scale = std::max( predicted + roundoff, tiny );
-          Real const decrease_ratio = Real( 1 ) + decrease_violation / decrease_scale;
-          Real const merit = std::max( grad_ratio, decrease_ratio );
+          Real const tiny               = std::numeric_limits<Real>::min();
+          Real const grad_scale         = std::max( options.gradient_acceptance_factor * lr, tiny );
+          Real const grad_ratio         = np1 / grad_scale;
+          Real const decrease_violation = std::max( Real( 0 ), trial_objective - ( objective - predicted + roundoff ) );
+          Real const decrease_scale     = std::max( predicted + roundoff, tiny );
+          Real const decrease_ratio     = Real( 1 ) + decrease_violation / decrease_scale;
+          Real const merit              = std::max( grad_ratio, decrease_ratio );
 
-          if ( !have_trial || merit < best_merit ||
-               ( merit == best_merit && trial_objective < best_objective ) )
+          if ( !have_trial || merit < best_merit || ( merit == best_merit && trial_objective < best_objective ) )
           {
             best_x                  = m_trial;
             best_gradient           = m_trial_gradient;
@@ -1186,24 +1360,30 @@ namespace Utils::MinimizeNewton
             std::printf(
               "  sub=%2d f_trial=%14.7e p_trial=%10.3e step=%10.3e "
               "lambda=%10.3e H=%10.3e merit=%9.3e decrease=%d gradient=%d\n",
-              sub_iteration, double( trial_objective ), double( np1 ), double( rp ),
-              double( lambda ), double( H_estimate ), double( merit ),
-              int( decrease_ok ), int( gradient_ok ) );
+              sub_iteration,
+              double( trial_objective ),
+              double( np1 ),
+              double( rp ),
+              double( lambda ),
+              double( H_estimate ),
+              double( merit ),
+              int( decrease_ok ),
+              int( gradient_ok ) );
 
           if ( gradient_ok && decrease_ok )
           {
-            m_x                    = m_trial;
-            m_gradient             = m_trial_gradient;
-            m_projected_gradient   = m_trial_projected_gradient;
-            objective              = trial_objective;
-            projected_norm         = np1;
-            projected_norm_inf     = m_projected_gradient.template lpNorm<Eigen::Infinity>();
-            last_step_norm         = rp;
+            m_x                  = m_trial;
+            m_gradient           = m_trial_gradient;
+            m_projected_gradient = m_trial_projected_gradient;
+            objective            = trial_objective;
+            projected_norm       = np1;
+            projected_norm_inf   = m_projected_gradient.template lpNorm<Eigen::Infinity>();
+            last_step_norm       = rp;
             if ( agreement_ratio >= options.ratio_increase_threshold )
               H_estimate = std::max( M_min, options.ratio_good_M_factor * H_estimate );
             else if ( agreement_ratio < options.ratio_decrease_threshold )
               H_estimate = std::min( M_max, options.ratio_bad_M_factor * H_estimate );
-            accepted               = true;
+            accepted = true;
             break;
           }
 
@@ -1217,16 +1397,22 @@ namespace Utils::MinimizeNewton
         bool rescued = false;
         if ( !accepted && options.enable_semismooth_rescue )
         {
-          Real const norm_before = projected_norm_inf;
-          int const polish_before = m_polish_iterations;
+          Real const norm_before   = projected_norm_inf;
+          int const  polish_before = m_polish_iterations;
           polish(
-            problem, lower, upper,
-            objective, projected_norm, projected_norm_inf,
-            last_step_norm, polish_tolerance, options.semismooth_rescue_iterations );
+            problem,
+            lower,
+            upper,
+            objective,
+            projected_norm,
+            projected_norm_inf,
+            last_step_norm,
+            polish_tolerance,
+            options.semismooth_rescue_iterations );
           if ( projected_norm_inf < norm_before )
           {
             m_semismooth_rescue_steps += m_polish_iterations - polish_before;
-            lambda = Real( 0 );
+            lambda  = Real( 0 );
             rescued = true;
           }
         }
@@ -1236,10 +1422,10 @@ namespace Utils::MinimizeNewton
         // geometric extrapolation.  Only the selected alpha is tested on f.
         if ( !accepted && !rescued && options.enable_gradient_rescue )
         {
-          Real const cauchy_radius = options.cauchy_radius_factor *
-            std::sqrt( std::max( forcing_norm, Real( 64 ) * eps ) /
-                       std::max( M_min, H_previous ) );
-          auto cauchy_model_ok = [&]( Real alpha ) -> bool
+          Real const cauchy_radius   = options.cauchy_radius_factor *
+                                       std::sqrt(
+                                         std::max( forcing_norm, Real( 64 ) * eps ) / std::max( M_min, H_previous ) );
+          auto       cauchy_model_ok = [&]( Real alpha ) -> bool
           {
             m_trial = m_x - alpha * m_gradient;
             detail::project( m_trial, m_trial, lower, upper );
@@ -1247,14 +1433,14 @@ namespace Utils::MinimizeNewton
             if ( m_step.squaredNorm() == Real( 0 ) ) return false;
             if ( std::isfinite( cauchy_radius ) && m_step.norm() > cauchy_radius ) return false;
             m_model_Hstep.noalias() = m_H * m_step;
-            Real const slope = m_gradient.dot( m_step );
-            Real const q = slope + Real( 0.5 ) * m_step.dot( m_model_Hstep );
-            Real const scale = std::max( { Real( 1 ), std::abs( slope ), std::abs( q ) } );
-            Real const ro = Real( 64 ) * eps * scale;
+            Real const slope        = m_gradient.dot( m_step );
+            Real const q            = slope + Real( 0.5 ) * m_step.dot( m_model_Hstep );
+            Real const scale        = std::max( { Real( 1 ), std::abs( slope ), std::abs( q ) } );
+            Real const ro           = Real( 64 ) * eps * scale;
             return slope < Real( 0 ) && q <= options.model_armijo * slope + ro;
           };
 
-          Real alpha = std::clamp( cauchy_alpha, options.cauchy_alpha_min, options.cauchy_alpha_max );
+          Real alpha    = std::clamp( cauchy_alpha, options.cauchy_alpha_min, options.cauchy_alpha_max );
           bool model_ok = cauchy_model_ok( alpha );
           for ( int k = 0; !model_ok && k < options.max_gradient_rescue; ++k )
           {
@@ -1275,33 +1461,32 @@ namespace Utils::MinimizeNewton
               if ( !cauchy_model_ok( next ) ) break;
               alpha_ok = next;
             }
-            alpha = alpha_ok;
+            alpha        = alpha_ok;
             cauchy_alpha = alpha_ok;
-            cauchy_model_ok( alpha ); // restore selected trial/step
+            cauchy_model_ok( alpha );  // restore selected trial/step
 
             Real const slope = m_gradient.dot( m_step );
-            if ( options.max_function_evaluations >= 0 &&
-                 m_function_evaluations >= options.max_function_evaluations )
+            if ( options.max_function_evaluations >= 0 && m_function_evaluations >= options.max_function_evaluations )
               return fill( Status::max_function_evaluations );
 
             Real const trial_objective = evaluate_objective( problem, m_trial );
             if ( std::isfinite( trial_objective ) )
             {
               Real const roundoff = options.roundoff_factor * eps *
-                std::max( { Real( 1 ), std::abs( objective ), std::abs( trial_objective ) } );
+                                    std::max( { Real( 1 ), std::abs( objective ), std::abs( trial_objective ) } );
               if ( trial_objective <= objective + options.gradient_rescue_armijo * slope + roundoff )
               {
                 evaluate_gradient( problem, m_trial, m_trial_gradient );
                 if ( !m_trial_gradient.allFinite() ) return fill( Status::non_finite_gradient );
                 projected_gradient( m_trial, m_trial_gradient, lower, upper, m_trial_projected_gradient );
-                m_x                    = m_trial;
-                m_gradient             = m_trial_gradient;
-                m_projected_gradient   = m_trial_projected_gradient;
-                objective              = trial_objective;
-                projected_norm         = m_projected_gradient.norm();
-                projected_norm_inf     = m_projected_gradient.template lpNorm<Eigen::Infinity>();
-                last_step_norm         = m_step.norm();
-                lambda                 = Real( 0 );
+                m_x                  = m_trial;
+                m_gradient           = m_trial_gradient;
+                m_projected_gradient = m_trial_projected_gradient;
+                objective            = trial_objective;
+                projected_norm       = m_projected_gradient.norm();
+                projected_norm_inf   = m_projected_gradient.template lpNorm<Eigen::Infinity>();
+                last_step_norm       = m_step.norm();
+                lambda               = Real( 0 );
                 ++m_gradient_rescue_steps;
                 rescued = true;
               }
@@ -1315,9 +1500,9 @@ namespace Utils::MinimizeNewton
         {
           if ( !have_trial ) return fill( Status::no_progress );
           Real const fallback_roundoff = options.roundoff_factor * eps *
-            std::max( { Real( 1 ), std::abs( objective ), std::abs( best_objective ) } );
-          bool const fallback_safe = best_objective <= objective + fallback_roundoff &&
-            best_projected_gradient.norm() < projected_norm;
+                                         std::max( { Real( 1 ), std::abs( objective ), std::abs( best_objective ) } );
+          bool const fallback_safe     = best_objective <= objective + fallback_roundoff &&
+                                         best_projected_gradient.norm() < projected_norm;
           if ( !fallback_safe ) return fill( Status::no_progress );
 
           ++m_fallback_steps;
@@ -1337,17 +1522,25 @@ namespace Utils::MinimizeNewton
         if ( options.verbose > 0 && iteration % options.verbose == 0 )
           std::printf(
             "%6d f=%14.7e p=%10.3e step=%10.3e lambda=%10.3e H=%10.3e\n",
-            iteration, double( objective ), double( projected_norm_inf ),
-            double( last_step_norm ), double( lambda ), double( H_estimate ) );
+            iteration,
+            double( objective ),
+            double( projected_norm_inf ),
+            double( last_step_norm ),
+            double( lambda ),
+            double( H_estimate ) );
 
         if ( !callback( fill( Status::unknown ) ) ) return fill( Status::user );
       }
 
-      return fill( projected_norm_inf <= tolerance ? Status::converged : Status::max_iterations );
+      if ( projected_norm_inf <= tolerance )
+      {
+        CertificateAction const action = certify_or_escape();
+        if ( action == CertificateAction::certified ) return fill( Status::converged );
+      }
+      return fill( Status::max_iterations );
     }
 
   private:
-
     template <typename Problem>
     /**
      * @brief High-accuracy semismooth Newton polishing of the projected KKT map.
@@ -1371,12 +1564,10 @@ namespace Utils::MinimizeNewton
       Real                 tolerance,
       int                  max_iterations_override )
     {
-      constexpr Real eps = std::numeric_limits<Real>::epsilon();
-      auto const & options = m_options;
+      constexpr Real eps     = std::numeric_limits<Real>::epsilon();
+      auto const &   options = m_options;
 
-      int const max_pit = max_iterations_override > 0
-                        ? max_iterations_override
-                        : options.max_polish_iterations;
+      int const max_pit = max_iterations_override > 0 ? max_iterations_override : options.max_polish_iterations;
       for ( int pit = 0; pit < max_pit && projected_norm_inf > tolerance; ++pit )
       {
         evaluate_hessian( problem, m_x, m_H );
@@ -1391,19 +1582,20 @@ namespace Utils::MinimizeNewton
         // D=I, hence J_p=H exactly, with NO algorithmic branch.
         for ( Eigen::Index i = 0; i < m_n; ++i )
         {
-          Real const y = m_x[i] - m_gradient[i];
-          Real const scale = std::max( {
-            Real( 1 ), std::abs( m_x[i] ), std::abs( m_gradient[i] ),
-            std::isfinite( lower[i] ) ? std::abs( lower[i] ) : Real( 0 ),
-            std::isfinite( upper[i] ) ? std::abs( upper[i] ) : Real( 0 ) } );
+          Real const y     = m_x[i] - m_gradient[i];
+          Real const scale = std::max(
+            { Real( 1 ),
+              std::abs( m_x[i] ),
+              std::abs( m_gradient[i] ),
+              std::isfinite( lower[i] ) ? std::abs( lower[i] ) : Real( 0 ),
+              std::isfinite( upper[i] ) ? std::abs( upper[i] ) : Real( 0 ) } );
           Real const tol = options.projection_derivative_tol * scale;
 
           // D_ii=1 on the interior, D_ii=0 on a clamped branch.  At the kink
           // either value belongs to the Clarke generalized Jacobian; choosing
           // the clamped value is the stable semismooth-Newton convention.
-          bool const interior =
-            ( !std::isfinite( lower[i] ) || y > lower[i] + tol ) &&
-            ( !std::isfinite( upper[i] ) || y < upper[i] - tol );
+          bool const interior   = ( !std::isfinite( lower[i] ) || y > lower[i] + tol ) &&
+                                  ( !std::isfinite( upper[i] ) || y < upper[i] - tol );
           m_projection_slope[i] = interior ? Real( 1 ) : Real( 0 );
         }
 
@@ -1420,12 +1612,12 @@ namespace Utils::MinimizeNewton
         Real const x_scale   = std::max( Real( 1 ), m_x.norm() );
         if ( step_norm <= Real( 32 ) * eps * x_scale ) return;
 
-        Real alpha = Real( 1 );
-        bool accepted = false;
-        Real best_norm_inf = projected_norm_inf;
-        Real best_f = objective;
+        Real alpha          = Real( 1 );
+        bool accepted       = false;
+        Real best_norm_inf  = projected_norm_inf;
+        Real best_f         = objective;
         Real best_step_norm = Real( 0 );
-        Vec best_x( m_n ), best_g( m_n ), best_p( m_n );
+        Vec  best_x( m_n ), best_g( m_n ), best_p( m_n );
         bool have_best = false;
 
         for ( int bt = 0; bt <= options.max_polish_backtracking; ++bt )
@@ -1438,8 +1630,8 @@ namespace Utils::MinimizeNewton
 
           if ( m_step.norm() <= Real( 32 ) * eps * x_scale ) break;
 
-          if ( options.max_function_evaluations >= 0 &&
-               m_function_evaluations >= options.max_function_evaluations ) return;
+          if ( options.max_function_evaluations >= 0 && m_function_evaluations >= options.max_function_evaluations )
+            return;
 
           Real const trial_objective = evaluate_objective( problem, m_trial );
           if ( !std::isfinite( trial_objective ) )
@@ -1459,38 +1651,39 @@ namespace Utils::MinimizeNewton
 
           projected_gradient( m_trial, m_trial_gradient, lower, upper, m_trial_projected_gradient );
           Real const trial_norm_inf = m_trial_projected_gradient.template lpNorm<Eigen::Infinity>();
-          Real const roundoff = options.roundoff_factor * eps *
-                                std::max( { Real( 1 ), std::abs( objective ), std::abs( trial_objective ) } );
+          Real const roundoff       = options.roundoff_factor * eps *
+                                      std::max( { Real( 1 ), std::abs( objective ), std::abs( trial_objective ) } );
 
-          if ( !have_best || trial_norm_inf < best_norm_inf ||
-               ( trial_norm_inf == best_norm_inf && trial_objective < best_f ) )
+          if (
+            !have_best || trial_norm_inf < best_norm_inf ||
+            ( trial_norm_inf == best_norm_inf && trial_objective < best_f ) )
           {
-            best_x        = m_trial;
-            best_g        = m_trial_gradient;
-            best_p        = m_trial_projected_gradient;
-            best_f        = trial_objective;
-            best_norm_inf = trial_norm_inf;
-            best_step_norm= m_step.norm();
-            have_best     = true;
+            best_x         = m_trial;
+            best_g         = m_trial_gradient;
+            best_p         = m_trial_projected_gradient;
+            best_f         = trial_objective;
+            best_norm_inf  = trial_norm_inf;
+            best_step_norm = m_step.norm();
+            have_best      = true;
           }
 
           // Identical polishing test after the substitutions g -> p and
           // x-alpha*d -> P(x-alpha*d).  For P=I this is literally the same test.
-          bool const residual_ok =
-            trial_norm_inf <= ( Real( 1 ) - options.polish_armijo * alpha ) * projected_norm_inf ||
-            trial_norm_inf <= tolerance;
+          bool const residual_ok  = trial_norm_inf <=
+                                      ( Real( 1 ) - options.polish_armijo * alpha ) * projected_norm_inf ||
+                                    trial_norm_inf <= tolerance;
           bool const objective_ok = trial_objective <= objective + roundoff;
 
           if ( residual_ok && objective_ok )
           {
-            accepted = true;
-            m_x                    = m_trial;
-            m_gradient             = m_trial_gradient;
-            m_projected_gradient   = m_trial_projected_gradient;
-            objective              = trial_objective;
-            projected_norm         = m_projected_gradient.norm();
-            projected_norm_inf     = trial_norm_inf;
-            last_step_norm         = m_step.norm();
+            accepted             = true;
+            m_x                  = m_trial;
+            m_gradient           = m_trial_gradient;
+            m_projected_gradient = m_trial_projected_gradient;
+            objective            = trial_objective;
+            projected_norm       = m_projected_gradient.norm();
+            projected_norm_inf   = trial_norm_inf;
+            last_step_norm       = m_step.norm();
             ++m_polish_iterations;
             break;
           }
@@ -1502,13 +1695,13 @@ namespace Utils::MinimizeNewton
         if ( !accepted )
         {
           if ( !have_best || !( best_norm_inf < projected_norm_inf ) ) return;
-          m_x                    = best_x;
-          m_gradient             = best_g;
-          m_projected_gradient   = best_p;
-          objective              = best_f;
-          projected_norm         = m_projected_gradient.norm();
-          projected_norm_inf     = best_norm_inf;
-          last_step_norm         = best_step_norm;
+          m_x                  = best_x;
+          m_gradient           = best_g;
+          m_projected_gradient = best_p;
+          objective            = best_f;
+          projected_norm       = m_projected_gradient.norm();
+          projected_norm_inf   = best_norm_inf;
+          last_step_norm       = best_step_norm;
           ++m_polish_iterations;
         }
       }
@@ -1596,27 +1789,27 @@ namespace Utils::MinimizeNewton
     Options<Real> m_options{};
     Eigen::Index  m_n = 0;
 
-    Vec m_x, m_trial;
-    Vec m_gradient, m_trial_gradient;
-    Vec m_projected_gradient, m_trial_projected_gradient;
-    Vec m_direction, m_step, m_model_Hstep, m_projection_slope;
-    Vec m_reduced_rhs, m_reduced_solution;
-    Mat m_H, m_shifted_H, m_polish_J, m_reduced_H;
+    Vec                       m_x, m_trial;
+    Vec                       m_gradient, m_trial_gradient;
+    Vec                       m_projected_gradient, m_trial_projected_gradient;
+    Vec                       m_direction, m_step, m_model_Hstep, m_projection_slope;
+    Vec                       m_reduced_rhs, m_reduced_solution;
+    Mat                       m_H, m_shifted_H, m_polish_J, m_reduced_H;
     std::vector<Eigen::Index> m_free_indices;
 
-    int m_function_evaluations = 0;
-    int m_gradient_evaluations = 0;
-    int m_hessian_evaluations  = 0;
-    int m_rejected_steps       = 0;
-    int m_fallback_steps        = 0;
-    int m_model_rejections      = 0;
-    int m_gradient_rescue_steps        = 0;
-    int m_primary_semismooth_attempts  = 0;
-    int m_primary_semismooth_steps     = 0;
-    int m_primary_semismooth_rejected  = 0;
-    int m_semismooth_rescue_steps      = 0;
-    int m_polish_iterations            = 0;
-    int m_polish_backtracks    = 0;
+    int m_function_evaluations        = 0;
+    int m_gradient_evaluations        = 0;
+    int m_hessian_evaluations         = 0;
+    int m_rejected_steps              = 0;
+    int m_fallback_steps              = 0;
+    int m_model_rejections            = 0;
+    int m_gradient_rescue_steps       = 0;
+    int m_primary_semismooth_attempts = 0;
+    int m_primary_semismooth_steps    = 0;
+    int m_primary_semismooth_rejected = 0;
+    int m_semismooth_rescue_steps     = 0;
+    int m_polish_iterations           = 0;
+    int m_polish_backtracks           = 0;
   };
 
   template <typename Real = double, typename Problem>
@@ -1632,6 +1825,6 @@ namespace Utils::MinimizeNewton
     return solver.solve( problem, x0, lower, upper );
   }
 
-} // namespace Utils::MinimizeNewton
+}  // namespace Utils::MinimizeNewton
 
 #endif
