@@ -11,11 +11,10 @@ namespace
 {
 
   using Real           = double;
-  using Vector         = Utils::MinimizeNewton::Vector<Real>;
-  using ConstVectorRef = Utils::MinimizeNewton::ConstVectorRef<Real>;
-  using VectorRef      = Utils::MinimizeNewton::VectorRef<Real>;
-  using MatrixRef      = Utils::MinimizeNewton::MatrixRef<Real>;
-  using Status         = Utils::MinimizeNewton::Status;
+  using Vector         = Utils::Vector<Real>;
+  using ConstVectorRef = Utils::ConstVectorRef<Real>;
+  using VectorRef      = Utils::VectorRef<Real>;
+  using MatrixRef      = Utils::MatrixRef<Real>;
 
   bool check( bool condition, char const * message )
   {
@@ -27,9 +26,10 @@ namespace
 
 int main()
 {
-  bool passed = true;
+  using Status = Utils::Status;
+  bool passed  = true;
 
-  Utils::MinimizeNewton::Options<Real> options;
+  Utils::Options<Real> options;
   options.set_tolerances( 1e-12 );
   options.max_iterations = 400;
 
@@ -40,7 +40,7 @@ int main()
   Eigen::Map<Vector const> lower( lower_data, 2 );
   Eigen::Map<Vector const> upper( upper_data, 2 );
 
-  auto quadratic = Utils::MinimizeNewton::make_problem<Real>(
+  auto quadratic = Utils::make_problem<Real>(
     []( ConstVectorRef x ) { return Real( 0.5 ) * ( x[0] * x[0] + Real( 4 ) * x[1] * x[1] ); },
     []( ConstVectorRef x, VectorRef g )
     {
@@ -54,8 +54,8 @@ int main()
       H( 1, 1 ) = Real( 4 );
     } );
 
-  Utils::MinimizeNewton::Solver<Real> solver( 2, options );
-  auto                                result = solver.solve( quadratic, x0, lower, upper );
+  Utils::Minimize_BBOX_Newton<Real> solver( 2, options );
+  auto                              result = solver.solve( quadratic, x0, lower, upper );
   passed &= check( result.status == Status::converged, "unconstrained quadratic status" );
   passed &= check( result.x.stableNorm() <= 1e-12, "unconstrained quadratic solution" );
   passed &= check(
@@ -65,7 +65,7 @@ int main()
 
   // A large constant makes objective changes invisible in double precision;
   // derivative-driven regularized Newton refinement must still proceed.
-  auto offset_quadratic = Utils::MinimizeNewton::make_problem<Real>(
+  auto offset_quadratic = Utils::make_problem<Real>(
     []( ConstVectorRef x )
     { return Real( 1e20 ) + Real( 0.5 ) * ( std::pow( x[0] - Real( 0.25 ), 2 ) + std::pow( x[1] + Real( 0.5 ), 2 ) ); },
     []( ConstVectorRef x, VectorRef g )
@@ -87,19 +87,19 @@ int main()
 
   // The constrained minimizer is at the upper bound and has nonzero ordinary
   // gradient, but zero projected KKT residual.
-  auto boundary = Utils::MinimizeNewton::make_problem<Real>(
+  auto boundary = Utils::make_problem<Real>(
     []( ConstVectorRef x ) { return Real( 0.5 ) * std::pow( x[0] - Real( 2 ), 2 ); },
     []( ConstVectorRef x, VectorRef g ) { g[0] = x[0] - Real( 2 ); },
     []( ConstVectorRef, MatrixRef H ) { H.setConstant( Real( 1 ) ); } );
-  Utils::MinimizeNewton::Solver<Real> one_solver( 1, options );
-  auto                                one_result = one_solver.solve( boundary, one_x0, one_lower, one_upper );
+  Utils::Minimize_BBOX_Newton<Real> one_solver( 1, options );
+  auto                              one_result = one_solver.solve( boundary, one_x0, one_lower, one_upper );
   passed &= check( one_result.status == Status::converged, "BOX boundary status" );
   passed &= check( one_result.x[0] == Real( 1 ), "BOX projection to upper bound" );
   passed &= check( one_result.projected_gradient_norm == Real( 0 ), "BOX projected KKT residual" );
 
   // A weakly active point with zero gradient and negative feasible curvature is
   // not a minimum.  The eigensolver-based negative-curvature step must escape.
-  auto boundary_maximum = Utils::MinimizeNewton::make_problem<Real>(
+  auto boundary_maximum = Utils::make_problem<Real>(
     []( ConstVectorRef x ) { return -Real( 0.5 ) * x[0] * x[0]; },
     []( ConstVectorRef x, VectorRef g ) { g[0] = -x[0]; },
     []( ConstVectorRef, MatrixRef H ) { H.setConstant( Real( -1 ) ); } );

@@ -427,10 +427,10 @@
 #include <vector>
 
 #if EIGEN_MAJOR_VERSION < 5
-#error "Utils::MinimizeNewton requires Eigen 5 or newer"
+#error "Utils::Minimize_BBOX_Newton requires Eigen 5 or newer"
 #endif
 
-namespace Utils::MinimizeNewton
+namespace Utils
 {
 
   template <typename Real> using Vector         = Eigen::Matrix<Real, Eigen::Dynamic, 1>;
@@ -484,7 +484,7 @@ namespace Utils::MinimizeNewton
   auto make_problem( Obj obj, Grad grad, Hess hess )
   { return CallableProblem<Real, Obj, Grad, Hess>( std::move( obj ), std::move( grad ), std::move( hess ) ); }
 
-  /** @brief Termination code returned by Solver::solve(). */
+  /** @brief Termination code returned by Minimize_BBOX_Newton::solve(). */
   enum class Status
   {
     unknown,
@@ -693,13 +693,13 @@ namespace Utils::MinimizeNewton
    * allocations after resize().  The algorithm itself is described in the
    * file-level documentation above.
    */
-  template <typename Real = double> class Solver
+  template <typename Real = double> class Minimize_BBOX_Newton
   {
   public:
     using Vec = Vector<Real>;
     using Mat = Matrix<Real>;
 
-    explicit Solver( Eigen::Index dimension = 0, Options<Real> options = {} ) : m_options( options )
+    explicit Minimize_BBOX_Newton( Eigen::Index dimension = 0, Options<Real> options = {} ) : m_options( options )
     { resize( dimension ); }
 
     [[nodiscard]] Options<Real> &       options() noexcept { return m_options; }
@@ -1821,10 +1821,10 @@ namespace Utils::MinimizeNewton
     ConstVectorRef<Real> upper,
     Options<Real>        options = {} )
   {
-    Solver<Real> solver( x0.size(), options );
+    Minimize_BBOX_Newton<Real> solver( x0.size(), options );
     return solver.solve( problem, x0, lower, upper );
   }
 
-}  // namespace Utils::MinimizeNewton
+}  // namespace Utils
 
 #endif

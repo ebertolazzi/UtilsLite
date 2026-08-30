@@ -232,27 +232,28 @@ namespace
   {
     NDProblemAdapter adapter( problem );
 
-    Utils::MinimizeNewton::Options<Scalar> options;
+    Utils::Options options;
     options.max_iterations           = static_cast<int>( MAX_ITERATIONS );
     options.max_function_evaluations = static_cast<int>( MAX_ITERATIONS + 1 );
     options.set_tolerances( 1e-12 );
 
-    Utils::MinimizeNewton::Solver<Scalar> solver( x0.size(), options );
-    auto const                            result = solver.solve( adapter, x0, lower, upper );
+    Utils::Minimize_BBOX_Newton solver( x0.size(), options );
+    auto const                  result = solver.solve( adapter, x0, lower, upper );
 
     Metrics metrics;
+    using Status = Utils::Status;
     switch ( result.status )
     {
-      case Utils::MinimizeNewton::Status::unknown: metrics.status = "UNKNOWN"; break;
-      case Utils::MinimizeNewton::Status::converged: metrics.status = "CONVERGED"; break;
-      case Utils::MinimizeNewton::Status::max_iterations: metrics.status = "ITER LIMIT"; break;
-      case Utils::MinimizeNewton::Status::max_function_evaluations: metrics.status = "EVAL LIMIT"; break;
-      case Utils::MinimizeNewton::Status::no_progress: metrics.status = "NO PROGRESS"; break;
-      case Utils::MinimizeNewton::Status::non_finite_objective: metrics.status = "NONFINITE F"; break;
-      case Utils::MinimizeNewton::Status::non_finite_gradient: metrics.status = "NONFINITE G"; break;
-      case Utils::MinimizeNewton::Status::non_finite_hessian: metrics.status = "NONFINITE H"; break;
-      case Utils::MinimizeNewton::Status::eigensolver_failure: metrics.status = "EIGEN FAIL"; break;
-      case Utils::MinimizeNewton::Status::user: metrics.status = "USER STOP"; break;
+      case Status::unknown: metrics.status = "UNKNOWN"; break;
+      case Status::converged: metrics.status = "CONVERGED"; break;
+      case Status::max_iterations: metrics.status = "ITER LIMIT"; break;
+      case Status::max_function_evaluations: metrics.status = "EVAL LIMIT"; break;
+      case Status::no_progress: metrics.status = "NO PROGRESS"; break;
+      case Status::non_finite_objective: metrics.status = "NONFINITE F"; break;
+      case Status::non_finite_gradient: metrics.status = "NONFINITE G"; break;
+      case Status::non_finite_hessian: metrics.status = "NONFINITE H"; break;
+      case Status::eigensolver_failure: metrics.status = "EIGEN FAIL"; break;
+      case Status::user: metrics.status = "USER STOP"; break;
     }
     metrics.iterations               = static_cast<std::size_t>( result.iterations );
     metrics.function_evaluations     = static_cast<std::size_t>( result.function_evaluations );
@@ -262,14 +263,13 @@ namespace
     metrics.projected_gradient_norm  = result.projected_gradient_norm;
     metrics.x                        = result.x;
 
-    using Status = Utils::MinimizeNewton::Status;
+    using Status = Utils::Status;
     if ( result.status == Status::converged )
       metrics.outcome = Outcome::converged;
     else if (
       result.status == Status::max_iterations || result.status == Status::max_function_evaluations ||
       result.status == Status::no_progress )
       metrics.outcome = Outcome::stopped;
-
     return metrics;
   }
 

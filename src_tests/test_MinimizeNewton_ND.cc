@@ -19,11 +19,11 @@
 int main()
 {
   using Real           = double;
-  using Vector         = Utils::MinimizeNewton::Vector<Real>;
-  using ConstVectorRef = Utils::MinimizeNewton::ConstVectorRef<Real>;
-  using VectorRef      = Utils::MinimizeNewton::VectorRef<Real>;
-  using MatrixRef      = Utils::MinimizeNewton::MatrixRef<Real>;
-  using Status         = Utils::MinimizeNewton::Status;
+  using Vector         = Utils::Vector<Real>;
+  using ConstVectorRef = Utils::ConstVectorRef<Real>;
+  using VectorRef      = Utils::VectorRef<Real>;
+  using MatrixRef      = Utils::MatrixRef<Real>;
+  using Status         = Utils::Status;
 
   std::size_t converged            = 0;
   std::size_t stopped              = 0;
@@ -45,16 +45,16 @@ int main()
     Vector const x0      = function->init();
     Vector const lower   = function->lower();
     Vector const upper   = function->upper();
-    auto         problem = Utils::MinimizeNewton::make_problem<Real>(
+    auto         problem = Utils::make_problem<Real>(
       [&]( ConstVectorRef x ) { return ( *function )( x ); },
       [&]( ConstVectorRef x, VectorRef gradient ) { gradient = function->gradient( x ); },
       [&]( ConstVectorRef x, MatrixRef hessian ) { hessian = function->hessian( x ); } );
 
-    Utils::MinimizeNewton::Options<Real> options;
+    Utils::Options<double> options;
     options.set_tolerances( 1e-12 );
     options.max_iterations           = 400;
     options.max_function_evaluations = 401;
-    Utils::MinimizeNewton::Solver<Real> solver( x0.size(), options );
+    Utils::Minimize_BBOX_Newton<double> solver( x0.size(), options );
     auto const                          result = solver.solve( problem, x0, lower, upper );
 
     if ( result.status == Status::converged )
@@ -68,7 +68,7 @@ int main()
         fmt::fg( fmt::color::gold ),
         "  stopped: {:<39} {:<36} iter={:<3} pi={:.3e}\n",
         name,
-        Utils::MinimizeNewton::to_string( result.status ),
+        Utils::to_string( result.status ),
         result.iterations,
         result.projected_gradient_norm );
     }

@@ -324,8 +324,7 @@ namespace Utils
         // opposite magnitude, where the naive expression a+t*(b-a) overflows.
         for ( Integer denominator = 2; m_iteration_count < m_max_iteration; )
         {
-          for ( Integer numerator = 1; numerator < denominator && m_iteration_count < m_max_iteration;
-                numerator += 2 )
+          for ( Integer numerator = 1; numerator < denominator && m_iteration_count < m_max_iteration; numerator += 2 )
           {
             Real t = Real( numerator ) / Real( denominator );
             Real x = std::lerp( a, b, t );
@@ -609,7 +608,7 @@ namespace Utils
       Sample guess;
       if ( !find_valid_start( xguess, a, b, guess ) ) return finish( guess, false );
 
-      xguess     = guess.x;
+      xguess      = guess.x;
       Real Dguess = guess.Df;
       if ( Dguess == 0 )
       {

@@ -285,22 +285,17 @@ namespace
 
     auto check = [&]<typename FUN, typename FUN_D>(
                    string const & label,
-                   real_type     xguess,
-                   real_type     a,
-                   real_type     b,
-                   real_type     expected,
-                   FUN &&        fun,
-                   FUN_D &&      fun_D )
+                   real_type      xguess,
+                   real_type      a,
+                   real_type      b,
+                   real_type      expected,
+                   FUN &&         fun,
+                   FUN_D &&       fun_D )
     {
       Minimize_BBOX_1D<real_type> solver;
-      real_type x = solver.eval2(
-        xguess,
-        a,
-        b,
-        std::forward<FUN>( fun ),
-        std::forward<FUN_D>( fun_D ) );
-      bool ok = solver.converged() && close_to( x, expected ) && std::isfinite( solver.min_value() ) &&
-                std::isfinite( solver.derivative() );
+      real_type x  = solver.eval2( xguess, a, b, std::forward<FUN>( fun ), std::forward<FUN_D>( fun_D ) );
+      bool      ok = solver.converged() && close_to( x, expected ) && std::isfinite( solver.min_value() ) &&
+                     std::isfinite( solver.derivative() );
       ++stats.tests;
       stats.iterations += solver.used_iter();
       stats.function_evaluations += solver.num_fun_eval();
@@ -425,14 +420,8 @@ namespace
         -2,
         2,
         expected,
-        [inf]( real_type x )
-        {
-          return std::abs( x ) < 1 ? std::log( 1 - x * x ) + real_type( 1e-6 ) * x : -inf;
-        },
-        [nan]( real_type x )
-        {
-          return std::abs( x ) < 1 ? -2 * x / ( 1 - x * x ) + real_type( 1e-6 ) : nan;
-        } );
+        [inf]( real_type x ) { return std::abs( x ) < 1 ? std::log( 1 - x * x ) + real_type( 1e-6 ) * x : -inf; },
+        [nan]( real_type x ) { return std::abs( x ) < 1 ? -2 * x / ( 1 - x * x ) + real_type( 1e-6 ) : nan; } );
     }
 
     // Convex logarithmic barrier on the same declared box.  Unlike the
@@ -441,22 +430,17 @@ namespace
     //   1 + 2*eps*x/(1-x^2) = 0,
     //   x = eps - sqrt(1+eps^2), eps=1e-6.
     {
-      real_type constexpr eps      = 1e-6;
-      real_type const     expected = eps - std::sqrt( 1 + eps * eps );
+      real_type constexpr eps  = 1e-6;
+      real_type const expected = eps - std::sqrt( 1 + eps * eps );
       check(
         "-eps*log barrier + x",
         0,
         -2,
         2,
         expected,
-        [inf]( real_type x )
-        {
-          return std::abs( x ) < 1 ? -real_type( 1e-6 ) * std::log( 1 - x * x ) + x : inf;
-        },
+        [inf]( real_type x ) { return std::abs( x ) < 1 ? -real_type( 1e-6 ) * std::log( 1 - x * x ) + x : inf; },
         [nan]( real_type x )
-        {
-          return std::abs( x ) < 1 ? real_type( 1 ) + real_type( 2e-6 ) * x / ( 1 - x * x ) : nan;
-        } );
+        { return std::abs( x ) < 1 ? real_type( 1 ) + real_type( 2e-6 ) * x / ( 1 - x * x ) : nan; } );
     }
 
     // f(x)=x on the open domain x>0 has only an unattained infimum at zero.
