@@ -92,7 +92,7 @@ void example_unconstrained()
     "   Analytic sensitivity: ∂x*/∂p = [[1,0,0],[0,1,0]]\n" );
 
   auto parametric_function =
-    []( Vector const & x, Vector const & p, Vector * grad_x, SparseMatrix * hess_xx, Matrix * grad_xp ) -> Scalar
+    []( Vector const & x, Vector const & p, Vector * grad_x, Matrix * hess_xx, Matrix * grad_xp ) -> Scalar
   {
     Scalar x1 = x( 0 ), x2 = x( 1 );
     Scalar p1 = p( 0 ), p2 = p( 1 ), p3 = p( 2 );
@@ -107,10 +107,9 @@ void example_unconstrained()
 
     if ( hess_xx )
     {
-      std::vector<Eigen::Triplet<Scalar>> triplets;
-      triplets.emplace_back( 0, 0, 2.0 );
-      triplets.emplace_back( 1, 1, 2.0 / p3 );
-      hess_xx->setFromTriplets( triplets.begin(), triplets.end() );
+      hess_xx->setZero( 2, 2 );
+      ( *hess_xx )( 0, 0 ) = 2.0;
+      ( *hess_xx )( 1, 1 ) = 2.0 / p3;
     }
 
     if ( grad_xp )
@@ -217,7 +216,7 @@ void example_box_constrained()
     "     - x₂* = 0.5 (free) → ∂x₂/∂p = [0, 1]\n" );
 
   auto parametric_function =
-    []( Vector const & x, Vector const & p, Vector * grad_x, SparseMatrix * hess_xx, Matrix * grad_xp ) -> Scalar
+    []( Vector const & x, Vector const & p, Vector * grad_x, Matrix * hess_xx, Matrix * grad_xp ) -> Scalar
   {
     Scalar f = std::pow( x( 0 ) - p( 0 ), 2 ) + std::pow( x( 1 ) - p( 1 ), 2 );
 
@@ -229,10 +228,9 @@ void example_box_constrained()
 
     if ( hess_xx )
     {
-      std::vector<Eigen::Triplet<Scalar>> triplets;
-      triplets.emplace_back( 0, 0, 2.0 );
-      triplets.emplace_back( 1, 1, 2.0 );
-      hess_xx->setFromTriplets( triplets.begin(), triplets.end() );
+      hess_xx->setZero( 2, 2 );
+      ( *hess_xx )( 0, 0 ) = 2.0;
+      ( *hess_xx )( 1, 1 ) = 2.0;
     }
 
     if ( grad_xp && grad_xp->rows() == 2 && grad_xp->cols() == 2 )
@@ -262,7 +260,7 @@ void example_box_constrained()
   Matrix sensitivity_exact( 2, 2 );
   sensitivity_exact << 0.0, 0.0, 0.0, 1.0;
 
-  auto standard_callback = [&]( Vector const & x, Vector * g, SparseMatrix * H )
+  auto standard_callback = [&]( Vector const & x, Vector * g, Matrix * H )
   { return parametric_function( x, p, g, H, nullptr ); };
 
   Newton_minimizer<Scalar>::Options opt_opts;
@@ -380,7 +378,7 @@ void example_regularized()
     "     - Smooths solution w.r.t. parameters\n" );
 
   auto parametric_function =
-    []( Vector const & x, Vector const & p, Vector * grad_x, SparseMatrix * hess_xx, Matrix * grad_xp ) -> Scalar
+    []( Vector const & x, Vector const & p, Vector * grad_x, Matrix * hess_xx, Matrix * grad_xp ) -> Scalar
   {
     Vector diff = x - p;
     Vector Qdiff( 2 );
@@ -397,10 +395,9 @@ void example_regularized()
 
     if ( hess_xx )
     {
-      std::vector<Eigen::Triplet<Scalar>> triplets;
-      triplets.emplace_back( 0, 0, 2.0 );
-      triplets.emplace_back( 1, 1, 20.0 );
-      hess_xx->setFromTriplets( triplets.begin(), triplets.end() );
+      hess_xx->setZero( 2, 2 );
+      ( *hess_xx )( 0, 0 ) = 2.0;
+      ( *hess_xx )( 1, 1 ) = 20.0;
     }
 
     if ( grad_xp && grad_xp->rows() == 2 && grad_xp->cols() == 2 )

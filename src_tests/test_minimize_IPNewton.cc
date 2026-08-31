@@ -28,7 +28,7 @@
 #include <algorithm>
 #include <numeric>
 
-#include "Utils_minimize_IPNewton.hh"
+#include "Utils_minimize_BBOX_IPNewton.hh"
 
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wsign-conversion"
@@ -43,9 +43,10 @@ using std::pair;
 using std::string;
 using std::vector;
 using Scalar       = double;
-using MINIMIZER    = Utils::IPNewton_minimizer<Scalar>;
+using MINIMIZER    = Utils::minimize_BBOX_IPNewton<Scalar>;
 using integer      = MINIMIZER::integer;
 using Vector       = typename MINIMIZER::Vector;
+using Matrix       = typename MINIMIZER::Matrix;
 using SparseMatrix = typename MINIMIZER::SparseMatrix;
 
 using Status = MINIMIZER::Status;
@@ -91,6 +92,69 @@ struct TestResult
 };
 
 vector<TestResult> global_test_results;
+
+struct QuadraticAPIProblem
+{
+  Scalar objective( Vector const & x ) { return Scalar( 0.5 ) * x.squaredNorm(); }
+  void gradient( Vector const & x, Vector & gradient ) { gradient = x; }
+  void hessian( Vector const & x, Matrix & hessian )
+  {
+    hessian.setIdentity( x.size(), x.size() );
+  }
+};
+
+bool test_new_solver_interface()
+{
+  MINIMIZER::Options options;
+  options.verbosity = 0;
+  options.tol       = Scalar( 1e-12 );
+  MINIMIZER solver( 2, options );
+  Vector x0( 2 ), lower( 2 ), upper( 2 );
+  x0 << Scalar( 0.5 ), Scalar( -0.75 );
+  lower.setConstant( Scalar( -2 ) );
+  upper.setConstant( Scalar( 2 ) );
+  QuadraticAPIProblem problem;
+  auto const bounded = solver.solve( problem, x0, lower, upper );
+
+  Scalar const infinity = std::numeric_limits<Scalar>::infinity();
+  lower.setConstant( -infinity );
+  upper.setConstant( infinity );
+  auto const unbounded_box = solver.solve( problem, x0, lower, upper );
+
+  lower << Scalar( -0.25 ), -infinity;
+  upper << infinity, Scalar( 0.25 );
+  auto const one_sided = solver.solve( problem, x0, lower, upper );
+
+  bool missing_bounds_rejected = false;
+  try
+  {
+    MINIMIZER without_bounds( 2, options );
+    MINIMIZER::Callback callback = [&problem]( Vector const & x, Vector * gradient, Matrix * hessian )
+    {
+      if ( gradient ) problem.gradient( x, *gradient );
+      if ( hessian ) problem.hessian( x, *hessian );
+      return problem.objective( x );
+    };
+    without_bounds.minimize( x0, callback );
+  }
+  catch ( ... ) { missing_bounds_rejected = true; }
+
+  bool const passed = bounded.status != Status::NOT_STARTED && bounded.x.size() == x0.size() && bounded.x.allFinite() &&
+                      unbounded_box.status == Status::CONVERGED && unbounded_box.x.allFinite() &&
+                      unbounded_box.x.norm() <= Scalar( 1e-8 ) && one_sided.status != Status::NOT_STARTED &&
+                      one_sided.x.allFinite() && one_sided.x[0] > lower[0] && one_sided.x[1] < upper[1] &&
+                      missing_bounds_rejected;
+  if ( !passed )
+    fmt::print(
+      stderr,
+      "IPNewton API regression: bounded={} free={} |x_free|={:.3e} one-sided={} x={}\n",
+      MINIMIZER::to_string( bounded.status ),
+      MINIMIZER::to_string( unbounded_box.status ),
+      unbounded_box.x.norm(),
+      MINIMIZER::to_string( one_sided.status ),
+      one_sided.x.transpose() );
+  return passed;
+}
 
 #include "ND_func.cxx"
 
@@ -166,7 +230,7 @@ template <typename Problem> static void test( Problem & tp, string const & name 
 
   Vector final_solution = x0;
 
-  auto cb = [&tp, &final_solution]( Vector const & x, Vector * g, SparseMatrix * H ) -> Scalar
+  auto cb = [&tp, &final_solution]( Vector const & x, Vector * g, Matrix * H ) -> Scalar
   {
     final_solution = x;
 
@@ -191,13 +255,13 @@ template <typename Problem> static void test( Problem & tp, string const & name 
           Vector gp = tp.gradient( xp );
           Vector gm = tp.gradient( xm );
 
-          for ( integer j = 0; j < x.size(); ++j ) H->coeffRef( j, i ) = ( gp( j ) - gm( j ) ) / ( 2 * eps );
+          for ( integer j = 0; j < x.size(); ++j ) ( *H )( j, i ) = ( gp( j ) - gm( j ) ) / ( 2 * eps );
 
           xp( i ) = xm( i ) = x( i );
         }
 
-        SparseMatrix Ht = H->transpose();
-        *H              = 0.5 * ( ( *H ) + Ht );
+        Matrix Ht = H->transpose();
+        *H        = 0.5 * ( ( *H ) + Ht );
       }
     }
     return tp( x );
@@ -352,6 +416,8 @@ int main()
     "║               (Logarithmic Barrier)                            ║\n"
     "╚════════════════════════════════════════════════════════════════╝\n"
     "\n" );
+
+  if ( !test_new_solver_interface() ) return 1;
 
   for ( auto [ptr, name] : NL_list ) test( *ptr, name );
 

@@ -85,9 +85,10 @@ namespace Utils
   public:
     using Vector       = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
     using integer      = Eigen::Index;
-    using SparseMatrix = Eigen::SparseMatrix<Scalar>;
-    using DenseMatrix  = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
-    using Callback     = std::function<Scalar( Vector const &, Vector *, SparseMatrix * )>;
+    using Matrix       = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
+    using SparseMatrix = Eigen::SparseMatrix<Scalar>; // kept for compat
+    using DenseMatrix  = Matrix;
+    using Callback     = std::function<Scalar( Vector const &, Vector *, Matrix * )>;
     using BOX          = BoxConstraintHandler<Scalar>;
 
     // Stati dell'ottimizzatore
@@ -146,12 +147,12 @@ namespace Utils
     Scalar  m_eps = std::numeric_limits<Scalar>::epsilon();  // Precisione di macchina
 
     // --- Stato Corrente ---
-    Scalar       m_f;       // Valore funzione corrente
-    Scalar       m_lambda;  // Parametro di regolarizzazione corrente
-    Scalar       m_gnorm;   // Norma del gradiente proiettato
-    Vector       m_x;       // Punto corrente
-    Vector       m_g;       // Gradiente corrente
-    SparseMatrix m_H;       // Hessiana corrente (sparsa)
+    Scalar  m_f;      // Valore funzione corrente
+    Scalar  m_lambda; // Parametro di regolarizzazione corrente
+    Scalar  m_gnorm;  // Norma del gradiente proiettato
+    Vector  m_x;      // Punto corrente
+    Vector  m_g;      // Gradiente corrente
+    Matrix  m_H;      // Hessiana corrente (densa)
 
     // --- Miglior Punto Trovato ---
     Vector m_best_x;                                       // Miglior punto trovato
@@ -185,17 +186,12 @@ namespace Utils
      * @param H Hessiana iniziale
      * @return Scalar Valore iniziale per λ
      */
-    Scalar compute_initial_lambda( SparseMatrix const & H ) const
+    Scalar compute_initial_lambda( Matrix const & H ) const
     {
       if ( !m_opts.adaptive_lambda_init ) return m_opts.lambda_init;
 
-      // Calcola norma di Frobenius dell'Hessiana
-      Scalar norm_H = 0;
-      for ( integer j = 0; j < H.cols(); ++j )
-      {
-        for ( typename SparseMatrix::InnerIterator it( H, j ); it; ++it ) { norm_H += it.value() * it.value(); }
-      }
-      norm_H = std::sqrt( norm_H );
+      // Calcola norma di Frobenius dell'Hessiana (densa, no copie)
+      Scalar norm_H = H.norm();
 
       // Scala con la norma delle variabili
       Scalar norm_x = m_x.norm();
@@ -230,31 +226,13 @@ namespace Utils
     {
       try
       {
-        // CASO 1: SOLVER DENSO (per piccoli problemi o matrici dense)
-        if ( m_opts.use_dense )
+        // Solver denso (hessiana sempre densa, no copie sparse)
         {
-          DenseMatrix                  H_dense = m_H;  // Conversione a densa
-          DenseSymmetricSolver<Scalar> solver( H_dense, m_lambda );
-
-          // Risolvi (H + λI)p = -g
+          DenseSymmetricSolver<Scalar> solver( m_H, m_lambda );
           dir.noalias() = -solver.solve( m_g );
-
-          // Controlla validità numerica
           if ( !dir.allFinite() )
           {
             if ( m_opts.verbosity >= 3 ) fmt::print( PrintColors::WARNING, "    Solver denso prodotto NaN/Inf\n" );
-            return false;
-          }
-        }
-        // CASO 2: SOLVER SPARSO (default per grandi problemi)
-        else
-        {
-          SparseSymmetricSolver<Scalar> solver( m_H, m_lambda );
-          dir.noalias() = -solver.solve( m_g );
-
-          if ( !dir.allFinite() )
-          {
-            if ( m_opts.verbosity >= 3 ) fmt::print( PrintColors::WARNING, "    Solver sparso prodotto NaN/Inf\n" );
             return false;
           }
         }

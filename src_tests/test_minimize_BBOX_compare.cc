@@ -1,497 +1,234 @@
 // SPDX-License-Identifier: MPL-2.0
 
 #include "Utils_fmt.hh"
+#include "Utils_minimize_BBOX_IPNewton.hh"
 #include "Utils_minimize_BBOX_Newton.hh"
+#include "Utils_minimize_BBOX_NewtonCubic.hh"
 #include "Utils_minimize_BBOX_TRON.hh"
 #include "Utils_minimize_BBOX_small_TRON.hh"
+#include "Utils_minimize_Newton.hh"
 
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
-#include <cstddef>
+#include <exception>
 #include <limits>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
-
 #include "ND_func.cxx"
 
 namespace
 {
-
-  using Scalar         = double;
-  using Vector         = Eigen::VectorXd;
-  using SparseMatrix   = Eigen::SparseMatrix<Scalar>;
-  using ConstVectorRef = Utils::SmallTRON::ConstVectorRef<Scalar>;
-  using VectorRef      = Utils::SmallTRON::VectorRef<Scalar>;
-  using MatrixRef      = Utils::SmallTRON::MatrixRef<Scalar>;
+  using Scalar       = double;
+  using Vector       = Eigen::VectorXd;
+  using Matrix       = Eigen::MatrixXd;
+  using SparseMatrix = Eigen::SparseMatrix<Scalar>;
 
   constexpr std::size_t MAX_ITERATIONS = 400;
-  constexpr int         NAME_WIDTH     = 32;
-  constexpr int         STATUS_WIDTH   = 11;
+  constexpr int SOLVER_WIDTH = 27, STATUS_WIDTH = 15, TABLE_WIDTH = 116;
 
-  enum class Outcome
-  {
-    converged,
-    stopped,
-    failed
-  };
+  enum class Outcome { converged, stopped, failed };
 
   struct Metrics
   {
-    std::string status;
-    Outcome     outcome{ Outcome::failed };
-    std::size_t iterations{ 0 };
-    std::size_t function_evaluations{ 0 };
-    std::size_t gradient_evaluations{ 0 };
-    std::size_t second_order_evaluations{ 0 };
-    Scalar      objective{ std::numeric_limits<Scalar>::quiet_NaN() };
-    Scalar      projected_gradient_norm{ std::numeric_limits<Scalar>::quiet_NaN() };
-    Vector      x;
+    std::string solver, status{ "FAILED" }, message;
+    Outcome outcome{ Outcome::failed };
+    std::size_t iterations{ 0 }, function_evaluations{ 0 }, gradient_evaluations{ 0 }, second_order_evaluations{ 0 };
+    Scalar objective{ std::numeric_limits<Scalar>::quiet_NaN() };
+    Scalar projected_gradient_norm{ std::numeric_limits<Scalar>::quiet_NaN() };
+    Vector x;
   };
 
-  struct Comparison
-  {
-    std::string name;
-    int         dimension{ 0 };
-    Metrics     tron;
-    Metrics     tron2;
-    Metrics     newton;
-  };
-
+  struct Comparison { std::string name; int dimension{ 0 }; std::array<Metrics, 6> results; };
   std::vector<Comparison> comparisons;
 
   class NDProblemAdapter
   {
   public:
     explicit NDProblemAdapter( std::shared_ptr<NDbase<Scalar>> problem ) : m_problem( std::move( problem ) ) {}
-
-    Scalar objective( ConstVectorRef x ) { return ( *m_problem )( x ); }
-
-    void gradient( ConstVectorRef x, VectorRef g ) { g = m_problem->gradient( x ); }
-
-    void hessian( ConstVectorRef x, MatrixRef H )
-    {
-      if ( !m_cache_valid || m_cached_x.size() != x.size() || ( m_cached_x.array() != x.array() ).any() )
-      {
-        m_cached_x       = x;
-        m_cached_hessian = m_problem->hessian( x );
-        m_cache_valid    = true;
-      }
-      H = m_cached_hessian;
-    }
-
-    void hprod( Vector const & x, Vector const & v, Vector & Hv )
-    {
-      if ( !m_cache_valid || m_cached_x.size() != x.size() || ( m_cached_x.array() != x.array() ).any() )
-      {
-        m_cached_x       = x;
-        m_cached_hessian = m_problem->hessian( x );
-        m_cache_valid    = true;
-      }
-      Hv.noalias() = m_cached_hessian * v;
-    }
-
+    Scalar objective( Vector const & x ) { return ( *m_problem )( x ); }
+    void gradient( Vector const & x, Vector & g ) { g = m_problem->gradient( x ); }
+    void gradient( Utils::ConstVectorRef<Scalar> x, Utils::VectorRef<Scalar> g ) { g = m_problem->gradient( x ); }
+    void hessian( Vector const & x, Matrix & H ) { update( x ); H = Matrix( m_H ); }
+    void hessian( Vector const & x, Utils::MatrixRef<Scalar> H ) { update( x ); H = m_H; }
+    void hprod( Vector const & x, Vector const & v, Vector & Hv ) { update( x ); Hv.noalias() = m_H * v; }
+    SparseMatrix const & sparse_hessian( Vector const & x ) { update( x ); return m_H; }
   private:
+    void update( Vector const & x )
+    {
+      if ( !m_valid || m_x.size() != x.size() || ( m_x.array() != x.array() ).any() )
+      { m_x = x; m_H = m_problem->hessian( x ); m_valid = true; }
+    }
     std::shared_ptr<NDbase<Scalar>> m_problem;
-    Vector                          m_cached_x;
-    SparseMatrix                    m_cached_hessian;
-    bool                            m_cache_valid{ false };
+    Vector m_x; SparseMatrix m_H; bool m_valid{ false };
   };
 
-  [[nodiscard]] fmt::text_style outcome_style( Outcome outcome )
+  fmt::text_style outcome_style( Outcome outcome )
   {
-    switch ( outcome )
-    {
-      case Outcome::converged: return fmt::fg( fmt::color::lime_green ) | fmt::emphasis::bold;
-      case Outcome::stopped: return fmt::fg( fmt::color::gold );
-      case Outcome::failed: return fmt::fg( fmt::color::red ) | fmt::emphasis::bold;
-    }
-    return fmt::fg( fmt::color::white );
+    if ( outcome == Outcome::converged ) return fmt::fg( fmt::color::lime_green ) | fmt::emphasis::bold;
+    if ( outcome == Outcome::stopped ) return fmt::fg( fmt::color::gold );
+    return fmt::fg( fmt::color::red ) | fmt::emphasis::bold;
   }
 
-  [[nodiscard]] Metrics run_tron2(
-    std::shared_ptr<NDbase<Scalar>> const & problem,
-    Vector const &                          x0,
-    Vector const &                          lower,
-    Vector const &                          upper )
+  template <typename Function> Metrics guarded_run( std::string name, Function && function )
   {
-    NDProblemAdapter adapter( problem );
-
-    Utils::TRON2::Options<Scalar> options;
-    options.max_iterations                  = MAX_ITERATIONS;
-    options.max_function_evaluations        = MAX_ITERATIONS + 1;
-    options.absolute_tolerance              = 1e-12;
-    options.relative_tolerance              = 1e-12;
-    options.cg_tolerance                    = 1e-6;
-    options.max_projected_newton_iterations = 50;
-    options.max_time_seconds                = 30.0;
-
-    auto const result = Utils::TRON2::minimize(
-      x0,
-      lower,
-      upper,
-      [&]( Vector const & x ) { return adapter.objective( x ); },
-      [&]( Vector const & x, Vector & g ) { adapter.gradient( x, g ); },
-      [&]( Vector const & x, Vector const & v, Vector & Hv ) { adapter.hprod( x, v, Hv ); },
-      options );
-
-    Metrics metrics;
-    switch ( result.status )
-    {
-      case Utils::TRON2::Status::converged: metrics.status = "CONVERGED"; break;
-      case Utils::TRON2::Status::max_iterations: metrics.status = "ITER LIMIT"; break;
-      case Utils::TRON2::Status::max_function_evaluations: metrics.status = "EVAL LIMIT"; break;
-      case Utils::TRON2::Status::max_time: metrics.status = "TIME LIMIT"; break;
-      case Utils::TRON2::Status::unbounded: metrics.status = "UNBOUNDED"; break;
-      case Utils::TRON2::Status::small_step: metrics.status = "SMALL STEP"; break;
-      case Utils::TRON2::Status::non_descent_model: metrics.status = "BAD MODEL"; break;
-      case Utils::TRON2::Status::non_finite_objective: metrics.status = "NONFINITE F"; break;
-      case Utils::TRON2::Status::non_finite_gradient: metrics.status = "NONFINITE G"; break;
-      case Utils::TRON2::Status::non_finite_hessian: metrics.status = "NONFINITE H"; break;
-    }
-    metrics.iterations               = result.iterations;
-    metrics.function_evaluations     = result.function_evaluations;
-    metrics.gradient_evaluations     = result.gradient_evaluations;
-    metrics.second_order_evaluations = result.hessian_vector_evaluations;
-    metrics.objective                = result.objective;
-    metrics.projected_gradient_norm  = result.projected_gradient_norm;
-    metrics.x                        = result.x;
-
-    using Status = Utils::TRON2::Status;
-    if ( result.status == Status::converged )
-      metrics.outcome = Outcome::converged;
-    else if (
-      result.status == Status::max_iterations || result.status == Status::max_function_evaluations ||
-      result.status == Status::small_step )
-      metrics.outcome = Outcome::stopped;
-
-    return metrics;
+    try { Metrics m = function(); m.solver = std::move( name ); return m; }
+    catch ( std::exception const & e ) { Metrics m; m.solver = std::move( name ); m.status = "EXCEPTION"; m.message = e.what(); return m; }
+    catch ( ... ) { Metrics m; m.solver = std::move( name ); m.status = "EXCEPTION"; m.message = "unknown exception"; return m; }
   }
 
-  [[nodiscard]] Metrics run_tron(
-    std::shared_ptr<NDbase<Scalar>> const & problem,
-    Vector const &                          x0,
-    Vector const &                          lower,
-    Vector const &                          upper )
+  Metrics run_ipnewton( std::shared_ptr<NDbase<Scalar>> const & p, Vector const & x0, Vector const & l, Vector const & u )
   {
-    NDProblemAdapter adapter( problem );
-
-    Utils::SmallTRON::Options<Scalar> options;
-    options.max_iter                        = static_cast<int>( MAX_ITERATIONS );
-    options.max_eval                        = static_cast<int>( MAX_ITERATIONS + 1 );
-    options.max_projected_newton_iterations = 50;
-    options.set_tolerances( 1e-12 );
-
-    Utils::SmallTRON::Solver<Scalar> solver( x0.size(), options );
-    auto const                       result = solver.solve( adapter, x0, lower, upper );
-
-    Metrics metrics;
-    switch ( result.status )
-    {
-      case Utils::SmallTRON::Status::unknown: metrics.status = "UNKNOWN"; break;
-      case Utils::SmallTRON::Status::first_order: metrics.status = "CONVERGED"; break;
-      case Utils::SmallTRON::Status::unbounded: metrics.status = "UNBOUNDED"; break;
-      case Utils::SmallTRON::Status::max_iter: metrics.status = "ITER LIMIT"; break;
-      case Utils::SmallTRON::Status::max_eval: metrics.status = "EVAL LIMIT"; break;
-      case Utils::SmallTRON::Status::small_step: metrics.status = "SMALL STEP"; break;
-      case Utils::SmallTRON::Status::neg_pred: metrics.status = "BAD MODEL"; break;
-      case Utils::SmallTRON::Status::direct_solver_failure: metrics.status = "DIRECT FAIL"; break;
-      case Utils::SmallTRON::Status::user: metrics.status = "USER STOP"; break;
-    }
-    metrics.iterations               = static_cast<std::size_t>( result.iter );
-    metrics.function_evaluations     = static_cast<std::size_t>( result.obj_evals );
-    metrics.gradient_evaluations     = static_cast<std::size_t>( result.grad_evals );
-    metrics.second_order_evaluations = static_cast<std::size_t>( result.hess_evals );
-    metrics.objective                = result.objective;
-    metrics.projected_gradient_norm  = result.dual_feas;
-    metrics.x                        = result.x;
-
-    using Status = Utils::SmallTRON::Status;
-    if ( result.status == Status::first_order )
-      metrics.outcome = Outcome::converged;
-    else if (
-      result.status == Status::max_iter || result.status == Status::max_eval || result.status == Status::small_step )
-      metrics.outcome = Outcome::stopped;
-
-    return metrics;
+    NDProblemAdapter problem( p );
+    using Solver = Utils::minimize_BBOX_IPNewton<Scalar>;
+    Solver::Options options; options.max_outer_iterations = MAX_ITERATIONS; options.max_inner_iterations = MAX_ITERATIONS;
+    options.tol = 1e-12; options.verbosity = 0;
+    Solver solver( x0.size(), options ); auto const r = solver.solve( problem, x0, l, u );
+    Metrics m; m.status = Solver::to_string( r.status ); m.iterations = r.iterations;
+    m.function_evaluations = r.function_evaluations; m.second_order_evaluations = r.hessian_evaluations;
+    m.objective = r.objective; m.projected_gradient_norm = r.projected_gradient_norm; m.x = r.x;
+    if ( r.status == Solver::Status::CONVERGED ) m.outcome = Outcome::converged;
+    else if ( r.status == Solver::Status::MAX_ITERATIONS || r.status == Solver::Status::BARRIER_FAILED ) m.outcome = Outcome::stopped;
+    return m;
   }
 
-  [[nodiscard]] Metrics run_newton(
-    std::shared_ptr<NDbase<Scalar>> const & problem,
-    Vector const &                          x0,
-    Vector const &                          lower,
-    Vector const &                          upper )
+  template <typename Solver> Metrics run_newton_family(
+    std::shared_ptr<NDbase<Scalar>> const & p, Vector const & x0, Vector const & l, Vector const & u )
   {
-    NDProblemAdapter adapter( problem );
-
-    Utils::Options options;
-    options.max_iterations           = static_cast<int>( MAX_ITERATIONS );
-    options.max_function_evaluations = static_cast<int>( MAX_ITERATIONS + 1 );
-    options.set_tolerances( 1e-12 );
-
-    Utils::Minimize_BBOX_Newton solver( x0.size(), options );
-    auto const                  result = solver.solve( adapter, x0, lower, upper );
-
-    Metrics metrics;
-    using Status = Utils::Status;
-    switch ( result.status )
-    {
-      case Status::unknown: metrics.status = "UNKNOWN"; break;
-      case Status::converged: metrics.status = "CONVERGED"; break;
-      case Status::max_iterations: metrics.status = "ITER LIMIT"; break;
-      case Status::max_function_evaluations: metrics.status = "EVAL LIMIT"; break;
-      case Status::no_progress: metrics.status = "NO PROGRESS"; break;
-      case Status::non_finite_objective: metrics.status = "NONFINITE F"; break;
-      case Status::non_finite_gradient: metrics.status = "NONFINITE G"; break;
-      case Status::non_finite_hessian: metrics.status = "NONFINITE H"; break;
-      case Status::eigensolver_failure: metrics.status = "EIGEN FAIL"; break;
-      case Status::user: metrics.status = "USER STOP"; break;
-    }
-    metrics.iterations               = static_cast<std::size_t>( result.iterations );
-    metrics.function_evaluations     = static_cast<std::size_t>( result.function_evaluations );
-    metrics.gradient_evaluations     = static_cast<std::size_t>( result.gradient_evaluations );
-    metrics.second_order_evaluations = static_cast<std::size_t>( result.hessian_evaluations );
-    metrics.objective                = result.objective;
-    metrics.projected_gradient_norm  = result.projected_gradient_norm;
-    metrics.x                        = result.x;
-
-    using Status = Utils::Status;
-    if ( result.status == Status::converged )
-      metrics.outcome = Outcome::converged;
-    else if (
-      result.status == Status::max_iterations || result.status == Status::max_function_evaluations ||
-      result.status == Status::no_progress )
-      metrics.outcome = Outcome::stopped;
-    return metrics;
+    NDProblemAdapter problem( p ); Utils::Options<Scalar> options;
+    options.max_iterations = MAX_ITERATIONS; options.max_function_evaluations = MAX_ITERATIONS + 1; options.set_tolerances( 1e-12 );
+    Solver solver( x0.size(), options ); auto const r = solver.solve( problem, x0, l, u );
+    Metrics m; m.status = std::string( Utils::to_string( r.status ) ); m.iterations = r.iterations;
+    m.function_evaluations = r.function_evaluations; m.gradient_evaluations = r.gradient_evaluations;
+    m.second_order_evaluations = r.hessian_evaluations; m.objective = r.objective;
+    m.projected_gradient_norm = r.projected_gradient_norm; m.x = r.x;
+    if ( r.status == Utils::Status::converged ) m.outcome = Outcome::converged;
+    else if ( r.status == Utils::Status::max_iterations || r.status == Utils::Status::max_function_evaluations ||
+              r.status == Utils::Status::no_progress ) m.outcome = Outcome::stopped;
+    return m;
   }
 
-  void print_rule( std::string_view fill = "─" )
+  Metrics run_smalltron( std::shared_ptr<NDbase<Scalar>> const & p, Vector const & x0, Vector const & l, Vector const & u )
   {
-    for ( int i = 0; i < 202; ++i ) fmt::print( "{}", fill );
-    fmt::print( "\n" );
+    NDProblemAdapter problem( p ); Utils::SmallTRON_details::Options<Scalar> options;
+    options.max_iter = MAX_ITERATIONS; options.max_eval = MAX_ITERATIONS + 1; options.set_tolerances( 1e-12 );
+    Utils::Minimize_BBOX_SmallTRON<Scalar> solver( x0.size(), options ); auto const r = solver.solve( problem, x0, l, u );
+    Metrics m; m.status = std::string( Utils::SmallTRON_details::to_string( r.status ) ); m.iterations = r.iter;
+    m.function_evaluations = r.obj_evals; m.gradient_evaluations = r.grad_evals; m.second_order_evaluations = r.hess_evals;
+    m.objective = r.objective; m.projected_gradient_norm = r.dual_feas; m.x = r.x;
+    using Status = Utils::SmallTRON_details::Status;
+    if ( r.status == Status::first_order ) m.outcome = Outcome::converged;
+    else if ( r.status == Status::max_iter || r.status == Status::max_eval || r.status == Status::small_step ) m.outcome = Outcome::stopped;
+    return m;
   }
 
-  void print_header()
+  Metrics run_tron( std::shared_ptr<NDbase<Scalar>> const & p, Vector const & x0, Vector const & l, Vector const & u )
   {
-    print_rule();
-    fmt::print(
-      fmt::emphasis::bold,
-      "{:<{}} {:>4} │ {:^{}} {:>5} {:>5} {:>7} {:>10} {:>9} │ {:^{}} "
-      "{:>5} {:>5} {:>7} {:>10} {:>9} │ {:^{}} {:>5} {:>5} {:>7} "
-      "{:>10} {:>9}\n",
-      "Problem",
-      NAME_WIDTH,
-      "Dim",
-      "SmallTRON",
-      STATUS_WIDTH,
-      "Iter",
-      "F",
-      "H",
-      "f(x)",
-      "ǁPgradǁ",
-      "TRON",
-      STATUS_WIDTH,
-      "Iter",
-      "F",
-      "Hv",
-      "f(x)",
-      "ǁPgradǁ",
-      "BBOX Newton",
-      STATUS_WIDTH,
-      "Iter",
-      "F",
-      "H",
-      "f(x)",
-      "ǁPgradǁ" );
-    print_rule();
+    NDProblemAdapter problem( p ); Utils::TRON2_details::Options<Scalar> options;
+    options.max_iterations = MAX_ITERATIONS; options.max_function_evaluations = MAX_ITERATIONS + 1;
+    options.absolute_tolerance = options.relative_tolerance = 1e-12; options.cg_tolerance = 1e-6;
+    Utils::Minimize_BBOX_TRON<Scalar> solver( x0.size(), options );
+    auto const r = solver.solve( x0, l, u,
+      [&]( Vector const & x ) { return problem.objective( x ); },
+      [&]( Vector const & x, Vector & g ) { problem.gradient( x, g ); },
+      [&]( Vector const & x, Vector const & v, Vector & Hv ) { problem.hprod( x, v, Hv ); } );
+    Metrics m; m.status = std::string( Utils::TRON2_details::to_string( r.status ) ); m.iterations = r.iterations;
+    m.function_evaluations = r.function_evaluations; m.gradient_evaluations = r.gradient_evaluations;
+    m.second_order_evaluations = r.hessian_vector_evaluations; m.objective = r.objective;
+    m.projected_gradient_norm = r.projected_gradient_norm; m.x = r.x;
+    using Status = Utils::TRON2_details::Status;
+    if ( r.status == Status::converged ) m.outcome = Outcome::converged;
+    else if ( r.status == Status::max_iterations || r.status == Status::max_function_evaluations || r.status == Status::small_step ) m.outcome = Outcome::stopped;
+    return m;
   }
 
-  void print_status( Metrics const & metrics )
+  Metrics run_legacy_newton( std::shared_ptr<NDbase<Scalar>> const & p, Vector const & x0, Vector const & l, Vector const & u )
   {
-    std::string_view label = metrics.status;
-    if ( label.size() > static_cast<std::size_t>( STATUS_WIDTH ) ) label = label.substr( 0, STATUS_WIDTH );
-    fmt::print( outcome_style( metrics.outcome ), "{:<{}}", label, STATUS_WIDTH );
+    NDProblemAdapter problem( p ); using Solver = Utils::Newton_minimizer<Scalar>;
+    Solver::Options options; options.max_iter = MAX_ITERATIONS; options.g_tol = 1e-12; options.verbosity = 0;
+    Solver solver( options ); solver.set_bounds( l, u );
+    Solver::Callback callback = [&]( Vector const & x, Vector * g, Matrix * H ) -> Scalar
+    { if ( g ) problem.gradient( x, *g ); if ( H ) problem.hessian( x, *H ); return problem.objective( x ); };
+    solver.minimize( x0, callback ); Metrics m; m.status = Solver::to_string( solver.status() );
+    m.iterations = solver.iterations(); m.function_evaluations = solver.function_evals();
+    m.second_order_evaluations = solver.hessian_evals(); m.objective = solver.final_f();
+    m.projected_gradient_norm = solver.final_grad_norm(); m.x = solver.solution();
+    if ( solver.status() == Solver::Status::CONVERGED ) m.outcome = Outcome::converged;
+    else if ( solver.status() == Solver::Status::MAX_ITERATIONS || solver.status() == Solver::Status::STALLED ||
+              solver.status() == Solver::Status::LINE_SEARCH_FAILED ) m.outcome = Outcome::stopped;
+    return m;
   }
 
-  void print_comparison( Comparison const & comparison )
+  void print_rule( std::string_view fill = "─" ) { for ( int i = 0; i < TABLE_WIDTH; ++i ) fmt::print( "{}", fill ); fmt::print( "\n" ); }
+
+  void print_metrics( Metrics const & m )
   {
-    fmt::print( "{:<{}} {:>4} │ ", comparison.name, NAME_WIDTH, comparison.dimension );
-    print_status( comparison.tron );
-    fmt::print(
-      " {:>5} {:>5} {:>7} {:>10.2e} {:>9.2e} │ ",
-      comparison.tron.iterations,
-      comparison.tron.function_evaluations,
-      comparison.tron.second_order_evaluations,
-      comparison.tron.objective,
-      comparison.tron.projected_gradient_norm );
-    print_status( comparison.tron2 );
-    fmt::print(
-      " {:>5} {:>5} {:>7} {:>10.2e} {:>9.2e} │ ",
-      comparison.tron2.iterations,
-      comparison.tron2.function_evaluations,
-      comparison.tron2.second_order_evaluations,
-      comparison.tron2.objective,
-      comparison.tron2.projected_gradient_norm );
-    print_status( comparison.newton );
-    fmt::print(
-      " {:>5} {:>5} {:>7} {:>10.2e} {:>9.2e}\n",
-      comparison.newton.iterations,
-      comparison.newton.function_evaluations,
-      comparison.newton.second_order_evaluations,
-      comparison.newton.objective,
-      comparison.newton.projected_gradient_norm );
+    std::string_view status = m.status; if ( status.size() > STATUS_WIDTH ) status = status.substr( 0, STATUS_WIDTH );
+    fmt::print( "  {:<{}} │ ", m.solver, SOLVER_WIDTH ); fmt::print( outcome_style( m.outcome ), "{:<{}}", status, STATUS_WIDTH );
+    fmt::print( " {:>6} {:>7} {:>7} {:>7} {:>14.6e} {:>12.3e}\n", m.iterations, m.function_evaluations,
+                m.gradient_evaluations, m.second_order_evaluations, m.objective, m.projected_gradient_norm );
+    if ( !m.message.empty() ) fmt::print( fmt::fg( fmt::color::red ), "      {}\n", m.message );
   }
 
-  struct Totals
+  void print_comparison( Comparison const & c )
   {
-    std::size_t converged{ 0 };
-    std::size_t stopped{ 0 };
-    std::size_t failed{ 0 };
-    std::size_t iterations{ 0 };
-    std::size_t function_evaluations{ 0 };
-    std::size_t gradient_evaluations{ 0 };
-    std::size_t second_order_evaluations{ 0 };
-  };
-
-  void accumulate( Totals & totals, Metrics const & metrics )
-  {
-    switch ( metrics.outcome )
-    {
-      case Outcome::converged: ++totals.converged; break;
-      case Outcome::stopped: ++totals.stopped; break;
-      case Outcome::failed: ++totals.failed; break;
-    }
-    totals.iterations += metrics.iterations;
-    totals.function_evaluations += metrics.function_evaluations;
-    totals.gradient_evaluations += metrics.gradient_evaluations;
-    totals.second_order_evaluations += metrics.second_order_evaluations;
+    print_rule( "═" ); fmt::print( fmt::emphasis::bold | fmt::fg( fmt::color::cyan ), "TEST: {}  [dimensione {}]\n", c.name, c.dimension );
+    print_rule(); fmt::print( fmt::emphasis::bold, "  {:<{}} │ {:<{}} {:>6} {:>7} {:>7} {:>7} {:>14} {:>12}\n",
+      "Solver", SOLVER_WIDTH, "Status", STATUS_WIDTH, "Iter", "F", "G", "H/Hv", "f(x)", "ǁPgradǁ" ); print_rule();
+    for ( auto const & m : c.results ) print_metrics( m );
   }
 
-  void print_totals( std::string_view name, std::string_view second_order_label, Totals const & totals )
-  {
-    fmt::print( fmt::emphasis::bold | fmt::fg( fmt::color::cyan ), "  {:<10}", name );
-    fmt::print( outcome_style( Outcome::converged ), "{:>2} converged", totals.converged );
-    fmt::print( ", " );
-    fmt::print( outcome_style( Outcome::stopped ), "{:>2} stopped", totals.stopped );
-    fmt::print( ", " );
-    fmt::print( outcome_style( Outcome::failed ), "{:>2} failed", totals.failed );
-    fmt::print(
-      "; {:>5} iter, {:>5} f, {:>5} g, {:>7} {}\n",
-      totals.iterations,
-      totals.function_evaluations,
-      totals.gradient_evaluations,
-      totals.second_order_evaluations,
-      second_order_label );
-  }
-
+  struct Totals { std::string solver; std::size_t converged{}, stopped{}, failed{}, iterations{}, f{}, g{}, h{}, best{}; };
   void print_summary( std::size_t skipped )
   {
-    Totals      tron_totals;
-    Totals      tron2_totals;
-    Totals      newton_totals;
-    std::size_t same_outcome{ 0 };
-    std::size_t tron_best{ 0 };
-    std::size_t tron2_best{ 0 };
-    std::size_t newton_best{ 0 };
-
-    for ( auto const & comparison : comparisons )
+    std::array<Totals, 6> totals; if ( !comparisons.empty() ) for ( int i = 0; i < 6; ++i ) totals[i].solver = comparisons.front().results[i].solver;
+    for ( auto const & c : comparisons )
     {
-      accumulate( tron_totals, comparison.tron );
-      accumulate( tron2_totals, comparison.tron2 );
-      accumulate( newton_totals, comparison.newton );
-      if ( comparison.tron.outcome == comparison.tron2.outcome && comparison.tron.outcome == comparison.newton.outcome )
-        ++same_outcome;
-
-      Scalar const scale = std::max(
-        { Scalar( 1 ),
-          std::abs( comparison.tron.objective ),
-          std::abs( comparison.tron2.objective ),
-          std::abs( comparison.newton.objective ) } );
-      Scalar const tol  = 1e-10 * scale;
-      Scalar const best = std::min(
-        { comparison.tron.objective, comparison.tron2.objective, comparison.newton.objective } );
-      if ( comparison.tron.objective <= best + tol ) ++tron_best;
-      if ( comparison.tron2.objective <= best + tol ) ++tron2_best;
-      if ( comparison.newton.objective <= best + tol ) ++newton_best;
+      Scalar best = std::numeric_limits<Scalar>::infinity(); for ( auto const & m : c.results ) if ( std::isfinite( m.objective ) ) best = std::min( best, m.objective );
+      Scalar tol = 1e-10 * std::max( Scalar( 1 ), std::abs( best ) );
+      for ( int i = 0; i < 6; ++i ) { auto const & m = c.results[i]; auto & t = totals[i];
+        if ( m.outcome == Outcome::converged ) ++t.converged; else if ( m.outcome == Outcome::stopped ) ++t.stopped; else ++t.failed;
+        t.iterations += m.iterations; t.f += m.function_evaluations; t.g += m.gradient_evaluations; t.h += m.second_order_evaluations;
+        if ( std::isfinite( m.objective ) && m.objective <= best + tol ) ++t.best; }
     }
-
-    print_rule( "═" );
-    fmt::print( fmt::emphasis::bold | fmt::fg( fmt::color::cyan ), "SmallTRON vs TRON vs BBOX Newton SUMMARY\n" );
-    fmt::print(
-      "  Problems: {} compared, {} skipped; same outcome class for all "
-      "three: {}/{}\n",
-      comparisons.size(),
-      skipped,
-      same_outcome,
-      comparisons.size() );
-    print_totals( "SmallTRON", "H", tron_totals );
-    print_totals( "TRON", "Hv", tron2_totals );
-    print_totals( "Newton", "H", newton_totals );
-    fmt::print(
-      "  Best objective (ties included): SmallTRON {}, TRON {}, BBOX "
-      "Newton {}\n",
-      tron_best,
-      tron2_best,
-      newton_best );
-    fmt::print( "  Limit:     {} outer iterations per problem\n", MAX_ITERATIONS );
-    print_rule( "═" );
+    print_rule( "═" ); fmt::print( fmt::emphasis::bold | fmt::fg( fmt::color::cyan ), "RIEPILOGO DEI SEI SOLVER\n" );
+    fmt::print( "Problemi confrontati: {}; saltati: {}; limite iterazioni: {}\n", comparisons.size(), skipped, MAX_ITERATIONS ); print_rule();
+    fmt::print( fmt::emphasis::bold, "  {:<{}} {:>6} {:>6} {:>6} {:>8} {:>9} {:>9} {:>10} {:>6}\n",
+      "Solver", SOLVER_WIDTH, "Conv", "Stop", "Fail", "Iter", "F", "G", "H/Hv", "Best" );
+    for ( auto const & t : totals ) fmt::print( "  {:<{}} {:>6} {:>6} {:>6} {:>8} {:>9} {:>9} {:>10} {:>6}\n",
+      t.solver, SOLVER_WIDTH, t.converged, t.stopped, t.failed, t.iterations, t.f, t.g, t.h, t.best ); print_rule( "═" );
   }
-
-}  // namespace
+}
 
 int main()
 {
-  fmt::print( "\n" );
-  print_rule( "═" );
-  fmt::print(
-    fmt::emphasis::bold | fmt::fg( fmt::color::cyan ),
-    "SmallTRON vs TRON vs BBOX Newton — SAME ND_func PROBLEMS AND "
-    "SOLVER BUDGETS ({})\n",
-    NL_list.size() );
-  fmt::print( "Maximum iterations per problem: {}\n", MAX_ITERATIONS );
-  print_header();
-
-  std::size_t skipped{ 0 };
+  fmt::print( "\n" ); print_rule( "═" );
+  fmt::print( fmt::emphasis::bold | fmt::fg( fmt::color::cyan ), "CONFRONTO VERTICALE DEI SOLVER BBOX — {} PROBLEMI ND_func\n", NL_list.size() );
+  fmt::print( "Ogni test è seguito da sei righe, una per solver.\n" );
+  std::size_t skipped{};
   for ( auto const & [problem, name] : NL_list )
   {
-    if ( name == "Katsuura10D" || name == "MichalewiczN10D" )
-    {
-      ++skipped;
-      continue;
-    }
-
-    Vector const lower = problem->lower();
-    Vector const upper = problem->upper();
-    Vector const x0    = problem->init();
-
-    Comparison comparison;
-    comparison.name      = name;
-    comparison.dimension = static_cast<int>( x0.size() );
-    comparison.tron      = run_tron( problem, x0, lower, upper );
-    comparison.tron2     = run_tron2( problem, x0, lower, upper );
-    comparison.newton    = run_newton( problem, x0, lower, upper );
-    comparisons.emplace_back( std::move( comparison ) );
-    print_comparison( comparisons.back() );
+    if ( name == "Katsuura10D" || name == "MichalewiczN10D" ) { ++skipped; continue; }
+    Eigen::VectorXd const lower = problem->lower(), upper = problem->upper(), x0 = problem->init();
+    Comparison c; c.name = name; c.dimension = x0.size();
+    c.results = {
+      guarded_run( "minimize_BBOX_IPNewton", [&] { return run_ipnewton( problem, x0, lower, upper ); } ),
+      guarded_run( "Minimize_BBOX_Newton", [&] { return run_newton_family<Utils::Minimize_BBOX_Newton<Scalar>>( problem, x0, lower, upper ); } ),
+      guarded_run( "Minimize_BBOX_NewtonCubic", [&] { return run_newton_family<Utils::Minimize_BBOX_NewtonCubic<Scalar>>( problem, x0, lower, upper ); } ),
+      guarded_run( "Minimize_BBOX_SmallTRON", [&] { return run_smalltron( problem, x0, lower, upper ); } ),
+      guarded_run( "Minimize_BBOX_TRON", [&] { return run_tron( problem, x0, lower, upper ); } ),
+      guarded_run( "Newton_minimizer", [&] { return run_legacy_newton( problem, x0, lower, upper ); } ) };
+    comparisons.emplace_back( std::move( c ) ); print_comparison( comparisons.back() );
   }
-
-  print_summary( skipped );
-
-  bool const fatal_failure = std::any_of(
-    comparisons.begin(),
-    comparisons.end(),
-    []( Comparison const & comparison )
-    {
-      return comparison.tron.outcome == Outcome::failed || comparison.tron2.outcome == Outcome::failed ||
-             comparison.newton.outcome == Outcome::failed || !std::isfinite( comparison.tron.objective ) ||
-             !std::isfinite( comparison.tron2.objective ) || !std::isfinite( comparison.newton.objective );
-    } );
-  return fatal_failure ? 1 : 0;
+  print_summary( skipped ); return comparisons.empty() ? 1 : 0;
 }

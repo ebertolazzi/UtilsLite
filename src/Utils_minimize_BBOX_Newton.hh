@@ -9,7 +9,7 @@
 \*--------------------------------------------------------------------------*/
 
 /**
- * @file Utils_minimize_BBOX_Newton_TRON_v3_doxygen.hh
+ * @file Utils_minimize_BBOX_Newton.hh
  * @brief Dense box-constrained Newton solver with cubic regularization,
  *        semismooth projected Newton steps, TRON-inspired safeguards, and
  *        terminal high-accuracy polishing.
@@ -430,7 +430,7 @@
 #error "Utils::Minimize_BBOX_Newton requires Eigen 5 or newer"
 #endif
 
-namespace Utils
+namespace Utils::Minimize_BBOX_Newton_details
 {
 
   template <typename Real> using Vector         = Eigen::Matrix<Real, Eigen::Dynamic, 1>;
@@ -693,13 +693,13 @@ namespace Utils
    * allocations after resize().  The algorithm itself is described in the
    * file-level documentation above.
    */
-  template <typename Real = double> class Minimize_BBOX_Newton
+  template <typename Real = double> class Solver
   {
   public:
     using Vec = Vector<Real>;
     using Mat = Matrix<Real>;
 
-    explicit Minimize_BBOX_Newton( Eigen::Index dimension = 0, Options<Real> options = {} ) : m_options( options )
+    explicit Solver( Eigen::Index dimension = 0, Options<Real> options = {} ) : m_options( options )
     { resize( dimension ); }
 
     [[nodiscard]] Options<Real> &       options() noexcept { return m_options; }
@@ -948,11 +948,32 @@ namespace Utils
           Real const norm = direction.norm();
           if ( !( norm > Real( 0 ) ) ) return;
           direction /= norm;
-          Real const curvature = direction.dot( m_reduced_H * direction );
-          if ( curvature < best_curvature )
+
+          // Refine the projected seed on the unit critical cone.  Projected
+          // eigenvectors alone need not expose negative curvature when weakly
+          // active one-sided variables clip some of their components.
+          Real const rayleigh_step = Real( 0.25 ) / hscale;
+          for ( int refinement = 0; refinement < 16; ++refinement )
           {
-            best_curvature = curvature;
-            best_direction = direction;
+            Vec const  Hd        = m_reduced_H * direction;
+            Real const curvature = direction.dot( Hd );
+            if ( curvature < best_curvature )
+            {
+              best_curvature = curvature;
+              best_direction = direction;
+            }
+
+            Vec candidate = direction - rayleigh_step * ( Hd - curvature * direction );
+            for ( Eigen::Index k = 0; k < nc; ++k )
+            {
+              if ( cone_sign[static_cast<std::size_t>( k )] > 0 ) candidate[k] = std::max( candidate[k], Real( 0 ) );
+              if ( cone_sign[static_cast<std::size_t>( k )] < 0 ) candidate[k] = std::min( candidate[k], Real( 0 ) );
+            }
+            Real const candidate_norm = candidate.norm();
+            if ( !( candidate_norm > Real( 0 ) ) ) break;
+            candidate /= candidate_norm;
+            if ( ( candidate - direction ).norm() <= Real( 32 ) * eps ) break;
+            direction.swap( candidate );
           }
         };
 
@@ -1075,7 +1096,11 @@ namespace Utils
         // unnecessarily conservative.
         Real const M_min = std::max( Real( 32 ) * eps, options.hessian_lipschitz_min );
         Real const M_max = std::max( M_min, options.hessian_lipschitz_max );
-        H_estimate       = std::clamp( std::max( M_min, options.regularization_decrease * H_previous ), M_min, M_max );
+        
+        // More aggressive reduction of H_estimate after successful step
+        // Use geometric mean to prevent oscillation
+        Real const H_candidate = std::max( M_min, options.regularization_decrease * H_previous );
+        H_estimate = std::clamp( H_candidate, M_min, M_max );
 
         // x is fixed through the whole backtracking loop.
         evaluate_hessian( problem, m_x, m_H );
@@ -1218,6 +1243,7 @@ namespace Utils
                   projected_norm_inf   = m_projected_gradient.template lpNorm<Eigen::Infinity>();
                   last_step_norm       = m_step.norm();
                   lambda               = Real( 0 );
+                  
                   if ( ratio >= options.ratio_increase_threshold )
                     H_estimate = std::max( M_min, options.ratio_good_M_factor * H_estimate );
                   else if ( ratio < options.ratio_decrease_threshold )
@@ -1379,6 +1405,7 @@ namespace Utils
             projected_norm       = np1;
             projected_norm_inf   = m_projected_gradient.template lpNorm<Eigen::Infinity>();
             last_step_norm       = rp;
+            
             if ( agreement_ratio >= options.ratio_increase_threshold )
               H_estimate = std::max( M_min, options.ratio_good_M_factor * H_estimate );
             else if ( agreement_ratio < options.ratio_decrease_threshold )
@@ -1812,14 +1839,84 @@ namespace Utils
     int m_polish_backtracks           = 0;
   };
 
+}  // namespace Utils::Minimize_BBOX_Newton_details
+
+namespace Utils
+{
+  // Compatibility names.  Their definitions live in the solver-specific
+  // details namespace, avoiding duplicate support types across BBOX solvers.
+  template <typename Real> using Vector = Minimize_BBOX_Newton_details::Vector<Real>;
+  template <typename Real> using Matrix = Minimize_BBOX_Newton_details::Matrix<Real>;
+  template <typename Real> using ConstVectorRef = Minimize_BBOX_Newton_details::ConstVectorRef<Real>;
+  template <typename Real> using VectorRef = Minimize_BBOX_Newton_details::VectorRef<Real>;
+  template <typename Real> using MatrixRef = Minimize_BBOX_Newton_details::MatrixRef<Real>;
+  template <typename Problem, typename Real>
+  concept ProblemFor = Minimize_BBOX_Newton_details::ProblemFor<Problem, Real>;
+  template <typename Real = double> using Options = Minimize_BBOX_Newton_details::Options<Real>;
+  template <typename Real = double> using Result = Minimize_BBOX_Newton_details::Result<Real>;
+  using Status = Minimize_BBOX_Newton_details::Status;
+  using Minimize_BBOX_Newton_details::make_problem;
+  using Minimize_BBOX_Newton_details::to_string;
+
+  template <typename Real = double>
+  class Minimize_BBOX_Newton : public Minimize_BBOX_Newton_details::Solver<Real>
+  {
+    using Base = Minimize_BBOX_Newton_details::Solver<Real>;
+
+  public:
+    using Vector  = Minimize_BBOX_Newton_details::Vector<Real>;
+    using Matrix  = Minimize_BBOX_Newton_details::Matrix<Real>;
+    using Options = Minimize_BBOX_Newton_details::Options<Real>;
+    using Result  = Minimize_BBOX_Newton_details::Result<Real>;
+    using Status  = Minimize_BBOX_Newton_details::Status;
+    using Base::Base;
+    using Base::solve;
+    void set_tolerances( Real tol ) { this->options().set_tolerances( tol ); }
+    void set_max_iterations( int n ) { this->options().max_iterations = n; }
+
+    // --- lambda-based convenience overloads (dense Vector / Matrix) ---
+    template <typename Obj, typename Grad, typename Hess>
+    Result solve(
+      Obj &&                         obj,
+      Grad &&                        grad,
+      Hess &&                        hess,
+      Minimize_BBOX_Newton_details::ConstVectorRef<Real> x0,
+      Minimize_BBOX_Newton_details::ConstVectorRef<Real> lower,
+      Minimize_BBOX_Newton_details::ConstVectorRef<Real> upper )
+    {
+      auto prob = Minimize_BBOX_Newton_details::make_problem<Real>(
+        std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) );
+      return Base::solve( prob, x0, lower, upper );
+    }
+
+    template <typename Obj, typename Grad, typename Hess, typename Callback>
+    Result solve(
+      Obj &&                         obj,
+      Grad &&                        grad,
+      Hess &&                        hess,
+      Minimize_BBOX_Newton_details::ConstVectorRef<Real> x0,
+      Minimize_BBOX_Newton_details::ConstVectorRef<Real> lower,
+      Minimize_BBOX_Newton_details::ConstVectorRef<Real> upper,
+      Callback &&                    callback )
+    {
+      auto prob = Minimize_BBOX_Newton_details::make_problem<Real>(
+        std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) );
+      return Base::solve( prob, x0, lower, upper, std::forward<Callback>( callback ) );
+    }
+  };
+
+  template <typename Real>
+  Minimize_BBOX_Newton( Eigen::Index, Minimize_BBOX_Newton_details::Options<Real> )
+    -> Minimize_BBOX_Newton<Real>;
+
   template <typename Real = double, typename Problem>
-    requires ProblemFor<Problem, Real>
-  Result<Real> minimize(
+    requires Minimize_BBOX_Newton_details::ProblemFor<Problem, Real>
+  Minimize_BBOX_Newton_details::Result<Real> minimize(
     Problem &            problem,
-    ConstVectorRef<Real> x0,
-    ConstVectorRef<Real> lower,
-    ConstVectorRef<Real> upper,
-    Options<Real>        options = {} )
+    Minimize_BBOX_Newton_details::ConstVectorRef<Real> x0,
+    Minimize_BBOX_Newton_details::ConstVectorRef<Real> lower,
+    Minimize_BBOX_Newton_details::ConstVectorRef<Real> upper,
+    Minimize_BBOX_Newton_details::Options<Real>        options = {} )
   {
     Minimize_BBOX_Newton<Real> solver( x0.size(), options );
     return solver.solve( problem, x0, lower, upper );

@@ -184,7 +184,7 @@ namespace
       } );
     Utils::SmallTRON::Options<Scalar> strict_options;
     strict_options.set_tolerances( 1e-12 );
-    Utils::SmallTRON::Solver<Scalar> mapped_solver( 2, strict_options );
+    Utils::Minimize_BBOX_SmallTRON<Scalar> mapped_solver( 2, strict_options );
     auto const mapped_result = mapped_solver.solve( mapped_problem, x0_map, lower_map, upper_map );
     check( mapped_result.status == Status::first_order );
     check( mapped_result.x.norm() <= 1e-12 );
@@ -212,7 +212,7 @@ namespace
         H( 0, 0 ) = Scalar( 1 );
         H( 1, 1 ) = Scalar( 3 );
       } );
-    Utils::SmallTRON::Solver<Scalar> offset_solver( 2, strict_options );
+    Utils::Minimize_BBOX_SmallTRON<Scalar> offset_solver( 2, strict_options );
     auto const offset_result = offset_solver.solve( offset_problem, x0_map, lower_map, upper_map );
     Vector     offset_exact( 2 );
     offset_exact << Scalar( 0.25 ), Scalar( -0.75 );
@@ -232,7 +232,7 @@ namespace
       []( ConstVectorRef x ) { return Scalar( 0.5 ) * ( x[0] - Scalar( 2 ) ) * ( x[0] - Scalar( 2 ) ); },
       []( ConstVectorRef x, VectorRef g ) { g[0] = x[0] - Scalar( 2 ); },
       []( ConstVectorRef, MatrixRef H ) { H.setConstant( Scalar( 1 ) ); } );
-    Utils::SmallTRON::Solver<Scalar> boundary_solver( 1, strict_options );
+    Utils::Minimize_BBOX_SmallTRON<Scalar> boundary_solver( 1, strict_options );
     auto const boundary_result = boundary_solver.solve( boundary_problem, one_x0, one_lower, one_upper );
     check( boundary_result.status == Status::first_order );
     check( std::abs( boundary_result.x[0] - Scalar( 1 ) ) <= 1e-12 );
@@ -248,7 +248,7 @@ namespace
       []( ConstVectorRef x ) { return -Scalar( 0.5 ) * x[0] * x[0]; },
       []( ConstVectorRef x, VectorRef g ) { g[0] = -x[0]; },
       []( ConstVectorRef, MatrixRef H ) { H.setConstant( Scalar( -1 ) ); } );
-    Utils::SmallTRON::Solver<Scalar> saddle_solver( 1, strict_options );
+    Utils::Minimize_BBOX_SmallTRON<Scalar> saddle_solver( 1, strict_options );
     auto const saddle_result = saddle_solver.solve( saddle_problem, one_x0, one_lower, one_upper );
     check( saddle_result.status == Status::first_order );
     check( std::abs( std::abs( saddle_result.x[0] ) - Scalar( 1 ) ) <= 1e-12 );
@@ -260,7 +260,7 @@ namespace
     one_x0[0]    = 0;
     one_lower[0] = 0;
     one_upper[0] = 1;
-    Utils::SmallTRON::Solver<Scalar> weak_boundary_solver( 1, strict_options );
+    Utils::Minimize_BBOX_SmallTRON<Scalar> weak_boundary_solver( 1, strict_options );
     auto const weak_boundary_result = weak_boundary_solver.solve( saddle_problem, one_x0, one_lower, one_upper );
     check( weak_boundary_result.status == Status::first_order );
     check(
@@ -295,7 +295,7 @@ namespace
       [&]( ConstVectorRef x ) { return ( *problem )( x ); },
       [&]( ConstVectorRef x, VectorRef g ) { g = problem->gradient( x ); },
       hessian );
-    Utils::SmallTRON::Solver<Scalar> solver( x0.size(), options );
+    Utils::Minimize_BBOX_SmallTRON<Scalar> solver( x0.size(), options );
 
     auto const tron_result = solver.solve( tron_problem, x0, lower, upper );
 

@@ -130,7 +130,7 @@ namespace Utils
       Vector const & x,
       Vector const & p,
       Vector *       grad_x,
-      SparseMatrix * hess_xx,
+      Matrix * hess_xx,
       Matrix *       grad_xp  // ∂²f/∂x_i∂p_j
       )>;
 
@@ -223,7 +223,7 @@ namespace Utils
     /**
      * @brief Extract submatrix for free variables
      */
-    Matrix extract_free_submatrix( SparseMatrix const & A, std::vector<size_t> const & free_indices ) const
+    Matrix extract_free_submatrix( Matrix const & A, std::vector<size_t> const & free_indices ) const
     {
       Eigen::Index n_free = static_cast<Eigen::Index>( free_indices.size() );
       Matrix       A_free( n_free, n_free );
@@ -308,7 +308,7 @@ namespace Utils
      * For constrained problems, only solve for free variables.
      * Active variables remain at bounds: dx_active/dp = 0
      */
-    bool solve_sensitivity_system( SparseMatrix const & hess_xx, Matrix const & grad_xp, ActiveSet const & active_set )
+    bool solve_sensitivity_system( Matrix const & hess_xx, Matrix const & grad_xp, ActiveSet const & active_set )
     {
       m_active_set = active_set;
       m_success    = false;
@@ -507,33 +507,16 @@ namespace Utils
 
       // Evaluate at optimal point
       Vector       grad_x( n_x );
-      SparseMatrix hess_xx( n_x, n_x );
+      Matrix hess_xx( n_x, n_x );
       Matrix       grad_xp( n_x, n_p );
 
       Scalar f_opt = callback( x_opt, p, &grad_x, &hess_xx, &grad_xp );
       (void) f_opt;  // Suppress unused variable warning
 
-      // Add regularization to Hessian if specified
+      // Add regularization to Hessian if specified (dense, no Triplet)
       if ( m_opts.account_for_regularization && m_opts.regularization_epsilon > 0 )
       {
-        std::vector<Eigen::Triplet<Scalar>> reg_triplets;
-
-        // Extract existing triplets
-        for ( Eigen::Index k = 0; k < hess_xx.outerSize(); ++k )
-        {
-          for ( typename SparseMatrix::InnerIterator it( hess_xx, k ); it; ++it )
-          {
-            reg_triplets.emplace_back( it.row(), it.col(), it.value() );
-          }
-        }
-
-        // Add 2ε to diagonal
-        for ( Eigen::Index i = 0; i < n_x; ++i )
-        {
-          reg_triplets.emplace_back( i, i, 2 * m_opts.regularization_epsilon );
-        }
-
-        hess_xx.setFromTriplets( reg_triplets.begin(), reg_triplets.end() );
+        hess_xx.diagonal().array() += 2 * m_opts.regularization_epsilon;
 
         if ( m_opts.verbosity_level >= 2 )
         {
@@ -733,7 +716,7 @@ namespace Utils
       m_optimization_success = false;
 
       // Create standard callback for optimizer (fixing p)
-      auto fixed_p_callback = [&]( Vector const & x, Vector * grad, SparseMatrix * hess ) -> Scalar
+      auto fixed_p_callback = [&]( Vector const & x, Vector * grad, Matrix * hess ) -> Scalar
       { return parametric_callback( x, m_current_p, grad, hess, nullptr ); };
 
       // Optimize

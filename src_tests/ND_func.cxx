@@ -24,9 +24,6 @@
  |  Updated adaptation with verbose output and final x saving               |
 \*--------------------------------------------------------------------------*/
 
-#include <Eigen/Core>
-#include <Eigen/Sparse>
-#include <Eigen/SparseCore>
 #include <cmath>
 #include <string>
 #include <vector>

@@ -168,15 +168,15 @@ namespace
     options.cg_tolerance             = 1e-6;
     options.max_time_seconds         = 30.0;
 
+    Utils::Minimize_BBOX_TRON<Scalar> solver( x0.size(), options );
     auto const start       = std::chrono::steady_clock::now();
-    auto const tron_result = Utils::TRON2::minimize(
+    auto const tron_result = solver.solve(
       x0,
       lower,
       upper,
       [&]( Vector const & x ) { return ( *problem )( x ); },
       [&]( Vector const & x, Vector & g ) { g = problem->gradient( x ); },
-      hessian_vector,
-      options );
+      hessian_vector );
     double const elapsed = std::chrono::duration<double>( std::chrono::steady_clock::now() - start ).count();
 
     TestResult result;

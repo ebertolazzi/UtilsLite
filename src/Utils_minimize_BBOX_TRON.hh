@@ -52,10 +52,10 @@
 #include <utility>
 
 #if EIGEN_MAJOR_VERSION < 5
-#error "Utils::TRON2 requires Eigen 5 or newer"
+#error "Utils::Minimize_BBOX_TRON requires Eigen 5 or newer"
 #endif
 
-namespace Utils::TRON2
+namespace Utils::TRON2_details
 {
 
   template <std::floating_point Scalar> using Vector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
@@ -120,6 +120,13 @@ namespace Utils::TRON2
     // Zero selects 2*n, matching Krylov.cg!'s default in the Julia version.
     std::size_t max_cg_iterations{ 0 };
     double      max_time_seconds{ 30.0 };
+
+    // Unified setters (same name across all BBOX solvers)
+    void set_tolerances( Scalar tol )
+    {
+      absolute_tolerance = relative_tolerance = tol;
+    }
+    void set_max_iterations( std::size_t n ) { max_iterations = n; }
   };
 
   template <std::floating_point Scalar> struct Result
@@ -831,6 +838,137 @@ namespace Utils::TRON2
     return finish( Status::max_iterations );
   }
 
-}  // namespace Utils::TRON2
+}  // namespace Utils::TRON2_details
+
+namespace Utils
+{
+  namespace TRON2 = TRON2_details; // source compatibility
+
+  /** Matrix-free bound-constrained TRON solver.
+   *
+   * The class owns configuration and the expected problem dimension; the
+   * numerical kernel and result types remain in Utils::TRON2_details.
+   */
+  template <std::floating_point Scalar = double> class Minimize_BBOX_TRON
+  {
+  public:
+    using Vector  = TRON2_details::Vector<Scalar>;
+    using Matrix  = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
+    using Options = TRON2_details::Options<Scalar>;
+    using Result  = TRON2_details::Result<Scalar>;
+    using Status  = TRON2_details::Status;
+
+    explicit Minimize_BBOX_TRON( Eigen::Index dimension = 0, Options options = {} )
+      : m_options( options ), m_dimension( dimension )
+    {
+      if ( dimension < 0 ) throw std::invalid_argument( "Minimize_BBOX_TRON: negative dimension" );
+    }
+
+    [[nodiscard]] Options &       options() noexcept { return m_options; }
+    [[nodiscard]] Options const & options() const noexcept { return m_options; }
+
+    void set_tolerances( Scalar tol ) { m_options.set_tolerances( tol ); }
+    void set_max_iterations( std::size_t n ) { m_options.set_max_iterations( n ); }
+
+    void resize( Eigen::Index dimension )
+    {
+      if ( dimension < 0 ) throw std::invalid_argument( "Minimize_BBOX_TRON: negative dimension" );
+      m_dimension = dimension;
+    }
+
+    [[nodiscard]] Eigen::Index dimension() const noexcept { return m_dimension; }
+
+    template <class Value, class Gradient, class HessianVector>
+    [[nodiscard]] Result solve(
+      Vector const &  x0,
+      Vector const &  lower,
+      Vector const &  upper,
+      Value &&        value,
+      Gradient &&     gradient,
+      HessianVector && hessian_vector ) const
+    {
+      check_dimension( x0.size() );
+      return TRON2_details::minimize(
+        x0,
+        lower,
+        upper,
+        std::forward<Value>( value ),
+        std::forward<Gradient>( gradient ),
+        std::forward<HessianVector>( hessian_vector ),
+        m_options );
+    }
+
+    template <class Value, class Gradient, class HessianVector>
+    [[nodiscard]] Result minimize(
+      Vector const &  x0,
+      Vector const &  lower,
+      Vector const &  upper,
+      Value &&        value,
+      Gradient &&     gradient,
+      HessianVector && hessian_vector ) const
+    {
+      return solve(
+        x0,
+        lower,
+        upper,
+        std::forward<Value>( value ),
+        std::forward<Gradient>( gradient ),
+        std::forward<HessianVector>( hessian_vector ) );
+    }
+
+    // --- unified dense interface: f(x), grad(x,g), hess(x,H) with dense Matrix ---
+    template <typename Obj, typename Grad, typename Hess>
+    [[nodiscard]] Result solve(
+      Obj &&         obj,
+      Grad &&        grad,
+      Hess &&        hess_dense,
+      Vector const & x0,
+      Vector const & lower,
+      Vector const & upper ) const
+    {
+      auto value = [&]( Vector const & x ) -> Scalar { return static_cast<Scalar>( obj( x ) ); };
+      auto gradient = [&]( Vector const & x, Vector & g ) -> void { grad( x, g ); };
+      auto hess_vec = [&]( Vector const & x, Vector const & v, Vector & Hv ) -> void {
+        Matrix H( x.size(), x.size() );
+        hess_dense( x, H );
+        Hv.noalias() = H * v;
+      };
+      return solve( x0, lower, upper, value, gradient, hess_vec );
+    }
+
+    // Problem-based dense interface (expects problem.objective/gradient/hessian with dense Matrix)
+    template <typename Problem>
+      requires requires( Problem & p, Vector const & x, Vector & g, Matrix & H ) {
+        { p.objective( x ) } -> std::convertible_to<Scalar>;
+        p.gradient( x, g );
+        p.hessian( x, H );
+      }
+    [[nodiscard]] Result solve(
+      Problem &      problem,
+      Vector const & x0,
+      Vector const & lower,
+      Vector const & upper ) const
+    {
+      auto value = [&]( Vector const & x ) -> Scalar { return static_cast<Scalar>( problem.objective( x ) ); };
+      auto gradient = [&]( Vector const & x, Vector & g ) -> void { problem.gradient( x, g ); };
+      auto hess_vec = [&]( Vector const & x, Vector const & v, Vector & Hv ) -> void {
+        Matrix H( x.size(), x.size() );
+        problem.hessian( x, H );
+        Hv.noalias() = H * v;
+      };
+      return solve( x0, lower, upper, value, gradient, hess_vec );
+    }
+
+  private:
+    void check_dimension( Eigen::Index dimension ) const
+    {
+      if ( m_dimension != 0 && dimension != m_dimension )
+        throw std::invalid_argument( "Minimize_BBOX_TRON: initial point has the wrong dimension" );
+    }
+
+    Options      m_options{};
+    Eigen::Index m_dimension{ 0 };
+  };
+}
 
 #endif

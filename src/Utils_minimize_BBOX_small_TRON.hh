@@ -63,10 +63,10 @@
 #include <vector>
 
 #if EIGEN_MAJOR_VERSION < 5
-#error "Utils::SmallTRON requires Eigen 5 or newer"
+#error "Utils::Minimize_BBOX_SmallTRON requires Eigen 5 or newer"
 #endif
 
-namespace Utils::SmallTRON
+namespace Utils::SmallTRON_details
 {
 
   /**
@@ -333,6 +333,11 @@ namespace Utils::SmallTRON
       rtol                       = tol;
       projected_newton_tolerance = std::max( Real( 32 ) * eps, tol * Real( 10 ) );
     }
+
+    // Unified setters (same name across all BBOX solvers)
+    void set_max_iterations( int n ) { max_iter = n; }
+    void set_absolute_tolerance( Real t ) { atol = t; }
+    void set_relative_tolerance( Real t ) { rtol = t; }
   };
 
   /**
@@ -559,7 +564,7 @@ namespace Utils::SmallTRON
         const Real asym  = ( hessian - hessian.transpose() ).cwiseAbs().maxCoeff();
         assert(
           asym <= Real( 1024 ) * std::numeric_limits<Real>::epsilon() * scale &&
-          "Utils::SmallTRON::detail::direct_trust_region: hessian is not "
+          "Utils::SmallTRON_details::detail::direct_trust_region: hessian is not "
           "symmetric; "
           "Problem::hessian(x,H) is expected to be symmetrized once by "
           "Solver::eval_hessian." );
@@ -1645,6 +1650,61 @@ namespace Utils::SmallTRON
     return solver.solve( problem, x0 );
   }
 
-}  // namespace Utils::SmallTRON
+}  // namespace Utils::SmallTRON_details
+
+namespace Utils
+{
+  namespace SmallTRON = SmallTRON_details; // source compatibility
+
+  /** Public SmallTRON solver; implementation and support types are isolated
+   *  in Utils::SmallTRON_details. */
+  template <typename Real = double>
+  class Minimize_BBOX_SmallTRON : public SmallTRON_details::Solver<Real>
+  {
+    using Base = SmallTRON_details::Solver<Real>;
+
+  public:
+    using Vector  = SmallTRON_details::Vector<Real>;
+    using Matrix  = SmallTRON_details::Matrix<Real>;
+    using Options = SmallTRON_details::Options<Real>;
+    using Result  = SmallTRON_details::Result<Real>;
+    using Status  = SmallTRON_details::Status;
+    using Base::Base;
+    using Base::solve;
+    void set_tolerances( Real tol ) { this->options().set_tolerances( tol ); }
+    void set_max_iterations( int n ) { this->options().set_max_iterations( n ); }
+
+    // --- lambda-based convenience overloads (dense Vector / Matrix) ---
+    template <typename Obj, typename Grad, typename Hess>
+    Result solve(
+      Obj &&                                      obj,
+      Grad &&                                     grad,
+      Hess &&                                     hess,
+      SmallTRON_details::ConstVectorRef<Real> x0,
+      SmallTRON_details::ConstVectorRef<Real> lower,
+      SmallTRON_details::ConstVectorRef<Real> upper )
+    {
+      auto prob = SmallTRON_details::make_problem<Real>(
+        std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) );
+      return Base::solve( prob, x0, lower, upper );
+    }
+
+    template <typename Obj, typename Grad, typename Hess, typename Callback>
+    Result solve(
+      Obj &&                                      obj,
+      Grad &&                                     grad,
+      Hess &&                                     hess,
+      SmallTRON_details::ConstVectorRef<Real> x0,
+      SmallTRON_details::ConstVectorRef<Real> lower,
+      SmallTRON_details::ConstVectorRef<Real> upper,
+      Callback &&                                 callback )
+    {
+      auto prob = SmallTRON_details::make_problem<Real>(
+        std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) );
+      return Base::solve( prob, x0, lower, upper, std::forward<Callback>( callback ) );
+    }
+  };
+
+} // namespace Utils
 
 #endif  // UTILS_MINIMIZE_BBOX_SMALL_TRON_DOT_HH

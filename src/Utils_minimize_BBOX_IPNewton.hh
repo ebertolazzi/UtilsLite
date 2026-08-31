@@ -18,13 +18,13 @@
 \*--------------------------------------------------------------------------*/
 
 //
-// file: Utils_minimize_IPNewton.hh
+// file: Utils_minimize_BBOX_IPNewton.hh
 //
 
 #pragma once
 
-#ifndef UTILS_IPNEWTON_HH
-#define UTILS_IPNEWTON_HH
+#ifndef UTILS_MINIMIZE_BBOX_IPNEWTON_HH
+#define UTILS_MINIMIZE_BBOX_IPNEWTON_HH
 
 #include "Utils_minimize_BBOX.hh"
 #include "Utils_LBFGS.hh"
@@ -40,13 +40,18 @@ namespace Utils
   // ===========================================================================
   // Interior Point Newton Method for Box Constraints - ROBUST VERSION
   // ===========================================================================
-  template <typename Scalar = double> class IPNewton_minimizer
+  template <typename Scalar = double> class minimize_BBOX_IPNewton
   {
   public:
-    using integer      = Eigen::Index;
-    using Vector       = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
-    using SparseMatrix = Eigen::SparseMatrix<Scalar>;
-    using Callback     = std::function<Scalar( Vector const &, Vector *, SparseMatrix * )>;
+    using integer        = Eigen::Index;
+    using Vector         = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
+    using Matrix         = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
+    using SparseMatrix   = Eigen::SparseMatrix<Scalar>; // kept for compat, not used in new interface
+    using ConstVectorRef = Eigen::Ref<Vector const>;
+    using VectorRef      = Eigen::Ref<Vector>;
+    using ConstMatrixRef = Eigen::Ref<Matrix const>;
+    using MatrixRef      = Eigen::Ref<Matrix>;
+    using Callback       = std::function<Scalar( Vector const &, Vector *, Matrix * )>;
 
     enum class Status
     {
@@ -82,7 +87,7 @@ namespace Utils
       Scalar  tol                  = 1e-6;  // Relaxed tolerance
       Scalar  f_tol                = 1e-10;
       Scalar  x_tol                = 1e-8;
-      Scalar  g_max                = 1e-2;  // Relaxed gradient tolerance
+      Scalar  g_max                = 1e-4;  // Relaxed gradient tolerance
 
       // Barrier parameter
       Scalar mu_init            = 1.0;    // Start with larger mu for stability
@@ -121,12 +126,44 @@ namespace Utils
       bool    enable_recovery       = true;  // Enable recovery from failed subproblems
       Scalar  recovery_factor       = 10.0;  // Factor to increase mu when recovering
       integer max_recovery_attempts = 3;     // Max recovery attempts per barrier failure
+
+      // --- Unified setters (same name across all BBOX solvers) ---
+      void set_tolerances( Scalar t )
+      {
+        tol                  = t;
+        f_tol                = t * Scalar( 1e-4 );
+        x_tol                = t * Scalar( 1e-2 );
+        g_max                = t;
+        epsilon_feas         = t;
+        epsilon_infeas       = t * Scalar( 1e2 );
+      }
+      void set_max_iterations( integer n ) { max_outer_iterations = n; }
+    };
+
+    struct Result
+    {
+      Vector  x;
+      Status  status{ Status::NOT_STARTED };
+      Scalar  objective{ std::numeric_limits<Scalar>::quiet_NaN() };
+      Scalar  projected_gradient_norm{ std::numeric_limits<Scalar>::infinity() };
+      Scalar  primal_feasibility{ std::numeric_limits<Scalar>::infinity() };
+      Scalar  dual_infeasibility{ std::numeric_limits<Scalar>::infinity() };
+      Scalar  duality_gap{ std::numeric_limits<Scalar>::infinity() };
+      Scalar  barrier_parameter{ Scalar( 0 ) };
+      integer iterations{ 0 };
+      integer inner_iterations{ 0 };
+      integer function_evaluations{ 0 };
+      integer hessian_evaluations{ 0 };
+
+      [[nodiscard]] bool solved() const noexcept { return status == Status::CONVERGED; }
     };
 
   private:
     Options m_opts;
+    integer m_dimension{ 0 };
     Vector  m_lower;
     Vector  m_upper;
+    bool    m_bounds_initialized{ false };
     Scalar  m_epsi{ std::numeric_limits<Scalar>::epsilon() };
 
     // Results
@@ -200,7 +237,7 @@ namespace Utils
       {
       }
 
-      Scalar operator()( Vector const & x, Vector * grad, SparseMatrix * hess ) const
+      Scalar operator()( Vector const & x, Vector * grad, Matrix * hess ) const
       {
         integer n = x.size();
         Scalar  f = m_callback( x, grad, hess );
@@ -208,9 +245,16 @@ namespace Utils
         Scalar barrier = 0;
         for ( integer i = 0; i < n; ++i )
         {
-          Scalar s_lower = std::max( m_epsilon_feas, x[i] - m_lower[i] );
-          Scalar s_upper = std::max( m_epsilon_feas, m_upper[i] - x[i] );
-          barrier += -m_mu * ( std::log( s_lower ) + std::log( s_upper ) );
+          if ( std::isfinite( m_lower[i] ) )
+          {
+            Scalar const s_lower = std::max( m_epsilon_feas, x[i] - m_lower[i] );
+            barrier -= m_mu * std::log( s_lower );
+          }
+          if ( std::isfinite( m_upper[i] ) )
+          {
+            Scalar const s_upper = std::max( m_epsilon_feas, m_upper[i] - x[i] );
+            barrier -= m_mu * std::log( s_upper );
+          }
         }
 
         f += barrier;
@@ -219,34 +263,38 @@ namespace Utils
         {
           for ( integer i = 0; i < n; ++i )
           {
-            Scalar s_lower = std::max( m_epsilon_feas, x[i] - m_lower[i] );
-            Scalar s_upper = std::max( m_epsilon_feas, m_upper[i] - x[i] );
-            ( *grad )[i] += -m_mu * ( 1.0 / s_lower - 1.0 / s_upper );
+            if ( std::isfinite( m_lower[i] ) )
+            {
+              Scalar const s_lower = std::max( m_epsilon_feas, x[i] - m_lower[i] );
+              ( *grad )[i] -= m_mu / s_lower;
+            }
+            if ( std::isfinite( m_upper[i] ) )
+            {
+              Scalar const s_upper = std::max( m_epsilon_feas, m_upper[i] - x[i] );
+              ( *grad )[i] += m_mu / s_upper;
+            }
           }
         }
 
         if ( hess )
         {
-          std::vector<Eigen::Triplet<Scalar>> triplets;
-          triplets.reserve( hess->nonZeros() + n );
-
-          for ( int k = 0; k < hess->outerSize(); ++k )
-          {
-            for ( typename SparseMatrix::InnerIterator it( *hess, k ); it; ++it )
-            {
-              triplets.emplace_back( it.row(), it.col(), it.value() );
-            }
-          }
-
+          // hess already contains dense Hessian of original objective (if any)
+          // add barrier diagonal contribution in place, no allocation via triplets
           for ( integer i = 0; i < n; ++i )
           {
-            Scalar s_lower   = std::max( m_epsilon_feas, x[i] - m_lower[i] );
-            Scalar s_upper   = std::max( m_epsilon_feas, m_upper[i] - x[i] );
-            Scalar diag_term = m_mu * ( 1.0 / ( s_lower * s_lower ) + 1.0 / ( s_upper * s_upper ) );
-            triplets.emplace_back( i, i, diag_term );
+            Scalar diag_term = 0;
+            if ( std::isfinite( m_lower[i] ) )
+            {
+              Scalar const s_lower = std::max( m_epsilon_feas, x[i] - m_lower[i] );
+              diag_term += m_mu / ( s_lower * s_lower );
+            }
+            if ( std::isfinite( m_upper[i] ) )
+            {
+              Scalar const s_upper = std::max( m_epsilon_feas, m_upper[i] - x[i] );
+              diag_term += m_mu / ( s_upper * s_upper );
+            }
+            if ( diag_term != Scalar( 0 ) ) ( *hess )( i, i ) += diag_term;
           }
-
-          hess->setFromTriplets( triplets.begin(), triplets.end() );
         }
 
         return f;
@@ -277,15 +325,15 @@ namespace Utils
       KKTResiduals res;
       integer      n = x.size();
 
-      // Gradient norm (most important!)
-      res.gradient_norm = grad.norm();
+      // Stationarity of the Lagrangian: g-lambda_lower+lambda_upper.
+      res.gradient_norm = ( grad - lam_lower + lam_upper ).norm();
 
       // Primal feasibility
       Scalar max_primal_viol = 0;
       for ( integer i = 0; i < n; ++i )
       {
-        max_primal_viol = std::max( max_primal_viol, m_lower[i] - x[i] );
-        max_primal_viol = std::max( max_primal_viol, x[i] - m_upper[i] );
+        if ( std::isfinite( m_lower[i] ) ) max_primal_viol = std::max( max_primal_viol, m_lower[i] - x[i] );
+        if ( std::isfinite( m_upper[i] ) ) max_primal_viol = std::max( max_primal_viol, x[i] - m_upper[i] );
       }
       res.primal_feasibility = std::max( Scalar( 0 ), max_primal_viol );
 
@@ -303,10 +351,10 @@ namespace Utils
       Scalar total_gap = 0;
       for ( integer i = 0; i < n; ++i )
       {
-        Scalar comp_lower = std::abs( lam_lower[i] * ( x[i] - m_lower[i] ) );
-        Scalar comp_upper = std::abs( lam_upper[i] * ( m_upper[i] - x[i] ) );
+        Scalar const comp_lower = std::isfinite( m_lower[i] ) ? std::abs( lam_lower[i] * ( x[i] - m_lower[i] ) ) : 0;
+        Scalar const comp_upper = std::isfinite( m_upper[i] ) ? std::abs( lam_upper[i] * ( m_upper[i] - x[i] ) ) : 0;
         max_comp          = std::max( max_comp, std::max( comp_lower, comp_upper ) );
-        total_gap += lam_lower[i] * ( x[i] - m_lower[i] ) + lam_upper[i] * ( m_upper[i] - x[i] );
+        total_gap += comp_lower + comp_upper;
       }
       res.complementarity = max_comp;
       res.duality_gap     = total_gap;
@@ -327,16 +375,16 @@ namespace Utils
       for ( integer i = 0; i < n; ++i )
       {
         // Per lower bound: λ_lower > 0 solo se x_i ≈ lower_i E grad_i < 0
-        if ( x[i] <= m_lower[i] + m_opts.epsilon_feas )
+        if ( std::isfinite( m_lower[i] ) && x[i] <= m_lower[i] + m_opts.epsilon_feas )
         {
-          lam_lower[i] = std::max( Scalar( 0 ), -grad[i] );
+          lam_lower[i] = std::max( Scalar( 0 ), grad[i] );
           lam_upper[i] = 0;
         }
         // Per upper bound: λ_upper > 0 solo se x_i ≈ upper_i E grad_i > 0
-        else if ( x[i] >= m_upper[i] - m_opts.epsilon_feas )
+        else if ( std::isfinite( m_upper[i] ) && x[i] >= m_upper[i] - m_opts.epsilon_feas )
         {
           lam_lower[i] = 0;
-          lam_upper[i] = std::max( Scalar( 0 ), grad[i] );
+          lam_upper[i] = std::max( Scalar( 0 ), -grad[i] );
         }
         // Variabile libera: moltiplicatori = 0
         else
@@ -355,7 +403,8 @@ namespace Utils
     {
       for ( integer i = 0; i < x.size(); ++i )
       {
-        if ( x[i] <= m_lower[i] + m_epsi || x[i] >= m_upper[i] - m_epsi ) { return false; }
+        if ( std::isfinite( m_lower[i] ) && x[i] <= m_lower[i] + m_epsi ) return false;
+        if ( std::isfinite( m_upper[i] ) && x[i] >= m_upper[i] - m_epsi ) return false;
       }
       return true;
     }
@@ -367,21 +416,32 @@ namespace Utils
 
       for ( integer i = 0; i < x.size(); ++i )
       {
-        Scalar width  = m_upper[i] - m_lower[i];
-        Scalar margin = std::max( Scalar( 1e-3 ), margin_factor * width );
+        bool const finite_lower = std::isfinite( m_lower[i] );
+        bool const finite_upper = std::isfinite( m_upper[i] );
+        Scalar const scale = std::max( Scalar( 1 ), std::abs( x[i] ) );
+        Scalar const margin = finite_lower && finite_upper
+                                ? std::max( Scalar( 1e-3 ), margin_factor * ( m_upper[i] - m_lower[i] ) )
+                                : std::max( Scalar( 1e-3 ), margin_factor * scale );
 
-        if ( x[i] <= m_lower[i] + m_opts.epsilon_feas )
+        if ( finite_lower && x[i] <= m_lower[i] + m_opts.epsilon_feas )
         {
           x[i]     = m_lower[i] + margin;
           modified = true;
         }
-        else if ( x[i] >= m_upper[i] - m_opts.epsilon_feas )
+        else if ( finite_upper && x[i] >= m_upper[i] - m_opts.epsilon_feas )
         {
           x[i]     = m_upper[i] - margin;
           modified = true;
         }
       }
       return modified;
+    }
+
+    [[nodiscard]] bool has_finite_bound() const
+    {
+      for ( integer i = 0; i < m_lower.size(); ++i )
+        if ( std::isfinite( m_lower[i] ) || std::isfinite( m_upper[i] ) ) return true;
+      return false;
     }
 
     void print_header( integer n, Scalar f0 ) const
@@ -444,13 +504,13 @@ namespace Utils
       BarrierEvaluator const & evaluator,
       integer &                inner_iterations ) const
     {
-      Newton_minimizer<Scalar>                   newton_solver;
       typename Newton_minimizer<Scalar>::Options newton_opts;
 
       newton_opts.max_iter  = m_opts.max_inner_iterations;
-      newton_opts.g_tol     = std::max( m_opts.tol * 0.1, mu * 0.1 );  // More conservative
+      newton_opts.g_tol     = has_finite_bound() ? std::max( m_opts.tol * 0.1, mu * 0.1 ) : m_opts.tol;
       newton_opts.f_tol     = m_opts.f_tol * 100.0;
       newton_opts.verbosity = ( m_opts.verbosity > 2 ) ? m_opts.verbosity - 2 : 0;
+      Newton_minimizer<Scalar> newton_solver( newton_opts );
 
       // Set bounds with safe margin
       Vector lower_with_margin = m_lower.array() + m_opts.epsilon_feas;
@@ -458,8 +518,8 @@ namespace Utils
 
       newton_solver.set_bounds( lower_with_margin, upper_with_margin );
 
-      // Create barrier callback
-      auto barrier_callback = [&]( Vector const & x_eval, Vector * grad, SparseMatrix * hess ) -> Scalar
+      // Create barrier callback (dense, no SparseMatrix)
+      auto barrier_callback = [&]( Vector const & x_eval, Vector * grad, Matrix * hess ) -> Scalar
       { return evaluator( x_eval, grad, hess ); };
 
       newton_solver.minimize( x, barrier_callback );
@@ -504,9 +564,9 @@ namespace Utils
       Vector dir = -grad;
       for ( integer i = 0; i < x.size(); ++i )
       {
-        if ( x[i] <= m_lower[i] + m_opts.epsilon_feas && dir[i] < 0 )
+        if ( std::isfinite( m_lower[i] ) && x[i] <= m_lower[i] + m_opts.epsilon_feas && dir[i] < 0 )
           dir[i] = 0;
-        else if ( x[i] >= m_upper[i] - m_opts.epsilon_feas && dir[i] > 0 )
+        else if ( std::isfinite( m_upper[i] ) && x[i] >= m_upper[i] - m_opts.epsilon_feas && dir[i] > 0 )
           dir[i] = 0;
       }
 
@@ -527,8 +587,10 @@ namespace Utils
         // Assicura fattibilità
         for ( integer i = 0; i < x_trial.size(); ++i )
         {
-          if ( x_trial[i] < m_lower[i] ) { x_trial[i] = m_lower[i] + m_opts.epsilon_feas; }
-          else if ( x_trial[i] > m_upper[i] ) { x_trial[i] = m_upper[i] - m_opts.epsilon_feas; }
+          if ( std::isfinite( m_lower[i] ) && x_trial[i] < m_lower[i] )
+            x_trial[i] = m_lower[i] + m_opts.epsilon_feas;
+          else if ( std::isfinite( m_upper[i] ) && x_trial[i] > m_upper[i] )
+            x_trial[i] = m_upper[i] - m_opts.epsilon_feas;
         }
 
         Scalar f_trial = callback( x_trial, nullptr, nullptr );
@@ -598,12 +660,43 @@ namespace Utils
     }
 
   public:
-    IPNewton_minimizer( Options opts = Options() ) : m_opts( opts ) {}
+    explicit minimize_BBOX_IPNewton( integer dimension = 0, Options opts = {} )
+      : m_opts( std::move( opts ) )
+    { resize( dimension ); }
 
-    void set_bounds( Vector const & lower, Vector const & upper )
+    explicit minimize_BBOX_IPNewton( Options opts ) : minimize_BBOX_IPNewton( 0, std::move( opts ) ) {}
+
+    [[nodiscard]] Options &       options() noexcept { return m_opts; }
+    [[nodiscard]] Options const & options() const noexcept { return m_opts; }
+
+    // Unified setters (same name across all BBOX solvers)
+    void set_tolerances( Scalar tol ) { m_opts.set_tolerances( tol ); }
+    void set_max_iterations( integer n ) { m_opts.set_max_iterations( n ); }
+
+    void resize( integer dimension )
     {
+      Utils::Check( dimension >= 0, "minimize_BBOX_IPNewton::resize: negative dimension" );
+      if ( dimension != m_dimension )
+      {
+        m_lower.resize( 0 );
+        m_upper.resize( 0 );
+        m_bounds_initialized = false;
+      }
+      m_dimension = dimension;
+    }
+
+    void set_bounds( ConstVectorRef lower, ConstVectorRef upper )
+    {
+      Utils::Check(
+        lower.size() == upper.size() && ( m_dimension == 0 || lower.size() == m_dimension ),
+        "minimize_BBOX_IPNewton::set_bounds: incompatible vector dimensions" );
+      Utils::Check(
+        !lower.hasNaN() && !upper.hasNaN() && ( lower.array() < upper.array() ).all(),
+        "minimize_BBOX_IPNewton::set_bounds: bounds must not be NaN and lower must be strictly smaller than upper" );
+      m_dimension = lower.size();
       m_lower = lower;
       m_upper = upper;
+      m_bounds_initialized = true;
     }
 
     // Getters
@@ -627,6 +720,70 @@ namespace Utils
     integer        centering_steps() const { return m_centering_steps; }
     Vector const & best_solution() const { return m_best_x; }
     Scalar         best_f() const { return m_best_f; }
+
+    [[nodiscard]] Result result() const
+    {
+      Result out;
+      out.x                       = m_x;
+      out.status                  = m_status;
+      out.objective               = m_final_f;
+      out.projected_gradient_norm = m_gradient_norm;
+      out.primal_feasibility      = m_primal_infeasibility;
+      out.dual_infeasibility      = m_dual_infeasibility;
+      out.duality_gap             = m_duality_gap;
+      out.barrier_parameter       = m_final_mu;
+      out.iterations              = m_outer_iterations;
+      out.inner_iterations        = m_total_inner_iterations;
+      out.function_evaluations    = m_function_evals;
+      out.hessian_evaluations     = m_hessian_evals;
+      return out;
+    }
+
+    template <typename Problem>
+      requires requires( Problem & problem, Vector const & x, Vector & gradient, Matrix & hessian ) {
+        { problem.objective( x ) } -> std::convertible_to<Scalar>;
+        problem.gradient( x, gradient );
+        problem.hessian( x, hessian );
+      }
+    Result solve(
+      Problem &      problem,
+      Vector const & x0,
+      Vector const & lower,
+      Vector const & upper )
+    {
+      resize( x0.size() );
+      set_bounds( lower, upper );
+      Callback callback = [&problem]( Vector const & x, Vector * gradient, Matrix * hessian ) -> Scalar
+      {
+        if ( gradient != nullptr ) problem.gradient( x, *gradient );
+        if ( hessian != nullptr ) problem.hessian( x, *hessian );
+        return static_cast<Scalar>( problem.objective( x ) );
+      };
+      minimize( x0, callback );
+      return result();
+    }
+
+    // --- unified dense lambda interface: f(x), grad(x,g), hess(x,H) ---
+    template <typename Obj, typename Grad, typename Hess>
+    Result solve(
+      Obj &&         obj,
+      Grad &&        grad,
+      Hess &&        hess,
+      ConstVectorRef x0,
+      ConstVectorRef lower,
+      ConstVectorRef upper )
+    {
+      struct Adapter
+      {
+        std::decay_t<Obj>  o;
+        std::decay_t<Grad> g;
+        std::decay_t<Hess> h;
+        Scalar objective( Vector const & x ) { return static_cast<Scalar>( o( x ) ); }
+        void gradient( Vector const & x, Vector & gg ) { g( x, gg ); }
+        void hessian( Vector const & x, Matrix & HH ) { h( x, HH ); }
+      } adapt{ std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) };
+      return solve( adapt, x0, lower, upper );
+    }
 
     std::string summary() const
     {
@@ -656,6 +813,19 @@ namespace Utils
     {
       reset_results();
 
+      Utils::Check( static_cast<bool>( callback ), "minimize_BBOX_IPNewton::minimize: callback is not initialized" );
+      Utils::Check( x0.size() > 0 && x0.allFinite(), "minimize_BBOX_IPNewton::minimize: invalid initial point" );
+      Utils::Check(
+        m_bounds_initialized && m_dimension == x0.size() && m_lower.size() == x0.size() && m_upper.size() == x0.size(),
+        "minimize_BBOX_IPNewton::minimize: bounds are not initialized or have the wrong dimension" );
+      Utils::Check(
+        !m_lower.hasNaN() && !m_upper.hasNaN() && ( m_lower.array() < m_upper.array() ).all(),
+        "minimize_BBOX_IPNewton::minimize: invalid bounds" );
+      Utils::Check(
+        m_opts.max_outer_iterations > 0 && m_opts.max_inner_iterations > 0 && m_opts.tol >= Scalar( 0 ) &&
+          m_opts.mu_init > Scalar( 0 ) && m_opts.mu_min > Scalar( 0 ) && m_opts.epsilon_feas > Scalar( 0 ),
+        "minimize_BBOX_IPNewton::minimize: invalid solver options" );
+
       integer n = x0.size();
       Vector  x = x0;
       Vector  grad( n );
@@ -667,6 +837,9 @@ namespace Utils
       }
 
       Scalar f        = callback( x, &grad, nullptr );
+      Utils::Check(
+        std::isfinite( f ) && grad.size() == n && grad.allFinite(),
+        "minimize_BBOX_IPNewton::minimize: callback returned an invalid objective or gradient" );
       m_initial_f     = f;
       integer f_evals = 1;
       integer h_evals = 0;
@@ -679,7 +852,8 @@ namespace Utils
       Vector lam_lower( n ), lam_upper( n );
       compute_dual_variables_corrected( x, grad, lam_lower, lam_upper );
 
-      Scalar  mu                     = m_opts.mu_init;
+      bool const barrier_active      = has_finite_bound();
+      Scalar  mu                     = barrier_active ? m_opts.mu_init : Scalar( 0 );
       Status  status                 = Status::MAX_ITERATIONS;
       integer outer_iter             = 0;
       integer total_inner_iterations = 0;
@@ -764,6 +938,14 @@ namespace Utils
         if ( check_convergence( kkt_res, mu ) )
         {
           status = Status::CONVERGED;
+          break;
+        }
+
+        // With no finite side the logarithmic barrier is identically zero:
+        // one unconstrained Newton solve is the complete subproblem.
+        if ( !barrier_active )
+        {
+          status = kkt_res.gradient_norm <= m_opts.g_max ? Status::CONVERGED : Status::FAILED;
           break;
         }
 
@@ -879,6 +1061,10 @@ namespace Utils
       m_centering_steps        = centering_steps;
     }
   };
+
+  // Consistency alias (capital M) for uniform naming
+  template <typename Scalar = double>
+  using Minimize_BBOX_IPNewton = minimize_BBOX_IPNewton<Scalar>;
 
 }  // namespace Utils
 

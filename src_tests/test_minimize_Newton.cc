@@ -46,6 +46,7 @@ using Scalar       = double;
 using MINIMIZER    = Utils::Newton_minimizer<Scalar>;
 using integer      = MINIMIZER::integer;
 using Vector       = typename MINIMIZER::Vector;
+using Matrix       = typename MINIMIZER::Matrix;
 using SparseMatrix = typename MINIMIZER::SparseMatrix;
 
 using Status = MINIMIZER::Status;
@@ -87,7 +88,7 @@ template <typename Problem> static void test( Problem & tp, string const & name 
 
   Vector final_solution = x0;
 
-  auto cb = [&tp, &final_solution]( Vector const & x, Vector * g, SparseMatrix * H ) -> Scalar
+  auto cb = [&tp, &final_solution]( Vector const & x, Vector * g, Matrix * H ) -> Scalar
   {
     final_solution = x;
 
@@ -112,12 +113,12 @@ template <typename Problem> static void test( Problem & tp, string const & name 
           Vector gp = tp.gradient( xp );
           Vector gm = tp.gradient( xm );
 
-          for ( int j = 0; j < x.size(); ++j ) H->coeffRef( j, i ) = ( gp( j ) - gm( j ) ) / ( 2 * eps );
+          for ( int j = 0; j < x.size(); ++j ) (*H)( j, i ) = ( gp( j ) - gm( j ) ) / ( 2 * eps );
 
           xp( i ) = xm( i ) = x( i );
         }
 
-        SparseMatrix Ht = H->transpose();
+        Matrix Ht = H->transpose();
         *H              = 0.5 * ( ( *H ) + Ht );
       }
     }
