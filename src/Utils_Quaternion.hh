@@ -928,7 +928,7 @@ namespace Utils
   template <typename T> inline T angular_distance( const Quaternion<T> & q1, const Quaternion<T> & q2 )
   {
     T dot_product = q1.dot( q2 );
-    dot_product   = std::max( T( -1 ), std::min( T( 1 ), dot_product ) );  // Clamp to [-1, 1]
+    dot_product   = std::clamp( dot_product, T( -1 ), T( 1 ) );  // Clamp to [-1, 1]
     return T( 2 ) * std::acos( std::abs( dot_product ) );
   }
 

@@ -49,23 +49,6 @@ namespace
 
   std::vector<TestResult> global_test_results;
 
-  [[nodiscard]] std::string_view status_label( Status status )
-  {
-    switch ( status )
-    {
-      case Status::unknown: return "UNKNOWN";
-      case Status::first_order: return "CONVERGED";
-      case Status::max_iter: return "ITER LIMIT";
-      case Status::max_eval: return "EVAL LIMIT";
-      case Status::unbounded: return "UNBOUNDED";
-      case Status::small_step: return "SMALL STEP";
-      case Status::neg_pred: return "BAD MODEL";
-      case Status::direct_solver_failure: return "DIRECT FAIL";
-      case Status::user: return "USER STOP";
-    }
-    return "UNKNOWN";
-  }
-
   [[nodiscard]] fmt::text_style status_style( Status status )
   {
     switch ( status )
@@ -77,8 +60,8 @@ namespace
       case Status::unbounded: return fmt::fg( fmt::color::magenta );
       case Status::unknown:
       case Status::neg_pred:
-      case Status::direct_solver_failure:
-      case Status::user: return fmt::fg( fmt::color::red ) | fmt::emphasis::bold;
+      case Status::direct_solver_failure: return fmt::fg( fmt::color::red ) | fmt::emphasis::bold;
+      case Status::user_request: return fmt::fg( fmt::color::cyan ) | fmt::emphasis::bold;
     }
     return fmt::fg( fmt::color::white );
   }
@@ -112,7 +95,7 @@ namespace
   void print_result( TestResult const & result )
   {
     fmt::print( "{:<{}} ", result.problem_name, NAME_WIDTH );
-    fmt::print( status_style( result.status ), "{:<{}}", status_label( result.status ), STATUS_WIDTH );
+    fmt::print( status_style( result.status ), "{:<{}}", to_string( result.status ), STATUS_WIDTH );
     fmt::print(
       " {:>4} {:>6} {:>7} {:>7} {:>13.5e} {:>11.3e} {:>11.3e}\n",
       result.dimension,
@@ -169,18 +152,20 @@ namespace
     Eigen::Map<Vector const> lower_map( lower_data, 2 );
     Eigen::Map<Vector const> upper_map( upper_data, 2 );
 
-    auto mapped_problem = Utils::SmallTRON::make_problem<Scalar>(
-      []( ConstVectorRef x ) { return Scalar( 0.5 ) * ( x[0] * x[0] + Scalar( 2 ) * x[1] * x[1] ); },
-      []( ConstVectorRef x, VectorRef g )
+    auto mapped_problem = Utils::make_problem<Scalar>(
+      []( ConstVectorRef x, Scalar & f ) -> bool { f = Scalar( 0.5 ) * ( x[0] * x[0] + Scalar( 2 ) * x[1] * x[1] ); return true; },
+      []( ConstVectorRef x, VectorRef g ) -> bool
       {
         g[0] = x[0];
         g[1] = Scalar( 2 ) * x[1];
+        return true;
       },
-      []( ConstVectorRef, MatrixRef H )
+      []( ConstVectorRef, MatrixRef H ) -> bool
       {
         H.setZero();
         H( 0, 0 ) = Scalar( 1 );
         H( 1, 1 ) = Scalar( 2 );
+        return true;
       } );
     Utils::SmallTRON::Options<Scalar> strict_options;
     strict_options.set_tolerances( 1e-12 );
@@ -195,22 +180,25 @@ namespace
     // The objective cannot resolve changes of order one next to a 1e20 offset.
     // Acceptance must still permit derivative-driven Newton refinement instead
     // of stalling because f(x+s) and f(x) round to the same double.
-    auto offset_problem = Utils::SmallTRON::make_problem<Scalar>(
-      []( ConstVectorRef x )
+    auto offset_problem = Utils::make_problem<Scalar>(
+      []( ConstVectorRef x, Scalar & f ) -> bool
       {
-        return Scalar( 1e20 ) + Scalar( 0.5 ) * ( std::pow( x[0] - Scalar( 0.25 ), 2 ) +
-                                                  Scalar( 3 ) * std::pow( x[1] + Scalar( 0.75 ), 2 ) );
+        f = Scalar( 1e20 ) + Scalar( 0.5 ) * ( std::pow( x[0] - Scalar( 0.25 ), 2 ) +
+                                                Scalar( 3 ) * std::pow( x[1] + Scalar( 0.75 ), 2 ) );
+        return true;
       },
-      []( ConstVectorRef x, VectorRef g )
+      []( ConstVectorRef x, VectorRef g ) -> bool
       {
         g[0] = x[0] - Scalar( 0.25 );
         g[1] = Scalar( 3 ) * ( x[1] + Scalar( 0.75 ) );
+        return true;
       },
-      []( ConstVectorRef, MatrixRef H )
+      []( ConstVectorRef, MatrixRef H ) -> bool
       {
         H.setZero();
         H( 0, 0 ) = Scalar( 1 );
         H( 1, 1 ) = Scalar( 3 );
+        return true;
       } );
     Utils::Minimize_BBOX_SmallTRON<Scalar> offset_solver( 2, strict_options );
     auto const offset_result = offset_solver.solve( offset_problem, x0_map, lower_map, upper_map );
@@ -228,10 +216,10 @@ namespace
     one_x0[0]             = 0;
     one_lower[0]          = 0;
     one_upper[0]          = 1;
-    auto boundary_problem = Utils::SmallTRON::make_problem<Scalar>(
-      []( ConstVectorRef x ) { return Scalar( 0.5 ) * ( x[0] - Scalar( 2 ) ) * ( x[0] - Scalar( 2 ) ); },
-      []( ConstVectorRef x, VectorRef g ) { g[0] = x[0] - Scalar( 2 ); },
-      []( ConstVectorRef, MatrixRef H ) { H.setConstant( Scalar( 1 ) ); } );
+    auto boundary_problem = Utils::make_problem<Scalar>(
+      []( ConstVectorRef x, Scalar & f ) -> bool { f = Scalar( 0.5 ) * ( x[0] - Scalar( 2 ) ) * ( x[0] - Scalar( 2 ) ); return true; },
+      []( ConstVectorRef x, VectorRef g ) -> bool { g[0] = x[0] - Scalar( 2 ); return true; },
+      []( ConstVectorRef, MatrixRef H ) -> bool { H.setConstant( Scalar( 1 ) ); return true; } );
     Utils::Minimize_BBOX_SmallTRON<Scalar> boundary_solver( 1, strict_options );
     auto const boundary_result = boundary_solver.solve( boundary_problem, one_x0, one_lower, one_upper );
     check( boundary_result.status == Status::first_order );
@@ -244,10 +232,10 @@ namespace
     one_x0[0]           = 0;
     one_lower[0]        = -1;
     one_upper[0]        = 1;
-    auto saddle_problem = Utils::SmallTRON::make_problem<Scalar>(
-      []( ConstVectorRef x ) { return -Scalar( 0.5 ) * x[0] * x[0]; },
-      []( ConstVectorRef x, VectorRef g ) { g[0] = -x[0]; },
-      []( ConstVectorRef, MatrixRef H ) { H.setConstant( Scalar( -1 ) ); } );
+    auto saddle_problem = Utils::make_problem<Scalar>(
+      []( ConstVectorRef x, Scalar & f ) -> bool { f = -Scalar( 0.5 ) * x[0] * x[0]; return true; },
+      []( ConstVectorRef x, VectorRef g ) -> bool { g[0] = -x[0]; return true; },
+      []( ConstVectorRef, MatrixRef H ) -> bool { H.setConstant( Scalar( -1 ) ); return true; } );
     Utils::Minimize_BBOX_SmallTRON<Scalar> saddle_solver( 1, strict_options );
     auto const saddle_result = saddle_solver.solve( saddle_problem, one_x0, one_lower, one_upper );
     check( saddle_result.status == Status::first_order );
@@ -282,18 +270,18 @@ namespace
     Vector const x0    = problem->init();
     Vector const exact = problem->exact();
 
-    auto hessian = [&]( ConstVectorRef x, MatrixRef H ) { H = problem->hessian( x ); };
+    auto hessian = [&]( ConstVectorRef x, MatrixRef H ) -> bool { H = problem->hessian( x ); return true; };
 
     Utils::SmallTRON::Options<Scalar> options;
-    options.max_iter                        = static_cast<int>( MAX_ITERATIONS );
-    options.max_eval                        = static_cast<int>( MAX_ITERATIONS + 1 );
+    options.max_iterations                  = static_cast<int>( MAX_ITERATIONS );
+    options.max_evaluations                 = static_cast<int>( MAX_ITERATIONS + 1 );
     options.max_projected_newton_iterations = 50;
     options.set_tolerances( 1e-12 );
     options.use_cubic_radius = false;
 
-    auto tron_problem = Utils::SmallTRON::make_problem<Scalar>(
-      [&]( ConstVectorRef x ) { return ( *problem )( x ); },
-      [&]( ConstVectorRef x, VectorRef g ) { g = problem->gradient( x ); },
+    auto tron_problem = Utils::make_problem<Scalar>(
+      [&]( ConstVectorRef x, Scalar & f ) -> bool { f = ( *problem )( x ); return true; },
+      [&]( ConstVectorRef x, VectorRef g ) -> bool { g = problem->gradient( x ); return true; },
       hessian );
     Utils::Minimize_BBOX_SmallTRON<Scalar> solver( x0.size(), options );
 
@@ -303,10 +291,10 @@ namespace
     result.problem_name            = name;
     result.status                  = tron_result.status;
     result.dimension               = static_cast<int>( lower.size() );
-    result.iterations              = static_cast<std::size_t>( tron_result.iter );
-    result.function_evaluations    = static_cast<std::size_t>( tron_result.obj_evals );
-    result.gradient_evaluations    = static_cast<std::size_t>( tron_result.grad_evals );
-    result.hessian_evaluations     = static_cast<std::size_t>( tron_result.hess_evals );
+    result.iterations              = tron_result.iterations;
+    result.function_evaluations    = tron_result.function_evaluations;
+    result.gradient_evaluations    = tron_result.gradient_evaluations;
+    result.hessian_evaluations     = tron_result.hessian_evaluations;
     result.final_function_value    = tron_result.objective;
     result.projected_gradient_norm = tron_result.dual_feas;
     result.solution_error          = exact.size() == tron_result.x.size() ? ( tron_result.x - exact ).stableNorm()
@@ -420,7 +408,7 @@ int main()
     {
       return result.status == Status::unknown || result.status == Status::unbounded ||
              result.status == Status::neg_pred || result.status == Status::direct_solver_failure ||
-             result.status == Status::user || !std::isfinite( result.final_function_value ) ||
+             !std::isfinite( result.final_function_value ) ||
              !std::isfinite( result.projected_gradient_norm );
     } );
   return fatal_failure || !direct_subproblems_passed ? 1 : 0;

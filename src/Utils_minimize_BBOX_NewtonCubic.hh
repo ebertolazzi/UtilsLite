@@ -2,9 +2,18 @@
  |                                                                          |
  |  Copyright (C) 2018                                                      |
  |                                                                          |
+ |         , __                 , __                                        |
+ |        /|/  \               /|/  \                                       |
+ |         | __/ _   ,_         | __/ _   ,_                                |
+ |         |   \|/  /  |  |   | |   \|/  /  |  |   |                        |
+ |         |(__/|__/   |_/ \_/|/|(__/|__/   |_/ \_/|/                       |
+ |                           /|                   /|                        |
+ |                           \|                   \|                        |
+ |                                                                          |
  |      Enrico Bertolazzi                                                   |
  |      Dipartimento di Ingegneria Industriale                              |
  |      Università degli Studi di Trento                                    |
+ |      email: enrico.bertolazzi@unitn.it                                   |
  |                                                                          |
 \*--------------------------------------------------------------------------*/
 
@@ -13,9 +22,8 @@
 #ifndef UTILS_MINIMIZE_BBOX_NEWTON_CUBIC_DOT_HH
 #define UTILS_MINIMIZE_BBOX_NEWTON_CUBIC_DOT_HH
 
+#include "Utils_minimize_BBOX_Common.hh"
 #include "Utils_minimize_BBOX_Newton.hh"
-
-#include <functional>
 
 namespace Utils
 {
@@ -69,39 +77,23 @@ namespace Utils
     }
 
     template <typename Problem>
-      requires Utils::ProblemFor<Problem, Real>
+      requires ::Utils::ProblemFor<Problem, Real>
     Result solve(
       Problem &                   problem,
       Utils::ConstVectorRef<Real> x0,
       Utils::ConstVectorRef<Real> lower,
       Utils::ConstVectorRef<Real> upper )
     {
-      auto keep_going = []( Result const & ) { return true; };
-      return solve( problem, x0, lower, upper, keep_going );
-    }
-
-    template <typename Problem, typename Callback>
-      requires Utils::ProblemFor<Problem, Real>
-    Result solve(
-      Problem &                   problem,
-      Utils::ConstVectorRef<Real> x0,
-      Utils::ConstVectorRef<Real> lower,
-      Utils::ConstVectorRef<Real> upper,
-      Callback &&                 callback )
-    {
-      Objective objective = [&problem]( Utils::ConstVectorRef<Real> x ) { return problem.objective( x ); };
+      Objective objective = [&problem]( Utils::ConstVectorRef<Real> x, Real& f ) { return problem.objective( x, f ); };
       Gradient  gradient  = [&problem]( Utils::ConstVectorRef<Real> x, Utils::VectorRef<Real> g )
-      { problem.gradient( x, g ); };
+      { return problem.gradient( x, g ); };
       Hessian hessian = [&problem]( Utils::ConstVectorRef<Real> x, Utils::MatrixRef<Real> h )
-      { problem.hessian( x, h ); };
-      IterationCallback iteration_callback = [&callback]( Result const & result )
-      { return static_cast<bool>( callback( result ) ); };
-      return solve_impl( objective, gradient, hessian, x0, lower, upper, iteration_callback );
+      { return problem.hessian( x, h ); };
+      return solve_impl( objective, gradient, hessian, x0, lower, upper );
     }
 
-    // --- unified lambda interface (dense Vector / Matrix) ---
-    template <typename Obj, typename Grad, typename Hess>
-    Result solve(
+// --- unified lambda interface (dense Vector / Matrix) ---
+    template <typename Obj, typename Grad, typename Hess> Result solve(
       Obj &&                      obj,
       Grad &&                     grad,
       Hess &&                     hess,
@@ -109,30 +101,15 @@ namespace Utils
       Utils::ConstVectorRef<Real> lower,
       Utils::ConstVectorRef<Real> upper )
     {
-      auto prob = Utils::make_problem<Real>(
-        std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) );
+      auto prob =
+        ::Utils::make_problem<Real>( std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) );
       return solve( prob, x0, lower, upper );
     }
 
-    template <typename Obj, typename Grad, typename Hess, typename Callback>
-    Result solve(
-      Obj &&                      obj,
-      Grad &&                     grad,
-      Hess &&                     hess,
-      Utils::ConstVectorRef<Real> x0,
-      Utils::ConstVectorRef<Real> lower,
-      Utils::ConstVectorRef<Real> upper,
-      Callback &&                 callback )
-    {
-      auto prob = Utils::make_problem<Real>(
-        std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) );
-      return solve( prob, x0, lower, upper, std::forward<Callback>( callback ) );
-    }
-
   private:
-    using Objective         = std::function<Real( Utils::ConstVectorRef<Real> )>;
-    using Gradient          = std::function<void( Utils::ConstVectorRef<Real>, Utils::VectorRef<Real> )>;
-    using Hessian           = std::function<void( Utils::ConstVectorRef<Real>, Utils::MatrixRef<Real> )>;
+    using Objective         = std::function<bool( Utils::ConstVectorRef<Real>, Real& )>;
+    using Gradient          = std::function<bool( Utils::ConstVectorRef<Real>, Utils::VectorRef<Real> )>;
+    using Hessian           = std::function<bool( Utils::ConstVectorRef<Real>, Utils::MatrixRef<Real> )>;
     using IterationCallback = std::function<bool( Result const & )>;
 
     inline Result solve_impl(
@@ -141,17 +118,16 @@ namespace Utils
       Hessian const &             hessian,
       Utils::ConstVectorRef<Real> x0,
       Utils::ConstVectorRef<Real> lower,
-      Utils::ConstVectorRef<Real> upper,
-      IterationCallback const &   callback )
+      Utils::ConstVectorRef<Real> upper )
     {
       using std::max;
       using std::min;
       using std::sqrt;
 
-      Utils::Check(
+      ::Utils::Check(
         x0.size() == lower.size() && x0.size() == upper.size(),
         "Minimize_BBOX_NewtonCubic::solve: incompatible vector dimensions" );
-      Utils::Check(
+      ::Utils::Check(
         !lower.hasNaN() && !upper.hasNaN() && ( lower.array() <= upper.array() ).all(),
         "Minimize_BBOX_NewtonCubic::solve: invalid lower/upper bounds" );
 
@@ -170,10 +146,17 @@ namespace Utils
       int    primary_semismooth_steps    = 0;
       int    primary_semismooth_rejected = 0;
 
-      Real f = objective( m_x );
+      Real f;
+      if ( !objective( m_x, f ) ) {
+        result.x                    = m_x;
+        result.objective            = f;
+        result.function_evaluations = function_evaluations;
+        result.status               = Utils::Status::non_finite_objective;
+        return result;
+      }
       ++function_evaluations;
-      if ( !Utils::is_finite( f ) )
-      {
+
+      if ( !::Utils::is_finite( f ) ) {
         result.x                    = m_x;
         result.objective            = f;
         result.function_evaluations = function_evaluations;
@@ -181,7 +164,14 @@ namespace Utils
         return result;
       }
 
-      gradient( m_x, m_gradient );
+      if ( !gradient( m_x, m_gradient ) ) {
+        result.x                    = m_x;
+        result.objective            = f;
+        result.function_evaluations = function_evaluations;
+        result.gradient_evaluations = gradient_evaluations;
+        result.status               = Utils::Status::non_finite_gradient;
+        return result;
+      }
       ++gradient_evaluations;
       if ( !m_gradient.allFinite() )
       {
@@ -242,7 +232,7 @@ namespace Utils
       };
       auto certify_or_escape = [&]() -> CertificateAction
       {
-        hessian( m_x, m_hessian );
+if ( !hessian( m_x, m_hessian ) ) return CertificateAction::failed;
         ++hessian_evaluations;
         if ( !m_hessian.allFinite() ) return CertificateAction::failed;
 
@@ -377,11 +367,12 @@ namespace Utils
             if ( m_options.max_function_evaluations >= 0 && function_evaluations >= m_options.max_function_evaluations )
               return CertificateAction::failed;
 
-            Real const trial_f = objective( m_trial );
-            ++function_evaluations;
-            Real const roundoff = m_options.roundoff_factor * eps *
+Real trial_f;
+      if ( !objective( m_trial, trial_f ) ) return CertificateAction::failed;
+      ++function_evaluations;
+      Real const roundoff = m_options.roundoff_factor * eps *
                                   max( { Real( 1 ), std::abs( f ), std::abs( trial_f ) } );
-            if ( Utils::is_finite( trial_f ) && trial_f < f - roundoff )
+            if ( ::Utils::is_finite( trial_f ) && trial_f < f - roundoff )
             {
               gradient( m_trial, m_trial_gradient );
               ++gradient_evaluations;
@@ -403,8 +394,6 @@ namespace Utils
         return CertificateAction::failed;
       };
 
-      if ( !callback( fill_result( Utils::Status::unknown, 0 ) ) ) { return fill_result( Utils::Status::user, 0 ); }
-
       for ( int iteration = 1; iteration <= m_options.max_iterations; ++iteration )
       {
         if ( gradient_norm_inf < tolerance )
@@ -415,17 +404,15 @@ namespace Utils
             return fill_result(
               m_hessian.allFinite() ? Utils::Status::no_progress : Utils::Status::non_finite_hessian,
               iteration - 1 );
-          if ( !callback( fill_result( Utils::Status::unknown, iteration - 1 ) ) )
-            return fill_result( Utils::Status::user, iteration - 1 );
           continue;
         }
 
         hessian_estimate = max( m_options.hessian_lipschitz_min, m_options.regularization_decrease * hessian_estimate );
         bool accepted    = false;
 
-        hessian( m_x, m_hessian );
-        ++hessian_evaluations;
-        if ( !m_hessian.allFinite() ) return fill_result( Utils::Status::non_finite_hessian, iteration - 1 );
+if ( !hessian( m_x, m_hessian ) ) return fill_result( Utils::Status::non_finite_hessian, iteration - 1 );
+      ++hessian_evaluations;
+      if ( !m_hessian.allFinite() ) return fill_result( Utils::Status::non_finite_hessian, iteration - 1 );
 
         // Try the inexpensive pure Newton step first when the free Hessian is
         // positive definite.  Model-only backtracking avoids repeated f/g calls.
@@ -483,17 +470,17 @@ namespace Utils
             primary_ok &&
             ( m_options.max_function_evaluations < 0 || function_evaluations < m_options.max_function_evaluations ) )
           {
-            Real const trial_f = objective( m_trial );
+            Real trial_f;
+            if ( !objective( m_trial, trial_f ) ) return fill_result( Utils::Status::non_finite_objective, iteration - 1 );
             ++function_evaluations;
             Real const roundoff = m_options.roundoff_factor * std::numeric_limits<Real>::epsilon() *
                                   max( { Real( 1 ), std::abs( f ), std::abs( trial_f ), std::abs( model_reduction ) } );
             Real const ratio    = ( f - trial_f + roundoff ) / ( model_reduction + roundoff );
-            if ( Utils::is_finite( trial_f ) && ratio >= m_options.primary_acceptance_threshold )
+            if (
+            ::Utils::is_finite( trial_f ) && ratio >= m_options.primary_acceptance_threshold )
             {
-              gradient( m_trial, m_trial_gradient );
+              if ( !gradient( m_trial, m_trial_gradient ) ) return fill_result( Utils::Status::non_finite_gradient, iteration - 1 );
               ++gradient_evaluations;
-              if ( !m_trial_gradient.allFinite() )
-                return fill_result( Utils::Status::non_finite_gradient, iteration - 1 );
               m_trial_projected_gradient = m_trial - ( m_trial - m_trial_gradient ).cwiseMax( lower ).cwiseMin( upper );
               step_norm                  = ( m_trial - m_x ).norm();
               m_x.swap( m_trial );
@@ -573,17 +560,18 @@ namespace Utils
             return fill_result( Utils::Status::max_function_evaluations, iteration - 1 );
           }
 
-          Real const trial_f = objective( m_trial );
-          ++function_evaluations;
-          if ( !Utils::is_finite( trial_f ) )
+Real trial_f;
+      if ( !objective( m_trial, trial_f ) ) return fill_result( Utils::Status::non_finite_objective, iteration - 1 );
+      ++function_evaluations;
+          if ( !::Utils::is_finite( trial_f ) )
           {
             hessian_estimate *= m_options.factorization_increase;
             ++rejected_steps;
             continue;
           }
 
-          gradient( m_trial, m_trial_gradient );
-          ++gradient_evaluations;
+if ( !gradient( m_trial, m_trial_gradient ) ) return fill_result( Utils::Status::non_finite_gradient, iteration - 1 );
+      ++gradient_evaluations;
           if ( !m_trial_gradient.allFinite() )
           {
             hessian_estimate *= m_options.factorization_increase;
@@ -641,15 +629,15 @@ namespace Utils
               return fill_result( Utils::Status::max_function_evaluations, iteration - 1 );
             }
 
-            Real const trial_f = objective( m_trial );
+            Real trial_f;
+            if ( !objective( m_trial, trial_f ) ) return fill_result( Utils::Status::non_finite_objective, iteration - 1 );
             ++function_evaluations;
             if (
-              Utils::is_finite( trial_f ) && slope < Real( 0 ) &&
+              ::Utils::is_finite( trial_f ) && slope < Real( 0 ) &&
               trial_f <= f + m_options.gradient_rescue_armijo * slope )
             {
-              gradient( m_trial, m_trial_gradient );
+              if ( !gradient( m_trial, m_trial_gradient ) ) return fill_result( Utils::Status::non_finite_gradient, iteration - 1 );
               ++gradient_evaluations;
-              if ( !m_trial_gradient.allFinite() )
                 return fill_result( Utils::Status::non_finite_gradient, iteration - 1 );
 
               m_trial_projected_gradient = m_trial - ( m_trial - m_trial_gradient ).cwiseMax( lower ).cwiseMin( upper );
@@ -671,10 +659,6 @@ namespace Utils
         }
 
         if ( !accepted ) return fill_result( Utils::Status::no_progress, iteration - 1 );
-        if ( !callback( fill_result( Utils::Status::unknown, iteration ) ) )
-        {
-          return fill_result( Utils::Status::user, iteration );
-        }
       }
 
       if ( gradient_norm_inf <= tolerance )

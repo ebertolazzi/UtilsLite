@@ -87,7 +87,7 @@ namespace Utils
     // Helper for vector formatting
     template <typename Scalar> inline string format_vector( Vector<Scalar> const & v, integer max_size = 10 )
     {
-      string  tmp{ "[" };
+      string  tmp = "[";
       integer v_size = v.size();
       if ( v_size <= max_size )
       {
@@ -242,16 +242,18 @@ namespace Utils
     mutable vector<integer> m_sorted_indices;           ///< Indices sorted by function value
 
     integer m_stagnation_count = 0;                                 ///< Consecutive stagnation iterations
-    Scalar  m_previous_best{ std::numeric_limits<Scalar>::max() };  ///< Previous best value
+    Scalar  m_previous_best = std::numeric_limits<Scalar>::max();  ///< Previous best value
     integer m_shrink_count = 0;                                     ///< Shrink operation counter
 
     Vector m_best_point;                                        ///< Best point found (across restarts)
-    Scalar m_best_value{ std::numeric_limits<Scalar>::max() };  ///< Best value found
+    Scalar m_best_value = std::numeric_limits<Scalar>::max();  ///< Best value found
 
-    Scalar m_current_rho, m_current_chi, m_current_gamma,
-      m_current_sigma;  ///< Current adaptive parameters
+    Scalar m_current_rho;    ///< Current adaptive parameters
+    Scalar m_current_chi;    ///< Current adaptive parameters
+    Scalar m_current_gamma;  ///< Current adaptive parameters
+    Scalar m_current_sigma;  ///< Current adaptive parameters
 
-    string m_indent{ "" };
+    string m_indent;
 
     // Results from last optimization
     Vector m_solution;                    ///< Best solution found
@@ -462,7 +464,7 @@ namespace Utils
         }
       }
 
-      Scalar value{ ( *m_callback )( x ) };
+      Scalar value = ( *m_callback )( x );
       ++m_global_evals;
 
       if ( !std::isfinite( value ) )
@@ -705,7 +707,7 @@ namespace Utils
       Scalar max_dist = 0;
       for ( integer i = 0; i <= m_dim; ++i )
       {
-        for ( integer j{ i + 1 }; j <= m_dim; ++j )
+        for ( integer j = i + 1; j <= m_dim; ++j )
         {
           Scalar dist = ( m_simplex[i] - m_simplex[j] ).norm();
           max_dist    = max( max_dist, dist );
@@ -1080,7 +1082,7 @@ namespace Utils
       Scalar f_reflect       = reflect_point( worst_idx );
       Vector reflected_point = m_trial_point;
 
-      bool improve{ f_reflect < best_value };
+      bool improve = f_reflect < best_value;
       print_inner_operation( "Reflect", f_reflect, improve );
       if ( improve )
       {

@@ -113,13 +113,13 @@ template <typename Problem> static void test( Problem & tp, string const & name 
           Vector gp = tp.gradient( xp );
           Vector gm = tp.gradient( xm );
 
-          for ( int j = 0; j < x.size(); ++j ) (*H)( j, i ) = ( gp( j ) - gm( j ) ) / ( 2 * eps );
+          for ( int j = 0; j < x.size(); ++j ) ( *H )( j, i ) = ( gp( j ) - gm( j ) ) / ( 2 * eps );
 
           xp( i ) = xm( i ) = x( i );
         }
 
         Matrix Ht = H->transpose();
-        *H              = 0.5 * ( ( *H ) + Ht );
+        *H        = 0.5 * ( ( *H ) + Ht );
       }
     }
     return tp( x );

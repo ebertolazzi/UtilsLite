@@ -58,7 +58,7 @@ namespace Utils
     using std::upper_bound;
 
     // Validazione iniziale
-    T_int n{ npts - 1 };
+    T_int n = npts - 1;
     Utils::Check(
       npts > 1 && last_interval >= 0 && last_interval < n,
       "In search_interval( npts={}, X, x={}, last_interval={}, "
@@ -70,12 +70,12 @@ namespace Utils
       closed,
       can_extend );
 
-    T_real xl{ X[0] };
-    T_real xr{ X[n] };
+    T_real xl = X[0];
+    T_real xr = X[n];
 
     if ( closed )
     {
-      T_real L{ xr - xl };
+      T_real L = xr - xl;
 
       // Caso degenere: intervallo di lunghezza zero
       if ( L <= 0 )
@@ -85,7 +85,7 @@ namespace Utils
       }
 
       // Normalizza x nell'intervallo [xl, xr)
-      T_real t{ x - xl };
+      T_real t = x - xl;
       t = fmod( t, L );
       if ( t < 0 ) t += L;
 
@@ -121,7 +121,7 @@ namespace Utils
     }
 
     // === OTTIMIZZAZIONE: Ricerca adattiva basata sulla posizione corrente ===
-    T_real const * XL{ X + last_interval };
+    T_real const * XL = X + last_interval;
 
     // Caso 1: x è a destra dell'intervallo corrente
     if ( x >= XL[1] )

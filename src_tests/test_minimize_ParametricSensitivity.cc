@@ -18,6 +18,7 @@
 \*--------------------------------------------------------------------------*/
 
 #include "Utils_minimize_ParametricSensitivity.hh"
+#include "Utils_minimize_Newton.hh"
 
 // ===========================================================================
 // USAGE EXAMPLES
@@ -26,9 +27,8 @@
 using namespace Utils;
 
 using Scalar       = double;
-using Vector       = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
-using Matrix       = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
-using SparseMatrix = Eigen::SparseMatrix<Scalar>;
+using TestVector   = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
+using TestMatrix   = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
 
 // ---------------------------------------------------------------------------
 // Utility functions for pretty printing
@@ -59,7 +59,7 @@ void print_error( const std::string & message )
 void print_info( const std::string & message )
 { fmt::print( fmt::fg( fmt::color::light_blue ), "   • {}", message ); }
 
-void print_matrix_info( const std::string & name, const Matrix & mat, bool show_values = false )
+void print_matrix_info( const std::string & name, const TestMatrix & mat, bool show_values = false )
 {
   fmt::print( fmt::fg( fmt::color::white ), "   {}: {} × {} matrix\n", name, mat.rows(), mat.cols() );
 
@@ -92,7 +92,8 @@ void example_unconstrained()
     "   Analytic sensitivity: ∂x*/∂p = [[1,0,0],[0,1,0]]\n" );
 
   auto parametric_function =
-    []( Vector const & x, Vector const & p, Vector * grad_x, Matrix * hess_xx, Matrix * grad_xp ) -> Scalar
+    []( TestVector const & x, TestVector const & p, TestVector * grad_x, TestMatrix * hess_xx, TestMatrix * grad_xp )
+    -> Scalar
   {
     Scalar x1 = x( 0 ), x2 = x( 1 );
     Scalar p1 = p( 0 ), p2 = p( 1 ), p3 = p( 2 );
@@ -123,25 +124,30 @@ void example_unconstrained()
     return f;
   };
 
-  Vector x0( 2 );
+  TestVector x0( 2 );
   x0 << 0.0, 0.0;
-  Vector p( 3 );
+  TestVector p( 3 );
   p << 1.0, 2.0, 1.5;
 
-  Vector x_exact( 2 );
+  TestVector x_exact( 2 );
   x_exact << p( 0 ), p( 1 );
 
-  Matrix sensitivity_exact( 2, 3 );
+  TestMatrix sensitivity_exact( 2, 3 );
   sensitivity_exact << 1.0, 0.0, 0.0, 0.0, 1.0, 0.0;
 
-  ParametricNewtonMinimizer<Scalar>::Options opts;
-  opts.optimizer_opts.verbosity                = 1;
-  opts.sensitivity_opts.verbosity_level        = 1;
-  opts.sensitivity_opts.use_finite_differences = false;
-  opts.compute_sensitivity                     = true;
+  auto standard_callback = [&]( TestVector const & x, TestVector * g, TestMatrix * H )
+  { return parametric_function( x, p, g, H, nullptr ); };
 
-  ParametricNewtonMinimizer<Scalar> minimizer( opts );
-  minimizer.minimize( x0, p, parametric_function );
+  Newton_minimizer<Scalar>::Options optimizer_opts;
+  optimizer_opts.verbosity = 1;
+  Newton_minimizer<Scalar> optimizer( optimizer_opts );
+  optimizer.minimize( x0, standard_callback );
+
+  ParametricSensitivity<Scalar>::Options sensitivity_opts;
+  sensitivity_opts.verbosity_level        = 1;
+  sensitivity_opts.use_finite_differences = false;
+  ParametricSensitivity<Scalar> sensitivity_analyzer( sensitivity_opts );
+  sensitivity_analyzer.compute_sensitivity( optimizer.solution(), p, parametric_function );
 
   print_subsection( "Optimization Results" );
   fmt::print(
@@ -155,20 +161,20 @@ void example_unconstrained()
     p( 0 ),
     p( 1 ),
     p( 2 ),
-    minimizer.iterations(),
-    minimizer.final_grad_norm() );
+    optimizer.iterations(),
+    optimizer.final_grad_norm() );
 
   print_subsection( "Optimal Solution" );
   fmt::print(
     fmt::fg( fmt::color::white ),
     "   Computed: x* = [{:.6f}, {:.6f}]\n"
     "   Exact:     x* = [{:.6f}, {:.6f}]\n",
-    minimizer.solution()( 0 ),
-    minimizer.solution()( 1 ),
+    optimizer.solution()( 0 ),
+    optimizer.solution()( 1 ),
     x_exact( 0 ),
     x_exact( 1 ) );
 
-  Scalar error = ( minimizer.solution() - x_exact ).norm();
+  Scalar error = ( optimizer.solution() - x_exact ).norm();
   if ( error < 1e-6 ) { print_success( fmt::format( "Solution accuracy: {:.2e} ✓\n", error ) ); }
   else
   {
@@ -176,27 +182,27 @@ void example_unconstrained()
   }
 
   print_subsection( "Parametric Sensitivity" );
-  if ( minimizer.sensitivity_success() )
+  if ( sensitivity_analyzer.success() )
   {
     print_success( "Sensitivity computation successful ✓\n" );
-    print_matrix_info( "Computed ∂x*/∂p", minimizer.sensitivity(), true );
+    print_matrix_info( "Computed ∂x*/∂p", sensitivity_analyzer.sensitivity(), true );
     print_matrix_info( "Exact ∂x*/∂p", sensitivity_exact, true );
 
-    Scalar max_error = ( minimizer.sensitivity() - sensitivity_exact ).template lpNorm<Eigen::Infinity>();
+    Scalar max_error = ( sensitivity_analyzer.sensitivity() - sensitivity_exact ).template lpNorm<Eigen::Infinity>();
     if ( max_error < 1e-8 ) { print_success( fmt::format( "Maximum sensitivity error: {:.2e} ✓\n", max_error ) ); }
     else
     {
       print_warning( fmt::format( "Maximum sensitivity error: {:.2e}\n", max_error ) );
     }
 
-    if ( minimizer.condition_number() > 0 )
+    if ( sensitivity_analyzer.condition_number() > 0 )
     {
-      fmt::print( fmt::fg( fmt::color::white ), "   Condition number: {:.2e}\n", minimizer.condition_number() );
+      fmt::print( fmt::fg( fmt::color::white ), "   Condition number: {:.2e}\n", sensitivity_analyzer.condition_number() );
     }
   }
   else
   {
-    print_error( fmt::format( "Sensitivity computation failed: {}\n", minimizer.sensitivity_error_message() ) );
+    print_error( fmt::format( "Sensitivity computation failed: {}\n", sensitivity_analyzer.error_message() ) );
   }
 }
 
@@ -216,7 +222,8 @@ void example_box_constrained()
     "     - x₂* = 0.5 (free) → ∂x₂/∂p = [0, 1]\n" );
 
   auto parametric_function =
-    []( Vector const & x, Vector const & p, Vector * grad_x, Matrix * hess_xx, Matrix * grad_xp ) -> Scalar
+    []( TestVector const & x, TestVector const & p, TestVector * grad_x, TestMatrix * hess_xx, TestMatrix * grad_xp )
+    -> Scalar
   {
     Scalar f = std::pow( x( 0 ) - p( 0 ), 2 ) + std::pow( x( 1 ) - p( 1 ), 2 );
 
@@ -243,24 +250,24 @@ void example_box_constrained()
     return f;
   };
 
-  Vector x0( 2 );
+  TestVector x0( 2 );
   x0 << 0.0, 0.0;
-  Vector p( 2 );
+  TestVector p( 2 );
   p << 2.0, 0.5;
 
-  Vector lower( 2 );
+  TestVector lower( 2 );
   lower << -1.0, -1.0;
-  Vector upper( 2 );
+  TestVector upper( 2 );
   upper << 1.0, 1.0;
 
-  Vector x_exact( 2 );
+  TestVector x_exact( 2 );
   x_exact( 0 ) = std::max( -1.0, std::min( 1.0, p( 0 ) ) );
   x_exact( 1 ) = std::max( -1.0, std::min( 1.0, p( 1 ) ) );
 
-  Matrix sensitivity_exact( 2, 2 );
+  TestMatrix sensitivity_exact( 2, 2 );
   sensitivity_exact << 0.0, 0.0, 0.0, 1.0;
 
-  auto standard_callback = [&]( Vector const & x, Vector * g, Matrix * H )
+  auto standard_callback = [&]( TestVector const & x, TestVector * g, TestMatrix * H )
   { return parametric_function( x, p, g, H, nullptr ); };
 
   Newton_minimizer<Scalar>::Options opt_opts;
@@ -269,11 +276,10 @@ void example_box_constrained()
   optimizer.set_bounds( lower, upper );
   optimizer.minimize( x0, standard_callback );
 
-  Vector x_opt = optimizer.solution();
+  TestVector x_opt = optimizer.solution();
 
   ParametricSensitivity<Scalar>::Options sens_opts;
   sens_opts.verbosity_level = 1;
-  sens_opts.has_bounds      = true;
 
   ParametricSensitivity<Scalar> sens_analyzer( sens_opts );
   sens_analyzer.compute_sensitivity( x_opt, p, parametric_function, lower, upper );
@@ -378,10 +384,11 @@ void example_regularized()
     "     - Smooths solution w.r.t. parameters\n" );
 
   auto parametric_function =
-    []( Vector const & x, Vector const & p, Vector * grad_x, Matrix * hess_xx, Matrix * grad_xp ) -> Scalar
+    []( TestVector const & x, TestVector const & p, TestVector * grad_x, TestMatrix * hess_xx, TestMatrix * grad_xp )
+    -> Scalar
   {
-    Vector diff = x - p;
-    Vector Qdiff( 2 );
+    TestVector diff = x - p;
+    TestVector Qdiff( 2 );
     Qdiff( 0 ) = 1.0 * diff( 0 );
     Qdiff( 1 ) = 10.0 * diff( 1 );
 
@@ -411,26 +418,26 @@ void example_regularized()
     return f;
   };
 
-  Vector x0( 2 );
+  TestVector x0( 2 );
   x0 << 0.0, 0.0;
-  Vector p( 2 );
+  TestVector p( 2 );
   p << 1.0, 2.0;
 
-  Matrix Q( 2, 2 );
+  TestMatrix Q( 2, 2 );
   Q << 1.0, 0.0, 0.0, 10.0;
 
   // Exact solutions
-  Vector x_exact_no_reg           = p;
-  Matrix sensitivity_exact_no_reg = Matrix::Identity( 2, 2 );
+  TestVector x_exact_no_reg           = p;
+  TestMatrix sensitivity_exact_no_reg = TestMatrix::Identity( 2, 2 );
 
-  Matrix Q_plus_epsI           = Q + epsilon * Matrix::Identity( 2, 2 );
-  Vector x_exact_reg           = Q_plus_epsI.inverse() * Q * p;
-  Matrix sensitivity_exact_reg = Q_plus_epsI.inverse() * Q;
+  TestMatrix Q_plus_epsI           = Q + epsilon * TestMatrix::Identity( 2, 2 );
+  TestVector x_exact_reg           = Q_plus_epsI.inverse() * Q * p;
+  TestMatrix sensitivity_exact_reg = Q_plus_epsI.inverse() * Q;
 
-  Eigen::SelfAdjointEigenSolver<Matrix> solver_no_reg( 2.0 * Q );
+  Eigen::SelfAdjointEigenSolver<TestMatrix> solver_no_reg( 2.0 * Q );
   Scalar cond_exact_no_reg = solver_no_reg.eigenvalues().maxCoeff() / solver_no_reg.eigenvalues().minCoeff();
 
-  Eigen::SelfAdjointEigenSolver<Matrix> solver_reg( 2.0 * ( Q + epsilon * Matrix::Identity( 2, 2 ) ) );
+  Eigen::SelfAdjointEigenSolver<TestMatrix> solver_reg( 2.0 * ( Q + epsilon * TestMatrix::Identity( 2, 2 ) ) );
   Scalar cond_exact_reg = solver_reg.eigenvalues().maxCoeff() / solver_reg.eigenvalues().minCoeff();
 
   print_subsection( "Without Regularization" );
@@ -440,7 +447,7 @@ void example_regularized()
     sens_opts.account_for_regularization = false;
 
     ParametricSensitivity<Scalar> sens_analyzer( sens_opts );
-    Vector                        x_opt = p;
+    TestVector                    x_opt = p;
     sens_analyzer.compute_sensitivity( x_opt, p, parametric_function );
 
     fmt::print(
@@ -465,7 +472,7 @@ void example_regularized()
     sens_opts.regularization_epsilon     = epsilon;
 
     ParametricSensitivity<Scalar> sens_analyzer( sens_opts );
-    Vector                        x_opt = x_exact_reg;
+    TestVector                    x_opt = x_exact_reg;
     sens_analyzer.compute_sensitivity( x_opt, p, parametric_function );
 
     fmt::print(

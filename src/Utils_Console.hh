@@ -96,7 +96,7 @@ namespace Utils
     [[nodiscard]] static integer validate_level( integer level )
     {
       Utils::Warning( level >= -1 && level <= 4, "Utils::Console: level={} must be in the range [-1,4]", level );
-      return std::min<integer>( 4, std::max<integer>( -1, level ) );
+      return std::clamp( level, integer( -1 ), integer( 4 ) );
     }
 
     //! Writes styled text while ensuring that ANSI reset codes precede every

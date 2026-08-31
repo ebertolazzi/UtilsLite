@@ -12,7 +12,7 @@
  |                                                                          |
  |      Enrico Bertolazzi                                                   |
  |      Dipartimento di Ingegneria Industriale                              |
- |      Università degli Studi di Trento                                   |
+ |      Università degli Studi di Trento                                    |
  |      email: enrico.bertolazzi@unitn.it                                   |
  |                                                                          |
 \*--------------------------------------------------------------------------*/
@@ -27,6 +27,7 @@
 #define UTILS_MINIMIZE_TRUST_REGION_dot_HH
 
 #include "Utils_fmt.hh"
+#include "Utils_minimize_BBOX_Common.hh"
 #include "Utils_ssolver.hh"
 
 namespace Utils

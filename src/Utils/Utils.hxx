@@ -104,8 +104,10 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <concepts>
+#include <deque>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -118,13 +120,16 @@
 #include <map>
 #include <memory>
 #include <numeric>
+#include <optional>
 #include <random>
+#include <set>
 #include <source_location>
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
 #include <string>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 

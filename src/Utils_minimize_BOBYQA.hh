@@ -49,17 +49,6 @@
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
 #endif
 
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <functional>
-#include <limits>
-#include <optional>
-#include <utility>
-#include <vector>
-#include <stdio.h>
-#include <math.h>
-
 #include "Utils.hh"
 #include "Utils_fmt.hh"
 #include "Utils_eigen.hh"

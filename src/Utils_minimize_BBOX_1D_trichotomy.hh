@@ -18,7 +18,7 @@
 \*--------------------------------------------------------------------------*/
 
 /**
- * \file Utils_minimize_1D_trichotomy.hh
+ * \file Utils_minimize_BBOX_1D_trichotomy.hh
  * \brief Implementation of the trichotomy method for 1D minimization
  *
  * This file contains the complete implementation of the trichotomy algorithm,
@@ -31,10 +31,16 @@
 
 #pragma once
 
-#ifndef UTILS_MINIMIZE_1D_TRICHOTOMY_dot_HH
-#define UTILS_MINIMIZE_1D_TRICHOTOMY_dot_HH
+#ifndef UTILS_MINIMIZE_BBOX_1D_TRICHOTOMY_dot_HH
+#define UTILS_MINIMIZE_BBOX_1D_TRICHOTOMY_dot_HH
 
 #include "Utils.hh"
+
+#include <algorithm>
+#include <cmath>
+#include <numeric>
+#include <type_traits>
+#include <utility>
 
 namespace Utils
 {
@@ -155,7 +161,7 @@ namespace Utils
      * \brief Construct a wrapper around the provided function
      * \param pfun Function object or pointer to wrap
      */
-    explicit Trichotomy_fun( PFUN pfun ) : m_fun( pfun ) {}
+    template <typename F> explicit Trichotomy_fun( F && pfun ) : m_fun( std::forward<F>( pfun ) ) {}
 
     /**
      * \brief Evaluate the wrapped function
@@ -171,6 +177,23 @@ namespace Utils
    *
    * This class implements the trichotomy method, a zero-order optimization
    * algorithm for finding the minimum of unimodal one-dimensional functions.
+   *
+   * \par Closed-box minimization:
+   * The bounded overloads solve the constrained problem
+   * \f[
+   *   x_\star \in \operatorname*{arg\,min}_{a \le x \le b} f(x).
+   * \f]
+   * In particular, the minimizer is not required to lie in the interior.
+   * The two endpoints are retained as legitimate candidates throughout the
+   * reduction process and the returned point is the best final candidate
+   * among \f$a\f$, the trichotomy reference point, and \f$b\f$. Hence a
+   * monotone increasing objective returns the left endpoint exactly, while a
+   * monotone decreasing objective returns the right endpoint exactly.
+   *
+   * The overloads with an explicit `xguess` mirror the public calling pattern
+   * of `Minimize_BBOX_1D`. The guess is projected onto `[a,b]`; when it lands
+   * on an endpoint, a safe midpoint is used as the interior trichotomy sample
+   * while the endpoint remains available as a constrained solution.
    *
    * \par Algorithm Description:
    * The trichotomy algorithm is a generalization of the golden section method
@@ -206,7 +229,7 @@ namespace Utils
    *
    * \par Complete Example:
    * \code{.cpp}
-   * #include "Utils_minimize_1D_trichotomy.hh"
+   * #include "Utils_minimize_BBOX_1D_trichotomy.hh"
    * #include <iostream>
    * #include <cmath>
    *
@@ -265,6 +288,12 @@ namespace Utils
      * \brief Destructor
      */
     ~Trichotomy() = default;
+
+    Trichotomy( Trichotomy const & )             = delete;
+    Trichotomy & operator=( Trichotomy const & ) = delete;
+    Trichotomy( Trichotomy && )                  = delete;
+    Trichotomy & operator=( Trichotomy && )      = delete;
+
     // =================================================================
     // Public interface methods
     // =================================================================
@@ -305,10 +334,31 @@ namespace Utils
      * \see converged() to verify convergence
      * \see get_interval() to obtain the final interval
      */
-    Real eval( Real a, Real b, Trichotomy_base_fun<Real> * fun )
+    Real eval( Real a, Real b, Trichotomy_base_fun<Real> const * fun )
     {
       m_function = fun;
-      return this->eval_impl( a, b );
+      return this->eval_impl( std::midpoint( a, b ), a, b );
+    }
+
+    /**
+     * \brief Find the constrained minimum on [a,b] from a user supplied guess.
+     *
+     * This overload mirrors the interface of Minimize_BBOX_1D. The guess is
+     * projected onto the closed interval. If it coincides with an endpoint,
+     * the safe midpoint is used as the first interior trichotomy point while
+     * the endpoint itself is still retained as a candidate constrained
+     * minimizer.
+     *
+     * \param xguess Initial finite guess.
+     * \param a Lower finite bound.
+     * \param b Upper finite bound.
+     * \param fun Objective object.
+     * \return Location of the minimum over the closed interval [a,b].
+     */
+    Real eval( Real xguess, Real a, Real b, Trichotomy_base_fun<Real> const * fun )
+    {
+      m_function = fun;
+      return this->eval_impl( xguess, a, b );
     }
 
     /**
@@ -348,11 +398,19 @@ namespace Utils
      *
      * \see eval() for the base class version
      */
-    template <typename PFUN> Real eval2( Real a, Real b, PFUN pfun )
+    template <typename PFUN> Real eval2( Real a, Real b, PFUN && pfun )
     {
-      Trichotomy_fun<Real, PFUN> fun( pfun );
+      Trichotomy_fun<Real, std::decay_t<PFUN>> fun( std::forward<PFUN>( pfun ) );
       m_function = &fun;
-      return this->eval_impl( a, b );
+      return this->eval_impl( std::midpoint( a, b ), a, b );
+    }
+
+    /** \brief Callable interface with a user supplied initial guess. */
+    template <typename PFUN> Real eval2( Real xguess, Real a, Real b, PFUN && pfun )
+    {
+      Trichotomy_fun<Real, std::decay_t<PFUN>> fun( std::forward<PFUN>( pfun ) );
+      m_function = &fun;
+      return this->eval_impl( xguess, a, b );
     }
 
     /**
@@ -407,7 +465,7 @@ namespace Utils
      * \see search2() for the function object version
      * \see set_max_fun_evaluation() to limit evaluations during expansion
      */
-    Real search( Real x, Real delta, Trichotomy_base_fun<Real> * fun )
+    Real search( Real x, Real delta, Trichotomy_base_fun<Real> const * fun )
     {
       m_function = fun;
       return this->search_impl( x, delta );
@@ -436,9 +494,9 @@ namespace Utils
      * // Will find the minimum near 3π/2
      * \endcode
      */
-    template <typename PFUN> Real search2( Real x, Real delta, PFUN pfun )
+    template <typename PFUN> Real search2( Real x, Real delta, PFUN && pfun )
     {
-      Trichotomy_fun<Real, PFUN> fun( pfun );
+      Trichotomy_fun<Real, std::decay_t<PFUN>> fun( std::forward<PFUN>( pfun ) );
       m_function = &fun;
       return this->search_impl( x, delta );
     }
@@ -594,6 +652,7 @@ namespace Utils
      *
      * \see num_fun_eval() for the total number of function evaluations
      */
+    Integer max_iterations() const { return m_max_iteration; }
     Integer used_iter() const { return m_num_iter_done; }
 
     /**
@@ -758,7 +817,11 @@ namespace Utils
      *
      * \see eval(), eval2(), search(), search2() for the methods that compute the minimum
      */
-    Real min_value() const { return m_f3; }
+    bool hit_max_iterations() const { return m_hit_max_iterations; }
+    Real x_minimum() const { return m_x_min; }
+    Real min_value() const { return m_f_min; }
+    Real bracket_a() const { return m_a; }
+    Real bracket_b() const { return m_b; }
 
   private:
     // =================================================================
@@ -771,7 +834,11 @@ namespace Utils
     Integer m_max_fun_evaluation = 1000;  ///< Maximum evaluation limit
     Real    m_tolerance          = 0;     ///< Convergence tolerance
 
-    bool m_converged = false;  ///< Convergence flag
+    bool m_converged          = false;  ///< Convergence flag
+    bool m_hit_max_iterations = false;  ///< Iteration budget exhausted
+
+    Real m_x_min = 0;  ///< Best constrained minimizer returned by the last call
+    Real m_f_min = 0;  ///< Objective value at m_x_min
 
     // Interval state and function values
     Real m_a  = 0;
@@ -789,7 +856,7 @@ namespace Utils
     Real m_x5 = 0;
     Real m_f5 = 0;  ///< Fifth interior point and f(x5)
 
-    Trichotomy_base_fun<Real> * m_function = nullptr;  ///< Pointer to function to minimize
+    Trichotomy_base_fun<Real> const * m_function = nullptr;  ///< Pointer to function to minimize
 
     // =================================================================
     // Private helper methods
@@ -833,23 +900,66 @@ namespace Utils
      *
      * \internal
      */
-    Real eval_impl( Real a, Real b )
+    Real eval_impl( Real xguess, Real a, Real b )
     {
-      // Inizializza con tre punti: a, midpoint, b
+      Utils::Check( m_function != nullptr, "Trichotomy::eval(), function pointer is null\n" );
+      Utils::Check(
+        std::isfinite( a ) && std::isfinite( b ) && a != b,
+        "Trichotomy::eval(a={}, b={}), expected finite bounds with a != b\n",
+        a, b );
+      if ( a > b ) std::swap( a, b );
+      Utils::Check(
+        std::isfinite( xguess ),
+        "Trichotomy::eval(xguess={}, a={}, b={}), expected a finite guess\n",
+        xguess, a, b );
+
+      m_num_iter_done      = 0;
+      m_num_fun_eval       = 0;
+      m_converged          = false;
+      m_hit_max_iterations = false;
+
       m_a  = a;
-      m_fa = m_function->eval( m_a );
+      m_fa = evaluate( m_a );
       m_b  = b;
-      m_fb = m_function->eval( m_b );
-      m_x3 = ( a + b ) / Real( 2 );
-      m_f3 = m_function->eval( m_x3 );
+      m_fb = evaluate( m_b );
 
-      m_num_iter_done = 0;
-      m_num_fun_eval  = 3;
+      Real const xprojected = std::clamp( xguess, a, b );
+      m_x3 = ( xprojected == a || xprojected == b ) ? std::midpoint( a, b ) : xprojected;
+      m_f3 = evaluate( m_x3 );
 
-      // Inizializza tolleranza se non impostata
-      if ( m_tolerance == Real( 0 ) ) { m_tolerance = pow( machine_eps<Real>(), Real( 2.0 / 3.0 ) ); }
+      if ( m_tolerance == Real( 0 ) )
+        m_tolerance = pow( machine_eps<Real>(), Real( 2.0 / 3.0 ) );
 
       return minimize();
+    }
+
+    /**
+     * \brief Select the best known point of the closed box.
+     *
+     * The unconstrained trichotomy state uses m_x3 as its interior reference
+     * point. For a minimum over the closed interval, however, either endpoint
+     * is also a legitimate solution. This routine therefore compares the
+     * final triplet (a,x3,b) and stores the best constrained candidate.
+     *
+     * This is essential for monotone objectives: if f is increasing on the
+     * whole interval the exact constrained minimizer is a, while for a
+     * decreasing objective it is b.
+     */
+    Real select_box_minimum()
+    {
+      m_x_min = m_x3;
+      m_f_min = m_f3;
+      if ( m_fa <= m_f_min )
+      {
+        m_x_min = m_a;
+        m_f_min = m_fa;
+      }
+      if ( m_fb < m_f_min )
+      {
+        m_x_min = m_b;
+        m_f_min = m_fb;
+      }
+      return m_x_min;
     }
 
     /**
@@ -1015,17 +1125,20 @@ namespace Utils
      */
     Real minimize()
     {
-      m_num_iter_done = 0;
-      m_converged     = false;
+      m_num_iter_done      = 0;
+      m_converged          = false;
+      m_hit_max_iterations = false;
 
-      while ( m_num_iter_done++ < m_max_iteration )
+      while ( m_num_iter_done < m_max_iteration )
       {
+        ++m_num_iter_done;
         m_converged = bracketing();
         if ( m_converged ) break;
         if ( m_num_fun_eval >= m_max_fun_evaluation ) break;
       }
 
-      return m_x3;
+      m_hit_max_iterations = !m_converged && m_num_iter_done >= m_max_iteration;
+      return select_box_minimum();
     }
 
     /**

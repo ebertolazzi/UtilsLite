@@ -23,16 +23,14 @@
 
 #pragma once
 
+#include "Utils_minimize_BBOX_Common.hh"
+
 #ifndef UTILS_MINIMIZE_BBOX_IPNEWTON_HH
 #define UTILS_MINIMIZE_BBOX_IPNEWTON_HH
 
 #include "Utils_minimize_BBOX.hh"
 #include "Utils_LBFGS.hh"
 #include "Utils_minimize_Newton.hh"
-#include <random>
-#include <algorithm>
-#include <deque>
-#include <optional>
 
 namespace Utils
 {
@@ -46,7 +44,7 @@ namespace Utils
     using integer        = Eigen::Index;
     using Vector         = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
     using Matrix         = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
-    using SparseMatrix   = Eigen::SparseMatrix<Scalar>; // kept for compat, not used in new interface
+    using SparseMatrix   = Eigen::SparseMatrix<Scalar>;  // kept for compat, not used in new interface
     using ConstVectorRef = Eigen::Ref<Vector const>;
     using VectorRef      = Eigen::Ref<Vector>;
     using ConstMatrixRef = Eigen::Ref<Matrix const>;
@@ -81,13 +79,13 @@ namespace Utils
 
     struct Options
     {
-      // General parameters
-      integer max_outer_iterations = 100;   // Increased for difficult problems
-      integer max_inner_iterations = 500;   // Increased for difficult subproblems
-      Scalar  tol                  = 1e-6;  // Relaxed tolerance
-      Scalar  f_tol                = 1e-10;
-      Scalar  x_tol                = 1e-8;
-      Scalar  g_max                = 1e-4;  // Relaxed gradient tolerance
+      // General parameters — unified to 1e-9 inf-norm for all BBOX solvers
+      integer max_outer_iterations = 100;
+      integer max_inner_iterations = 500;
+      Scalar  tol                  = Scalar( 1e-9 );
+      Scalar  f_tol                = Scalar( 1e-12 );
+      Scalar  x_tol                = Scalar( 1e-12 );
+      Scalar  g_max                = Scalar( 1e-9 );  // projected grad inf-norm
 
       // Barrier parameter
       Scalar mu_init            = 1.0;    // Start with larger mu for stability
@@ -130,12 +128,12 @@ namespace Utils
       // --- Unified setters (same name across all BBOX solvers) ---
       void set_tolerances( Scalar t )
       {
-        tol                  = t;
-        f_tol                = t * Scalar( 1e-4 );
-        x_tol                = t * Scalar( 1e-2 );
-        g_max                = t;
-        epsilon_feas         = t;
-        epsilon_infeas       = t * Scalar( 1e2 );
+        tol            = t;
+        f_tol          = t * Scalar( 1e-4 );
+        x_tol          = t * Scalar( 1e-2 );
+        g_max          = t;
+        epsilon_feas   = t;
+        epsilon_infeas = t * Scalar( 1e2 );
       }
       void set_max_iterations( integer n ) { max_outer_iterations = n; }
     };
@@ -325,8 +323,8 @@ namespace Utils
       KKTResiduals res;
       integer      n = x.size();
 
-      // Stationarity of the Lagrangian: g-lambda_lower+lambda_upper.
-      res.gradient_norm = ( grad - lam_lower + lam_upper ).norm();
+      // Stationarity of the Lagrangian: g-lambda_lower+lambda_upper — inf-norm for uniform 1e-9 test
+      res.gradient_norm = ( grad - lam_lower + lam_upper ).template lpNorm<Eigen::Infinity>();
 
       // Primal feasibility
       Scalar max_primal_viol = 0;
@@ -353,7 +351,7 @@ namespace Utils
       {
         Scalar const comp_lower = std::isfinite( m_lower[i] ) ? std::abs( lam_lower[i] * ( x[i] - m_lower[i] ) ) : 0;
         Scalar const comp_upper = std::isfinite( m_upper[i] ) ? std::abs( lam_upper[i] * ( m_upper[i] - x[i] ) ) : 0;
-        max_comp          = std::max( max_comp, std::max( comp_lower, comp_upper ) );
+        max_comp                = std::max( max_comp, std::max( comp_lower, comp_upper ) );
         total_gap += comp_lower + comp_upper;
       }
       res.complementarity = max_comp;
@@ -416,12 +414,12 @@ namespace Utils
 
       for ( integer i = 0; i < x.size(); ++i )
       {
-        bool const finite_lower = std::isfinite( m_lower[i] );
-        bool const finite_upper = std::isfinite( m_upper[i] );
-        Scalar const scale = std::max( Scalar( 1 ), std::abs( x[i] ) );
-        Scalar const margin = finite_lower && finite_upper
-                                ? std::max( Scalar( 1e-3 ), margin_factor * ( m_upper[i] - m_lower[i] ) )
-                                : std::max( Scalar( 1e-3 ), margin_factor * scale );
+        bool const   finite_lower = std::isfinite( m_lower[i] );
+        bool const   finite_upper = std::isfinite( m_upper[i] );
+        Scalar const scale        = std::max( Scalar( 1 ), std::abs( x[i] ) );
+        Scalar const margin       = finite_lower && finite_upper
+                                      ? std::max( Scalar( 1e-3 ), margin_factor * ( m_upper[i] - m_lower[i] ) )
+                                      : std::max( Scalar( 1e-3 ), margin_factor * scale );
 
         if ( finite_lower && x[i] <= m_lower[i] + m_opts.epsilon_feas )
         {
@@ -660,8 +658,7 @@ namespace Utils
     }
 
   public:
-    explicit minimize_BBOX_IPNewton( integer dimension = 0, Options opts = {} )
-      : m_opts( std::move( opts ) )
+    explicit minimize_BBOX_IPNewton( integer dimension = 0, Options opts = {} ) : m_opts( std::move( opts ) )
     { resize( dimension ); }
 
     explicit minimize_BBOX_IPNewton( Options opts ) : minimize_BBOX_IPNewton( 0, std::move( opts ) ) {}
@@ -693,9 +690,9 @@ namespace Utils
       Utils::Check(
         !lower.hasNaN() && !upper.hasNaN() && ( lower.array() < upper.array() ).all(),
         "minimize_BBOX_IPNewton::set_bounds: bounds must not be NaN and lower must be strictly smaller than upper" );
-      m_dimension = lower.size();
-      m_lower = lower;
-      m_upper = upper;
+      m_dimension          = lower.size();
+      m_lower              = lower;
+      m_upper              = upper;
       m_bounds_initialized = true;
     }
 
@@ -740,32 +737,29 @@ namespace Utils
     }
 
     template <typename Problem>
-      requires requires( Problem & problem, Vector const & x, Vector & gradient, Matrix & hessian ) {
-        { problem.objective( x ) } -> std::convertible_to<Scalar>;
-        problem.gradient( x, gradient );
-        problem.hessian( x, hessian );
+      requires requires( Problem & problem, Vector const & x, Vector & gradient, Matrix & hessian, Scalar & f ) {
+        { problem.objective( x, f ) } -> std::convertible_to<bool>;
+        { problem.gradient( x, gradient ) } -> std::convertible_to<bool>;
+        { problem.hessian( x, hessian ) } -> std::convertible_to<bool>;
       }
-    Result solve(
-      Problem &      problem,
-      Vector const & x0,
-      Vector const & lower,
-      Vector const & upper )
+    Result solve( Problem & problem, Vector const & x0, Vector const & lower, Vector const & upper )
     {
       resize( x0.size() );
       set_bounds( lower, upper );
       Callback callback = [&problem]( Vector const & x, Vector * gradient, Matrix * hessian ) -> Scalar
       {
-        if ( gradient != nullptr ) problem.gradient( x, *gradient );
-        if ( hessian != nullptr ) problem.hessian( x, *hessian );
-        return static_cast<Scalar>( problem.objective( x ) );
+        if ( gradient != nullptr ) (void)problem.gradient( x, *gradient );
+        if ( hessian != nullptr ) (void)problem.hessian( x, *hessian );
+        Scalar f{};
+        (void)problem.objective( x, f );
+        return f;
       };
       minimize( x0, callback );
       return result();
     }
 
     // --- unified dense lambda interface: f(x), grad(x,g), hess(x,H) ---
-    template <typename Obj, typename Grad, typename Hess>
-    Result solve(
+    template <typename Obj, typename Grad, typename Hess> Result solve(
       Obj &&         obj,
       Grad &&        grad,
       Hess &&        hess,
@@ -778,9 +772,43 @@ namespace Utils
         std::decay_t<Obj>  o;
         std::decay_t<Grad> g;
         std::decay_t<Hess> h;
-        Scalar objective( Vector const & x ) { return static_cast<Scalar>( o( x ) ); }
-        void gradient( Vector const & x, Vector & gg ) { g( x, gg ); }
-        void hessian( Vector const & x, Matrix & HH ) { h( x, HH ); }
+        Scalar objective( Vector const & x )
+        {
+          Scalar f{};
+          if constexpr ( std::is_invocable_r_v<bool, std::decay_t<Obj>, ConstVectorRef, Scalar &> )
+          {
+            (void)o( ConstVectorRef( x ), f );
+            return f;
+          }
+          else
+          {
+            return static_cast<Scalar>( o( ConstVectorRef( x ) ) );
+          }
+        }
+        void gradient( Vector const & x, Vector & gg )
+        {
+          if constexpr ( std::is_invocable_r_v<bool, std::decay_t<Grad>, ConstVectorRef, VectorRef> )
+          {
+            VectorRef rgg( gg );
+            (void)g( ConstVectorRef( x ), rgg );
+          }
+          else
+          {
+            g( ConstVectorRef( x ), VectorRef( gg ) );
+          }
+        }
+        void hessian( Vector const & x, Matrix & HH )
+        {
+          if constexpr ( std::is_invocable_r_v<bool, std::decay_t<Hess>, ConstVectorRef, MatrixRef> )
+          {
+            MatrixRef rHH( HH );
+            (void)h( ConstVectorRef( x ), rHH );
+          }
+          else
+          {
+            h( ConstVectorRef( x ), MatrixRef( HH ) );
+          }
+        }
       } adapt{ std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) };
       return solve( adapt, x0, lower, upper );
     }
@@ -809,7 +837,7 @@ namespace Utils
         m_centering_steps );
     }
 
-    void minimize( Vector const & x0, Callback const & callback )
+    void minimize( ConstVectorRef x0, Callback const & callback )
     {
       reset_results();
 
@@ -836,7 +864,7 @@ namespace Utils
         make_strictly_feasible( x );
       }
 
-      Scalar f        = callback( x, &grad, nullptr );
+      Scalar f = callback( x, &grad, nullptr );
       Utils::Check(
         std::isfinite( f ) && grad.size() == n && grad.allFinite(),
         "minimize_BBOX_IPNewton::minimize: callback returned an invalid objective or gradient" );
@@ -852,14 +880,14 @@ namespace Utils
       Vector lam_lower( n ), lam_upper( n );
       compute_dual_variables_corrected( x, grad, lam_lower, lam_upper );
 
-      bool const barrier_active      = has_finite_bound();
-      Scalar  mu                     = barrier_active ? m_opts.mu_init : Scalar( 0 );
-      Status  status                 = Status::MAX_ITERATIONS;
-      integer outer_iter             = 0;
-      integer total_inner_iterations = 0;
-      integer newton_steps           = 0;
-      integer gradient_steps         = 0;
-      integer centering_steps        = 0;
+      bool const barrier_active         = has_finite_bound();
+      Scalar     mu                     = barrier_active ? m_opts.mu_init : Scalar( 0 );
+      Status     status                 = Status::MAX_ITERATIONS;
+      integer    outer_iter             = 0;
+      integer    total_inner_iterations = 0;
+      integer    newton_steps           = 0;
+      integer    gradient_steps         = 0;
+      integer    centering_steps        = 0;
 
       integer no_progress_count = 0;
       integer barrier_failures  = 0;
@@ -1063,8 +1091,7 @@ namespace Utils
   };
 
   // Consistency alias (capital M) for uniform naming
-  template <typename Scalar = double>
-  using Minimize_BBOX_IPNewton = minimize_BBOX_IPNewton<Scalar>;
+  template <typename Scalar = double> using Minimize_BBOX_IPNewton = minimize_BBOX_IPNewton<Scalar>;
 
 }  // namespace Utils
 

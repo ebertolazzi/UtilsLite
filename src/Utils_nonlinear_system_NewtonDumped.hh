@@ -2613,7 +2613,7 @@ namespace Utils
                                     ( F_new - F - directional_derivative * alpha );
 
               // Safeguard
-              alpha_new = std::max( 0.1 * alpha, std::min( 0.9 * alpha, alpha_new ) );
+              alpha_new = std::clamp( alpha_new, 0.1 * alpha, 0.9 * alpha );
               alpha     = alpha_new;
 
               if ( alpha < m_quad_alpha_min )

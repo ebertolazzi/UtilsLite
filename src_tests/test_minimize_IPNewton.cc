@@ -95,12 +95,9 @@ vector<TestResult> global_test_results;
 
 struct QuadraticAPIProblem
 {
-  Scalar objective( Vector const & x ) { return Scalar( 0.5 ) * x.squaredNorm(); }
-  void gradient( Vector const & x, Vector & gradient ) { gradient = x; }
-  void hessian( Vector const & x, Matrix & hessian )
-  {
-    hessian.setIdentity( x.size(), x.size() );
-  }
+  bool objective( Vector const & x, Scalar & f ) { f = Scalar( 0.5 ) * x.squaredNorm(); return true; }
+  bool gradient( Vector const & x, Vector & gradient ) { gradient = x; return true; }
+  bool hessian( Vector const & x, Matrix & hessian ) { hessian.setIdentity( x.size(), x.size() ); return true; }
 };
 
 bool test_new_solver_interface()
@@ -109,12 +106,12 @@ bool test_new_solver_interface()
   options.verbosity = 0;
   options.tol       = Scalar( 1e-12 );
   MINIMIZER solver( 2, options );
-  Vector x0( 2 ), lower( 2 ), upper( 2 );
+  Vector    x0( 2 ), lower( 2 ), upper( 2 );
   x0 << Scalar( 0.5 ), Scalar( -0.75 );
   lower.setConstant( Scalar( -2 ) );
   upper.setConstant( Scalar( 2 ) );
   QuadraticAPIProblem problem;
-  auto const bounded = solver.solve( problem, x0, lower, upper );
+  auto const          bounded = solver.solve( problem, x0, lower, upper );
 
   Scalar const infinity = std::numeric_limits<Scalar>::infinity();
   lower.setConstant( -infinity );
@@ -128,16 +125,21 @@ bool test_new_solver_interface()
   bool missing_bounds_rejected = false;
   try
   {
-    MINIMIZER without_bounds( 2, options );
+    MINIMIZER           without_bounds( 2, options );
     MINIMIZER::Callback callback = [&problem]( Vector const & x, Vector * gradient, Matrix * hessian )
     {
-      if ( gradient ) problem.gradient( x, *gradient );
-      if ( hessian ) problem.hessian( x, *hessian );
-      return problem.objective( x );
+      if ( gradient ) (void)problem.gradient( x, *gradient );
+      if ( hessian ) (void)problem.hessian( x, *hessian );
+      Scalar f{};
+      (void)problem.objective( x, f );
+      return f;
     };
     without_bounds.minimize( x0, callback );
   }
-  catch ( ... ) { missing_bounds_rejected = true; }
+  catch ( ... )
+  {
+    missing_bounds_rejected = true;
+  }
 
   bool const passed = bounded.status != Status::NOT_STARTED && bounded.x.size() == x0.size() && bounded.x.allFinite() &&
                       unbounded_box.status == Status::CONVERGED && unbounded_box.x.allFinite() &&

@@ -43,15 +43,6 @@
 #include "Utils_fmt.hh"
 #include "Utils_eigen.hh"
 
-// Required headers
-#include <algorithm>
-#include <cmath>
-#include <functional>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-
 namespace Utils
 {
 

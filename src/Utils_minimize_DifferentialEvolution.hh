@@ -24,19 +24,6 @@
 #ifndef UTILS_DIFFERENTIAL_EVOLUTION_dot_HH
 #define UTILS_DIFFERENTIAL_EVOLUTION_dot_HH
 
-#include <algorithm>
-#include <atomic>
-#include <cmath>
-#include <functional>
-#include <iostream>
-#include <limits>
-#include <mutex>
-#include <numeric>
-#include <random>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
 #include "Utils.hh"
 #include "Utils_eigen.hh"
 #include "Utils_fmt.hh"
@@ -226,7 +213,7 @@ namespace Utils
         case CLAMPING:
           for ( integer j = 0; j < m_dimension; ++j )
           {
-            individual[j] = std::max( m_lower_bounds[j], std::min( m_upper_bounds[j], individual[j] ) );
+            individual[j] = std::clamp( individual[j], m_lower_bounds[j], m_upper_bounds[j] );
           }
           break;
 
@@ -356,8 +343,8 @@ namespace Utils
         CR = normal_dist( m_random_engine );
 
         // Clamp to valid ranges
-        F  = std::max<real_type>( 0.1, std::min<real_type>( 1.0, F ) );
-        CR = std::max<real_type>( 0.0, std::min<real_type>( 1.0, CR ) );
+        F  = std::clamp( F, real_type( 0.1 ), real_type( 1.0 ) );
+        CR = std::clamp( CR, real_type( 0.0 ), real_type( 1.0 ) );
       }
       else
       {
@@ -517,10 +504,9 @@ namespace Utils
 
     void set_strategy( Strategy strategy ) { m_strategy = strategy; }
 
-    void set_weight( real_type F ) { m_weight = std::max<real_type>( 0.0, std::min<real_type>( 2.0, F ) ); }
+    void set_weight( real_type F ) { m_weight = std::clamp( F, real_type( 0.0 ), real_type( 2.0 ) ); }
 
-    void set_crossover_rate( real_type CR )
-    { m_crossover_rate = std::max<real_type>( 0.0, std::min<real_type>( 1.0, CR ) ); }
+    void set_crossover_rate( real_type CR ) { m_crossover_rate = std::clamp( CR, real_type( 0.0 ), real_type( 1.0 ) ); }
 
     void set_bounds( const Vector & lower, const Vector & upper )
     {

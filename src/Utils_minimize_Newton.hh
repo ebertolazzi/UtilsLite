@@ -86,7 +86,7 @@ namespace Utils
     using Vector       = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
     using integer      = Eigen::Index;
     using Matrix       = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
-    using SparseMatrix = Eigen::SparseMatrix<Scalar>; // kept for compat
+    using SparseMatrix = Eigen::SparseMatrix<Scalar>;  // kept for compat
     using DenseMatrix  = Matrix;
     using Callback     = std::function<Scalar( Vector const &, Vector *, Matrix * )>;
     using BOX          = BoxConstraintHandler<Scalar>;
@@ -147,12 +147,12 @@ namespace Utils
     Scalar  m_eps = std::numeric_limits<Scalar>::epsilon();  // Precisione di macchina
 
     // --- Stato Corrente ---
-    Scalar  m_f;      // Valore funzione corrente
-    Scalar  m_lambda; // Parametro di regolarizzazione corrente
-    Scalar  m_gnorm;  // Norma del gradiente proiettato
-    Vector  m_x;      // Punto corrente
-    Vector  m_g;      // Gradiente corrente
-    Matrix  m_H;      // Hessiana corrente (densa)
+    Scalar m_f;       // Valore funzione corrente
+    Scalar m_lambda;  // Parametro di regolarizzazione corrente
+    Scalar m_gnorm;   // Norma del gradiente proiettato
+    Vector m_x;       // Punto corrente
+    Vector m_g;       // Gradiente corrente
+    Matrix m_H;       // Hessiana corrente (densa)
 
     // --- Miglior Punto Trovato ---
     Vector m_best_x;                                       // Miglior punto trovato
@@ -200,7 +200,7 @@ namespace Utils
       Scalar lambda = m_opts.lambda_init_factor * norm_H / ( 1.0 + norm_x );
 
       // Limita tra min e max
-      lambda = std::max( m_opts.lambda_min, std::min( lambda, m_opts.lambda_max ) );
+      lambda = std::clamp( lambda, m_opts.lambda_min, m_opts.lambda_max );
 
       if ( m_opts.verbosity >= 2 )
         fmt::print( PrintColors::INFO, "    λ iniziale: {:.2e} (‖H‖={:.2e}, ‖x‖={:.2e})\n", lambda, norm_H, norm_x );
@@ -527,31 +527,35 @@ namespace Utils
         a );
     }
 
+    void print_box_row( std::string const & text ) const
+    {
+      // The frame has a 70-column interior: one padding space on each side
+      // and 68 columns for the actual text.
+      fmt::print( "║ {:<68} ║\n", text );
+    }
+
+    void print_box_title( std::string const & text ) const
+    { fmt::print( "║{:^70}║\n", text ); }
+
     void print_header( integer n ) const
     {
       if ( m_opts.verbosity < 1 ) return;
 
       fmt::print( "╔══════════════════════════════════════════════════════════════════════╗\n" );
-      fmt::print( "║              NEWTON OPTIMIZER WITH ANALYTICAL HESSIAN               ║\n" );
+      print_box_title( "NEWTON OPTIMIZER WITH ANALYTICAL HESSIAN" );
       fmt::print( "╠══════════════════════════════════════════════════════════════════════╣\n" );
-      fmt::print(
-        "║ Dimension: {:4d}        MaxIter: {:4d}        GTol: {:8.2e}       ║\n",
-        n,
-        m_opts.max_iter,
-        m_opts.g_tol );
-      fmt::print(
-        "║ λ₀={:<8.2e}     Range=[{:<8.2e}, {:<8.2e}]                      ║\n",
-        m_opts.lambda_init,
-        m_opts.lambda_min,
-        m_opts.lambda_max );
+      print_box_row( fmt::format(
+        "Dimension: {:4d}        MaxIter: {:4d}        GTol: {:8.2e}", n, m_opts.max_iter, m_opts.g_tol ) );
+      print_box_row( fmt::format(
+        "λ₀={:<8.2e}     Range=[{:<8.2e}, {:<8.2e}]", m_opts.lambda_init, m_opts.lambda_min, m_opts.lambda_max ) );
       if ( m_box.is_active() )
       {
         integer n_active = m_box.num_active( m_x );
-        fmt::print( "║ Box constraints: ACTIVE ({:d}/{:d} variabili vincolate)              ║\n", n_active, n );
+        print_box_row( fmt::format( "Box constraints: ACTIVE ({:d}/{:d} variabili vincolate)", n_active, n ) );
       }
       else
-        fmt::print( "║ Box constraints: INACTIVE                                            ║\n" );
-      fmt::print( "║ Initial F = {:<12.6e}                                             ║\n", m_f_init );
+        print_box_row( "Box constraints: INACTIVE" );
+      print_box_row( fmt::format( "Initial F = {:.6e}", m_f_init ) );
       fmt::print( "╚══════════════════════════════════════════════════════════════════════╝\n" );
       if ( m_opts.verbosity >= 2 ) fmt::print( " Iter     F(x)          ΔF         ‖∇f‖         λ          α\n" );
     }
@@ -570,21 +574,21 @@ namespace Utils
         color = PrintColors::ERROR;
 
       fmt::print( "\n╔══════════════════════════════════════════════════════════════════════╗\n" );
-      fmt::print( "║                     OPTIMIZATION SUMMARY                            ║\n" );
+      print_box_title( "OPTIMIZATION SUMMARY" );
       fmt::print( "╠══════════════════════════════════════════════════════════════════════╣\n" );
-      fmt::print( color, "║ Status:            {:<45} ║\n", to_string( m_status ) );
-      fmt::print( "║ Iterations:        {:<45d} ║\n", m_iter );
-      fmt::print( "║ Function evals:    {:<45d} ║\n", m_f_evals );
-      fmt::print( "║ Hessian evals:     {:<45d} ║\n", m_h_evals );
-      fmt::print( "║ Line search evals: {:<45d} ║\n", m_ls_evals );
-      fmt::print( "║ Newton fails:      {:<45d} ║\n", m_newton_fails );
+      fmt::print( color, "║ {:<68} ║\n", fmt::format( "Status: {}", to_string( m_status ) ) );
+      print_box_row( fmt::format( "Iterations: {}", m_iter ) );
+      print_box_row( fmt::format( "Function evals: {}", m_f_evals ) );
+      print_box_row( fmt::format( "Hessian evals: {}", m_h_evals ) );
+      print_box_row( fmt::format( "Line search evals: {}", m_ls_evals ) );
+      print_box_row( fmt::format( "Newton fails: {}", m_newton_fails ) );
       fmt::print( "╠══════════════════════════════════════════════════════════════════════╣\n" );
-      fmt::print( "║ Final ‖∇f‖:        {:<45.2e} ║\n", m_gnorm );
-      fmt::print( "║ Final f:           {:<45.6e} ║\n", m_f );
-      fmt::print( "║ Initial f:         {:<45.6e} ║\n", m_f_init );
-      fmt::print( "║ Reduction:         {:<45.6e} ║\n", m_f_init - m_f );
+      print_box_row( fmt::format( "Final ‖∇f‖: {:.2e}", m_gnorm ) );
+      print_box_row( fmt::format( "Final f: {:.6e}", m_f ) );
+      print_box_row( fmt::format( "Initial f: {:.6e}", m_f_init ) );
+      print_box_row( fmt::format( "Reduction: {:.6e}", m_f_init - m_f ) );
       if ( m_opts.keep_best_point && m_best_f < m_f - m_eps )
-        fmt::print( "║ Best f found:      {:<45.6e} ║\n", m_best_f );
+        print_box_row( fmt::format( "Best f found: {:.6e}", m_best_f ) );
       fmt::print( "╚══════════════════════════════════════════════════════════════════════╝\n" );
     }
 

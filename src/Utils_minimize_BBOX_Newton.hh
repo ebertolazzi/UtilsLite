@@ -2,9 +2,18 @@
  |                                                                          |
  |  Copyright (C) 2026                                                      |
  |                                                                          |
+ |         , __                 , __                                        |
+ |        /|/  \               /|/  \                                       |
+ |         | __/ _   ,_         | __/ _   ,_                                |
+ |         |   \|/  /  |  |   | |   \|/  /  |  |   |                        |
+ |         |(__/|__/   |_/ \_/|/|(__/|__/   |_/ \_/|/                       |
+ |                           /|                   /|                        |
+ |                           \|                   \|                        |
+ |                                                                          |
  |      Enrico Bertolazzi                                                   |
  |      Dipartimento di Ingegneria Industriale                              |
- |      Universita degli Studi di Trento                                    |
+ |      Università degli Studi di Trento                                    |
+ |      email: enrico.bertolazzi@unitn.it                                   |
  |                                                                          |
 \*--------------------------------------------------------------------------*/
 
@@ -396,14 +405,16 @@
  * The problem object must provide
  *
  * @code{.cpp}
- * Real objective(ConstVectorRef<Real> x);
- * void gradient(ConstVectorRef<Real> x, VectorRef<Real> g);
- * void hessian(ConstVectorRef<Real> x, MatrixRef<Real> H);
+ * bool objective(ConstVectorRef<Real> x, Real& f);
+ * bool gradient(ConstVectorRef<Real> x, VectorRef<Real> g);
+ * bool hessian(ConstVectorRef<Real> x, MatrixRef<Real> H);
  * @endcode
  *
- * The supplied Hessian is assumed to represent the dense Hessian of the
- * objective at the requested point.  The solver uses Eigen dense matrices and
- * requires Eigen 5 or newer.
+ * Each evaluation returns `true` on success and `false` when the requested
+ * quantity cannot be evaluated reliably.  The objective value is returned
+ * through the output argument @p f.  The supplied Hessian is assumed to
+ * represent the dense Hessian of the objective at the requested point.  The
+ * solver uses Eigen dense matrices and requires Eigen 5 or newer.
  *
  * @note This documented file is algorithmically identical to the tested V3
  *       implementation; only Doxygen/documentation comments have been added.
@@ -415,16 +426,7 @@
 #define UTILS_MINIMIZE_BBOX_NEWTON_DOT_HH
 
 #include "Utils_eigen.hh"
-
-#include <algorithm>
-#include <cmath>
-#include <concepts>
-#include <cstdio>
-#include <limits>
-#include <string_view>
-#include <type_traits>
-#include <utility>
-#include <vector>
+#include "Utils_minimize_BBOX_Common.hh"
 
 #if EIGEN_MAJOR_VERSION < 5
 #error "Utils::Minimize_BBOX_Newton requires Eigen 5 or newer"
@@ -433,11 +435,11 @@
 namespace Utils::Minimize_BBOX_Newton_details
 {
 
-  template <typename Real> using Vector         = Eigen::Matrix<Real, Eigen::Dynamic, 1>;
-  template <typename Real> using Matrix         = Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic>;
-  template <typename Real> using ConstVectorRef = Eigen::Ref<Vector<Real> const>;
-  template <typename Real> using VectorRef      = Eigen::Ref<Vector<Real>>;
-  template <typename Real> using MatrixRef      = Eigen::Ref<Matrix<Real>>;
+  template <typename Real> using Vector         = Utils::Vector<Real>;
+  template <typename Real> using Matrix         = Utils::Matrix<Real>;
+  template <typename Real> using ConstVectorRef = Utils::ConstVectorRef<Real>;
+  template <typename Real> using VectorRef      = Utils::VectorRef<Real>;
+  template <typename Real> using MatrixRef      = Utils::MatrixRef<Real>;
 
   /**
    * @brief Compile-time interface required from an optimization problem.
@@ -448,10 +450,10 @@ namespace Utils::Minimize_BBOX_Newton_details
    * full problem classes.
    */
   template <typename Problem, typename Real>
-  concept ProblemFor = requires( Problem & p, ConstVectorRef<Real> x, VectorRef<Real> g, MatrixRef<Real> H ) {
-    { p.objective( x ) } -> std::convertible_to<Real>;
-    { p.gradient( x, g ) };
-    { p.hessian( x, H ) };
+  concept ProblemFor = requires( Problem & p, ConstVectorRef<Real> x, VectorRef<Real> g, MatrixRef<Real> H, Real & f ) {
+    { p.objective( x, f ) } -> std::convertible_to<bool>;
+    { p.gradient( x, g ) } -> std::convertible_to<bool>;
+    { p.hessian( x, H ) } -> std::convertible_to<bool>;
   };
 
   /**
@@ -470,9 +472,9 @@ namespace Utils::Minimize_BBOX_Newton_details
     {
     }
 
-    Real objective( ConstVectorRef<Real> x ) { return static_cast<Real>( m_obj( x ) ); }
-    void gradient( ConstVectorRef<Real> x, VectorRef<Real> g ) { m_grad( x, g ); }
-    void hessian( ConstVectorRef<Real> x, MatrixRef<Real> H ) { m_hess( x, H ); }
+    bool objective( ConstVectorRef<Real> x, Real & f ) { return static_cast<bool>( m_obj( x, f ) ); }
+    bool gradient( ConstVectorRef<Real> x, VectorRef<Real> g ) { return static_cast<bool>( m_grad( x, g ) ); }
+    bool hessian( ConstVectorRef<Real> x, MatrixRef<Real> H ) { return static_cast<bool>( m_hess( x, H ) ); }
 
   private:
     Obj  m_obj;
@@ -480,9 +482,7 @@ namespace Utils::Minimize_BBOX_Newton_details
     Hess m_hess;
   };
 
-  template <typename Real = double, typename Obj, typename Grad, typename Hess>
-  auto make_problem( Obj obj, Grad grad, Hess hess )
-  { return CallableProblem<Real, Obj, Grad, Hess>( std::move( obj ), std::move( grad ), std::move( hess ) ); }
+  // make_problem moved to Utils::make_problem in Common.hh
 
   /** @brief Termination code returned by Minimize_BBOX_Newton::solve(). */
   enum class Status
@@ -495,8 +495,7 @@ namespace Utils::Minimize_BBOX_Newton_details
     non_finite_objective,
     non_finite_gradient,
     non_finite_hessian,
-    eigensolver_failure,
-    user
+    eigensolver_failure
   };
 
   [[nodiscard]] constexpr std::string_view to_string( Status status ) noexcept
@@ -512,7 +511,6 @@ namespace Utils::Minimize_BBOX_Newton_details
       case Status::non_finite_gradient: return "non-finite gradient";
       case Status::non_finite_hessian: return "non-finite Hessian";
       case Status::eigensolver_failure: return "linear solver failure";
-      case Status::user: return "user request";
     }
     return "unknown";
   }
@@ -524,15 +522,25 @@ namespace Utils::Minimize_BBOX_Newton_details
    * tested V3 configuration.  Several legacy fields are intentionally retained
    * for API compatibility even when the present algorithm does not use them.
    */
+  template <typename Real = double, typename Obj, typename Grad, typename Hess>
+  auto make_problem( Obj && obj, Grad && grad, Hess && hess )
+  {
+    return ::Utils::make_problem<Real>(
+      std::forward<Obj>( obj ),
+      std::forward<Grad>( grad ),
+      std::forward<Hess>( hess ) );
+  }
+
   template <typename Real = double> struct Options
   {
     static constexpr Real eps = std::numeric_limits<Real>::epsilon();
 
+    // Unified convergence: projected gradient inf-norm < 1e-9
     // Keep these independent from the projection machinery.  If the same
     // tolerance is used by MinimizeNewtonCubic, the stopping test is identical
     // on an unbounded box because p(x) == g(x).
-    Real absolute_tolerance = Real( 128 ) * eps;
-    Real relative_tolerance = Real( 128 ) * eps;
+    Real absolute_tolerance = Real( 1e-9 );
+    Real relative_tolerance = Real( 1e-9 );
 
     // Kept for API compatibility with the previous BBOX solver.
     Real step_tolerance      = Real( 0 );
@@ -668,7 +676,7 @@ namespace Utils::Minimize_BBOX_Newton_details
     int          polish_backtracks             = 0;
     Status       status                        = Status::unknown;
 
-    [[nodiscard]] bool solved() const noexcept { return status == Status::converged; }
+    [[nodiscard]] bool success() const noexcept { return status == Status::converged; }
   };
 
   namespace detail
@@ -797,10 +805,11 @@ namespace Utils::Minimize_BBOX_Newton_details
 
       detail::project( m_x, x0, lower, upper );
 
-      Real objective = evaluate_objective( problem, m_x );
+      Real objective;
+      if ( !evaluate_objective( problem, m_x, objective ) ) return make_result( Status::non_finite_objective, objective );
       if ( !std::isfinite( objective ) ) return make_result( Status::non_finite_objective, objective );
 
-      evaluate_gradient( problem, m_x, m_gradient );
+      if ( !evaluate_gradient( problem, m_x, m_gradient ) ) return make_result( Status::non_finite_gradient, objective );
       if ( !m_gradient.allFinite() ) return make_result( Status::non_finite_gradient, objective );
 
       // p(x) = x - P(x-g).
@@ -866,8 +875,6 @@ namespace Utils::Minimize_BBOX_Newton_details
         return result;
       };
 
-      if ( !callback( fill( Status::unknown ) ) ) return fill( Status::user );
-
       enum class CertificateAction
       {
         certified,
@@ -879,7 +886,7 @@ namespace Utils::Minimize_BBOX_Newton_details
       // along feasible negative curvature, or report that neither was safe.
       auto certify_or_escape = [&]() -> CertificateAction
       {
-        evaluate_hessian( problem, m_x, m_H );
+        if ( !evaluate_hessian( problem, m_x, m_H ) ) return CertificateAction::failed;
         if ( !m_H.allFinite() ) return CertificateAction::failed;
 
         std::vector<Eigen::Index> critical;
@@ -1029,10 +1036,11 @@ namespace Utils::Minimize_BBOX_Newton_details
           m_step = m_trial - m_x;
           if ( m_step.norm() <= Real( 64 ) * eps * std::max( Real( 1 ), m_x.norm() ) ) break;
 
-          Real const trial_objective = evaluate_objective( problem, m_trial );
+          Real trial_objective;
+          if ( !evaluate_objective( problem, m_trial, trial_objective ) ) return CertificateAction::failed;
           if ( std::isfinite( trial_objective ) && trial_objective < objective )
           {
-            evaluate_gradient( problem, m_trial, m_trial_gradient );
+            if ( !evaluate_gradient( problem, m_trial, m_trial_gradient ) ) return CertificateAction::failed;
             if ( !m_trial_gradient.allFinite() ) return CertificateAction::failed;
             projected_gradient( m_trial, m_trial_gradient, lower, upper, m_trial_projected_gradient );
             m_x                  = m_trial;
@@ -1096,14 +1104,14 @@ namespace Utils::Minimize_BBOX_Newton_details
         // unnecessarily conservative.
         Real const M_min = std::max( Real( 32 ) * eps, options.hessian_lipschitz_min );
         Real const M_max = std::max( M_min, options.hessian_lipschitz_max );
-        
+
         // More aggressive reduction of H_estimate after successful step
         // Use geometric mean to prevent oscillation
         Real const H_candidate = std::max( M_min, options.regularization_decrease * H_previous );
-        H_estimate = std::clamp( H_candidate, M_min, M_max );
+        H_estimate             = std::clamp( H_candidate, M_min, M_max );
 
         // x is fixed through the whole backtracking loop.
-        evaluate_hessian( problem, m_x, m_H );
+        if ( !evaluate_hessian( problem, m_x, m_H ) ) return fill( Status::non_finite_hessian );
         if ( !m_H.allFinite() ) return fill( Status::non_finite_hessian );
 
         bool accepted   = false;
@@ -1219,7 +1227,8 @@ namespace Utils::Minimize_BBOX_Newton_details
               if ( options.max_function_evaluations >= 0 && m_function_evaluations >= options.max_function_evaluations )
                 return fill( Status::max_function_evaluations );
 
-              Real const trial_objective = evaluate_objective( problem, m_trial );
+Real trial_objective;
+      if ( !evaluate_objective( problem, m_trial, trial_objective ) ) return fill( Status::non_finite_objective );
               if ( std::isfinite( trial_objective ) )
               {
                 Real const ro =
@@ -1231,7 +1240,7 @@ namespace Utils::Minimize_BBOX_Newton_details
 
                 if ( ratio >= options.primary_acceptance_threshold )
                 {
-                  evaluate_gradient( problem, m_trial, m_trial_gradient );
+                  if ( !evaluate_gradient( problem, m_trial, m_trial_gradient ) ) return fill( Status::non_finite_gradient );
                   if ( !m_trial_gradient.allFinite() ) return fill( Status::non_finite_gradient );
                   projected_gradient( m_trial, m_trial_gradient, lower, upper, m_trial_projected_gradient );
 
@@ -1243,7 +1252,7 @@ namespace Utils::Minimize_BBOX_Newton_details
                   projected_norm_inf   = m_projected_gradient.template lpNorm<Eigen::Infinity>();
                   last_step_norm       = m_step.norm();
                   lambda               = Real( 0 );
-                  
+
                   if ( ratio >= options.ratio_increase_threshold )
                     H_estimate = std::max( M_min, options.ratio_good_M_factor * H_estimate );
                   else if ( ratio < options.ratio_decrease_threshold )
@@ -1317,7 +1326,8 @@ namespace Utils::Minimize_BBOX_Newton_details
           if ( options.max_function_evaluations >= 0 && m_function_evaluations >= options.max_function_evaluations )
             return fill( Status::max_function_evaluations );
 
-          Real const trial_objective = evaluate_objective( problem, m_trial );
+          Real trial_objective;
+          if ( !evaluate_objective( problem, m_trial, trial_objective ) ) return fill( Status::non_finite_objective );
           if ( !std::isfinite( trial_objective ) )
           {
             ++m_rejected_steps;
@@ -1337,7 +1347,7 @@ namespace Utils::Minimize_BBOX_Newton_details
             continue;
           }
 
-          evaluate_gradient( problem, m_trial, m_trial_gradient );
+          if ( !evaluate_gradient( problem, m_trial, m_trial_gradient ) ) return fill( Status::non_finite_gradient );
           if ( !m_trial_gradient.allFinite() ) return fill( Status::non_finite_gradient );
 
           projected_gradient( m_trial, m_trial_gradient, lower, upper, m_trial_projected_gradient );
@@ -1405,7 +1415,7 @@ namespace Utils::Minimize_BBOX_Newton_details
             projected_norm       = np1;
             projected_norm_inf   = m_projected_gradient.template lpNorm<Eigen::Infinity>();
             last_step_norm       = rp;
-            
+
             if ( agreement_ratio >= options.ratio_increase_threshold )
               H_estimate = std::max( M_min, options.ratio_good_M_factor * H_estimate );
             else if ( agreement_ratio < options.ratio_decrease_threshold )
@@ -1496,14 +1506,15 @@ namespace Utils::Minimize_BBOX_Newton_details
             if ( options.max_function_evaluations >= 0 && m_function_evaluations >= options.max_function_evaluations )
               return fill( Status::max_function_evaluations );
 
-            Real const trial_objective = evaluate_objective( problem, m_trial );
+            Real trial_objective;
+            if ( !evaluate_objective( problem, m_trial, trial_objective ) ) return fill( Status::non_finite_objective );
             if ( std::isfinite( trial_objective ) )
             {
               Real const roundoff = options.roundoff_factor * eps *
                                     std::max( { Real( 1 ), std::abs( objective ), std::abs( trial_objective ) } );
               if ( trial_objective <= objective + options.gradient_rescue_armijo * slope + roundoff )
               {
-                evaluate_gradient( problem, m_trial, m_trial_gradient );
+                if ( !evaluate_gradient( problem, m_trial, m_trial_gradient ) ) return fill( Status::non_finite_gradient );
                 if ( !m_trial_gradient.allFinite() ) return fill( Status::non_finite_gradient );
                 projected_gradient( m_trial, m_trial_gradient, lower, upper, m_trial_projected_gradient );
                 m_x                  = m_trial;
@@ -1555,8 +1566,6 @@ namespace Utils::Minimize_BBOX_Newton_details
             double( last_step_norm ),
             double( lambda ),
             double( H_estimate ) );
-
-        if ( !callback( fill( Status::unknown ) ) ) return fill( Status::user );
       }
 
       if ( projected_norm_inf <= tolerance )
@@ -1597,7 +1606,7 @@ namespace Utils::Minimize_BBOX_Newton_details
       int const max_pit = max_iterations_override > 0 ? max_iterations_override : options.max_polish_iterations;
       for ( int pit = 0; pit < max_pit && projected_norm_inf > tolerance; ++pit )
       {
-        evaluate_hessian( problem, m_x, m_H );
+        if ( !evaluate_hessian( problem, m_x, m_H ) ) return;
         if ( !m_H.allFinite() ) return;
 
         // p(x)=x-P(y), y=x-g(x).
@@ -1660,7 +1669,8 @@ namespace Utils::Minimize_BBOX_Newton_details
           if ( options.max_function_evaluations >= 0 && m_function_evaluations >= options.max_function_evaluations )
             return;
 
-          Real const trial_objective = evaluate_objective( problem, m_trial );
+          Real trial_objective;
+          if ( !evaluate_objective( problem, m_trial, trial_objective ) ) return;
           if ( !std::isfinite( trial_objective ) )
           {
             alpha *= Real( 0.5 );
@@ -1668,7 +1678,7 @@ namespace Utils::Minimize_BBOX_Newton_details
             continue;
           }
 
-          evaluate_gradient( problem, m_trial, m_trial_gradient );
+          if ( !evaluate_gradient( problem, m_trial, m_trial_gradient ) ) return;
           if ( !m_trial_gradient.allFinite() )
           {
             alpha *= Real( 0.5 );
@@ -1739,12 +1749,13 @@ namespace Utils::Minimize_BBOX_Newton_details
      * @tparam Problem Problem type satisfying ProblemFor.
      * @param problem Optimization problem.
      * @param x Point at which the objective is evaluated.
-     * @return Objective value.
+     * @param[out] f Output objective value.
+     * @return True if evaluation succeeded, false if x is out of domain or value not computable.
      */
-    template <typename Problem> Real evaluate_objective( Problem & problem, Vec const & x )
+    template <typename Problem> bool evaluate_objective( Problem & problem, Vec const & x, Real & f )
     {
       ++m_function_evaluations;
-      return problem.objective( x );
+      return problem.objective( x, f );
     }
 
     /**
@@ -1752,11 +1763,12 @@ namespace Utils::Minimize_BBOX_Newton_details
      * @param problem Optimization problem.
      * @param x Evaluation point.
      * @param gradient Output gradient vector.
+     * @return True if evaluation succeeded, false if x is out of domain or value not computable.
      */
-    template <typename Problem> void evaluate_gradient( Problem & problem, Vec const & x, Vec & gradient )
+    template <typename Problem> bool evaluate_gradient( Problem & problem, Vec const & x, Vec & gradient )
     {
       ++m_gradient_evaluations;
-      problem.gradient( x, gradient );
+      return problem.gradient( x, gradient );
     }
 
     /**
@@ -1764,11 +1776,12 @@ namespace Utils::Minimize_BBOX_Newton_details
      * @param problem Optimization problem.
      * @param x Evaluation point.
      * @param H Output dense Hessian matrix.
+     * @return True if evaluation succeeded, false if x is out of domain or value not computable.
      */
-    template <typename Problem> void evaluate_hessian( Problem & problem, Vec const & x, Mat & H )
+    template <typename Problem> bool evaluate_hessian( Problem & problem, Vec const & x, Mat & H )
     {
       ++m_hessian_evaluations;
-      problem.hessian( x, H );
+      return problem.hessian( x, H );
     }
 
     /**
@@ -1837,29 +1850,28 @@ namespace Utils::Minimize_BBOX_Newton_details
     int m_semismooth_rescue_steps     = 0;
     int m_polish_iterations           = 0;
     int m_polish_backtracks           = 0;
+
+    Result<Real> m_result;
   };
 
-}  // namespace Utils::Minimize_BBOX_Newton_details
+} // namespace Utils::Minimize_BBOX_Newton_details
 
 namespace Utils
 {
   // Compatibility names.  Their definitions live in the solver-specific
   // details namespace, avoiding duplicate support types across BBOX solvers.
-  template <typename Real> using Vector = Minimize_BBOX_Newton_details::Vector<Real>;
-  template <typename Real> using Matrix = Minimize_BBOX_Newton_details::Matrix<Real>;
+  template <typename Real> using Vector         = Minimize_BBOX_Newton_details::Vector<Real>;
+  template <typename Real> using Matrix         = Minimize_BBOX_Newton_details::Matrix<Real>;
   template <typename Real> using ConstVectorRef = Minimize_BBOX_Newton_details::ConstVectorRef<Real>;
-  template <typename Real> using VectorRef = Minimize_BBOX_Newton_details::VectorRef<Real>;
-  template <typename Real> using MatrixRef = Minimize_BBOX_Newton_details::MatrixRef<Real>;
-  template <typename Problem, typename Real>
-  concept ProblemFor = Minimize_BBOX_Newton_details::ProblemFor<Problem, Real>;
+  template <typename Real> using VectorRef      = Minimize_BBOX_Newton_details::VectorRef<Real>;
+  template <typename Real> using MatrixRef      = Minimize_BBOX_Newton_details::MatrixRef<Real>;
+  // ProblemFor already defined in Utils_minimize_BBOX_Common.hh as Utils::ProblemFor
   template <typename Real = double> using Options = Minimize_BBOX_Newton_details::Options<Real>;
-  template <typename Real = double> using Result = Minimize_BBOX_Newton_details::Result<Real>;
-  using Status = Minimize_BBOX_Newton_details::Status;
-  using Minimize_BBOX_Newton_details::make_problem;
+  template <typename Real = double> using Result  = Minimize_BBOX_Newton_details::Result<Real>;
+  using Status                                    = Minimize_BBOX_Newton_details::Status;
   using Minimize_BBOX_Newton_details::to_string;
 
-  template <typename Real = double>
-  class Minimize_BBOX_Newton : public Minimize_BBOX_Newton_details::Solver<Real>
+  template <typename Real = double> class Minimize_BBOX_Newton : public Minimize_BBOX_Newton_details::Solver<Real>
   {
     using Base = Minimize_BBOX_Newton_details::Solver<Real>;
 
@@ -1875,44 +1887,41 @@ namespace Utils
     void set_max_iterations( int n ) { this->options().max_iterations = n; }
 
     // --- lambda-based convenience overloads (dense Vector / Matrix) ---
-    template <typename Obj, typename Grad, typename Hess>
-    Result solve(
-      Obj &&                         obj,
-      Grad &&                        grad,
-      Hess &&                        hess,
+    template <typename Obj, typename Grad, typename Hess> Result solve(
+      Obj &&                                             obj,
+      Grad &&                                            grad,
+      Hess &&                                            hess,
       Minimize_BBOX_Newton_details::ConstVectorRef<Real> x0,
       Minimize_BBOX_Newton_details::ConstVectorRef<Real> lower,
       Minimize_BBOX_Newton_details::ConstVectorRef<Real> upper )
     {
-      auto prob = Minimize_BBOX_Newton_details::make_problem<Real>(
-        std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) );
+auto prob =
+        ::Utils::make_problem<Real>( std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) );
       return Base::solve( prob, x0, lower, upper );
     }
 
-    template <typename Obj, typename Grad, typename Hess, typename Callback>
-    Result solve(
-      Obj &&                         obj,
-      Grad &&                        grad,
-      Hess &&                        hess,
+  template <typename Obj, typename Grad, typename Hess, typename Callback> Result solve(
+      Obj &&                                             obj,
+      Grad &&                                            grad,
+      Hess &&                                            hess,
       Minimize_BBOX_Newton_details::ConstVectorRef<Real> x0,
       Minimize_BBOX_Newton_details::ConstVectorRef<Real> lower,
       Minimize_BBOX_Newton_details::ConstVectorRef<Real> upper,
-      Callback &&                    callback )
+      Callback &&                                        callback )
     {
-      auto prob = Minimize_BBOX_Newton_details::make_problem<Real>(
-        std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) );
+      auto prob =
+        ::Utils::make_problem<Real>( std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) );
       return Base::solve( prob, x0, lower, upper, std::forward<Callback>( callback ) );
     }
   };
 
-  template <typename Real>
-  Minimize_BBOX_Newton( Eigen::Index, Minimize_BBOX_Newton_details::Options<Real> )
+  template <typename Real> Minimize_BBOX_Newton( Eigen::Index, Minimize_BBOX_Newton_details::Options<Real> )
     -> Minimize_BBOX_Newton<Real>;
 
   template <typename Real = double, typename Problem>
     requires Minimize_BBOX_Newton_details::ProblemFor<Problem, Real>
   Minimize_BBOX_Newton_details::Result<Real> minimize(
-    Problem &            problem,
+    Problem &                                          problem,
     Minimize_BBOX_Newton_details::ConstVectorRef<Real> x0,
     Minimize_BBOX_Newton_details::ConstVectorRef<Real> lower,
     Minimize_BBOX_Newton_details::ConstVectorRef<Real> upper,

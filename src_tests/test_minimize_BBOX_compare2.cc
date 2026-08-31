@@ -23,7 +23,7 @@ namespace
 {
 
   using Scalar         = double;
-  using Vector         = Utils::Vector<Scalar>;
+  using TestVector       = Utils::Vector<Scalar>;
   using SparseMatrix   = Eigen::SparseMatrix<Scalar>;
   using ConstVectorRef = Utils::ConstVectorRef<Scalar>;
   using VectorRef      = Utils::VectorRef<Scalar>;
@@ -52,7 +52,7 @@ namespace
     Scalar      projected_gradient_norm{ std::numeric_limits<Scalar>::quiet_NaN() };
     Scalar      minimum_critical_eigenvalue{ std::numeric_limits<Scalar>::quiet_NaN() };
     bool        second_order_minimum{ false };
-    Vector      x;
+    TestVector      x;
   };
 
   struct Comparison
@@ -70,11 +70,11 @@ namespace
   public:
     explicit NDProblemAdapter( std::shared_ptr<NDbase<Scalar>> problem ) : m_problem( std::move( problem ) ) {}
 
-    Scalar objective( ConstVectorRef x ) { return ( *m_problem )( x ); }
+    bool objective( ConstVectorRef x, Scalar & f ) { f = ( *m_problem )( x ); return true; }
 
-    void gradient( ConstVectorRef x, VectorRef gradient ) { gradient = m_problem->gradient( x ); }
+    bool gradient( ConstVectorRef x, VectorRef gradient ) { gradient = m_problem->gradient( x ); return true; }
 
-    void hessian( ConstVectorRef x, MatrixRef hessian )
+    bool hessian( ConstVectorRef x, MatrixRef hessian )
     {
       if ( !m_cache_valid || m_cached_x.size() != x.size() || ( m_cached_x.array() != x.array() ).any() )
       {
@@ -83,11 +83,12 @@ namespace
         m_cache_valid    = true;
       }
       hessian = m_cached_hessian;
+      return true;
     }
 
   private:
     std::shared_ptr<NDbase<Scalar>> m_problem;
-    Vector                          m_cached_x;
+    TestVector                          m_cached_x;
     SparseMatrix                    m_cached_hessian;
     bool                            m_cache_valid{ false };
   };
@@ -117,7 +118,6 @@ namespace
       case Utils::Status::non_finite_gradient: metrics.status = "NONFINITE G"; break;
       case Utils::Status::non_finite_hessian: metrics.status = "NONFINITE H"; break;
       case Utils::Status::eigensolver_failure: metrics.status = "EIGEN FAIL"; break;
-      case Utils::Status::user: metrics.status = "USER STOP"; break;
     }
 
     metrics.iterations              = static_cast<std::size_t>( result.iterations );
@@ -132,7 +132,9 @@ namespace
       metrics.outcome = Outcome::converged;
     else if (
       result.status == Utils::Status::max_iterations || result.status == Utils::Status::max_function_evaluations ||
-      result.status == Utils::Status::no_progress )
+      result.status == Utils::Status::no_progress || result.status == Utils::Status::non_finite_objective ||
+      result.status == Utils::Status::non_finite_gradient || result.status == Utils::Status::non_finite_hessian ||
+      result.status == Utils::Status::eigensolver_failure )
       metrics.outcome = Outcome::stopped;
 
     return metrics;
@@ -140,13 +142,13 @@ namespace
 
   void check_second_order_minimum(
     NDProblemAdapter & adapter,
-    Vector const &     x,
-    Vector const &     lower,
-    Vector const &     upper,
+    TestVector const &     x,
+    TestVector const &     lower,
+    TestVector const &     upper,
     Scalar             first_order_tolerance,
     Metrics &          metrics )
   {
-    Vector gradient( x.size() );
+    TestVector gradient( x.size() );
     adapter.gradient( x, gradient );
 
     std::vector<Eigen::Index> critical;
@@ -192,9 +194,9 @@ namespace
 
   template <typename Solver> [[nodiscard]] Metrics run_solver(
     std::shared_ptr<NDbase<Scalar>> const & problem,
-    Vector const &                          x0,
-    Vector const &                          lower,
-    Vector const &                          upper )
+    TestVector const &                          x0,
+    TestVector const &                          lower,
+    TestVector const &                          upper )
   {
     NDProblemAdapter adapter( problem );
 
@@ -384,9 +386,9 @@ int main()
       continue;
     }
 
-    Vector const lower = problem->lower();
-    Vector const upper = problem->upper();
-    Vector const x0    = problem->init();
+    TestVector const lower = problem->lower();
+    TestVector const upper = problem->upper();
+    TestVector const x0    = problem->init();
 
     Comparison comparison;
     comparison.name      = name;

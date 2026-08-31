@@ -26,9 +26,9 @@ namespace
 {
 
   using Scalar       = double;
-  using Vector       = Utils::TRON2::Vector<Scalar>;
+  using Vector       = Utils::TRON_details::Vector<Scalar>;
   using SparseMatrix = Eigen::SparseMatrix<Scalar>;
-  using Status       = Utils::TRON2::Status;
+  using Status       = Utils::TRON_details::Status;
 
   constexpr std::size_t MAX_ITERATIONS = 1000;
   constexpr int         NAME_WIDTH     = 39;
@@ -51,24 +51,6 @@ namespace
 
   std::vector<TestResult> global_test_results;
 
-  [[nodiscard]] std::string_view status_label( Status status )
-  {
-    switch ( status )
-    {
-      case Status::converged: return "CONVERGED";
-      case Status::max_iterations: return "ITER LIMIT";
-      case Status::max_function_evaluations: return "EVAL LIMIT";
-      case Status::max_time: return "TIME LIMIT";
-      case Status::unbounded: return "UNBOUNDED";
-      case Status::small_step: return "SMALL STEP";
-      case Status::non_descent_model: return "BAD MODEL";
-      case Status::non_finite_objective: return "NONFINITE F";
-      case Status::non_finite_gradient: return "NONFINITE G";
-      case Status::non_finite_hessian: return "NONFINITE H";
-    }
-    return "UNKNOWN";
-  }
-
   [[nodiscard]] fmt::text_style status_style( Status status )
   {
     switch ( status )
@@ -76,7 +58,6 @@ namespace
       case Status::converged: return fmt::fg( fmt::color::lime_green ) | fmt::emphasis::bold;
       case Status::max_iterations:
       case Status::max_function_evaluations:
-      case Status::max_time:
       case Status::small_step: return fmt::fg( fmt::color::gold );
       case Status::unbounded: return fmt::fg( fmt::color::magenta );
       case Status::non_descent_model:
@@ -117,7 +98,7 @@ namespace
   void print_result( TestResult const & result )
   {
     fmt::print( "{:<{}} ", result.problem_name, NAME_WIDTH );
-    fmt::print( status_style( result.status ), "{:<{}}", status_label( result.status ), STATUS_WIDTH );
+    fmt::print( status_style( result.status ), "{:<{}}", to_string( result.status ), STATUS_WIDTH );
     fmt::print(
       " {:>4} {:>6} {:>7} {:>7} {:>13.5e} {:>11.3e} {:>11.3e} {:>7.3f}s\n",
       result.dimension,
@@ -144,7 +125,7 @@ namespace
     Vector const x0    = problem->init();
     Vector const exact = problem->exact();
 
-    // TRON2 applies the Hessian repeatedly at the same accepted iterate. Cache
+    // TRON applies the Hessian repeatedly at the same accepted iterate. Cache
     // the sparse matrix so ND_func.cxx constructs it only once per outer step.
     Vector       cached_x;
     SparseMatrix cached_hessian;
@@ -160,17 +141,16 @@ namespace
       Hv.noalias() = cached_hessian * v;
     };
 
-    Utils::TRON2::Options<Scalar> options;
+    Utils::TRON_details::Options<Scalar> options;
     options.max_iterations           = MAX_ITERATIONS;
     options.max_function_evaluations = MAX_ITERATIONS + 1;
     options.absolute_tolerance       = 1e-12;
     options.relative_tolerance       = 1e-12;
     options.cg_tolerance             = 1e-6;
-    options.max_time_seconds         = 30.0;
 
     Utils::Minimize_BBOX_TRON<Scalar> solver( x0.size(), options );
-    auto const start       = std::chrono::steady_clock::now();
-    auto const tron_result = solver.solve(
+    auto const                        start       = std::chrono::steady_clock::now();
+    auto const                        tron_result = solver.solve(
       x0,
       lower,
       upper,
@@ -214,7 +194,7 @@ namespace
         ++converged;
       else if (
         result.status == Status::max_iterations || result.status == Status::max_function_evaluations ||
-        result.status == Status::max_time || result.status == Status::small_step )
+        result.status == Status::small_step )
         ++limited;
       else
         ++failed;
@@ -234,7 +214,7 @@ namespace
                                         : static_cast<double>( total_iterations ) / static_cast<double>( executed );
 
     print_rule( "═" );
-    fmt::print( fmt::emphasis::bold | fmt::fg( fmt::color::cyan ), "TRON2 SUMMARY\n" );
+    fmt::print( fmt::emphasis::bold | fmt::fg( fmt::color::cyan ), "TRON SUMMARY\n" );
     fmt::print( "  Problems: {} executed, {} skipped\n", executed, skipped );
     fmt::print( "  Status:   " );
     fmt::print( fmt::fg( fmt::color::lime_green ) | fmt::emphasis::bold, "{} converged", converged );
@@ -263,7 +243,7 @@ int main()
   print_rule( "═" );
   fmt::print(
     fmt::emphasis::bold | fmt::fg( fmt::color::cyan ),
-    "TRON2 — BOUND-CONSTRAINED OPTIMIZATION ON ND_func ({})\n",
+    "TRON — BOUND-CONSTRAINED OPTIMIZATION ON ND_func ({})\n",
     NL_list.size() );
   fmt::print( "Newton model, projected Cauchy step and active-face truncated CG\n" );
   fmt::print( "Maximum iterations per problem: {}\n", MAX_ITERATIONS );

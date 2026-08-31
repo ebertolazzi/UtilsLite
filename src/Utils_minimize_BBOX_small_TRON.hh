@@ -49,18 +49,7 @@
 #define UTILS_MINIMIZE_BBOX_SMALL_TRON_DOT_HH
 
 #include "Utils_eigen.hh"
-
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <concepts>
-#include <cstdio>
-#include <functional>
-#include <limits>
-#include <string_view>
-#include <type_traits>
-#include <utility>
-#include <vector>
+#include "Utils_minimize_BBOX_Common.hh"
 
 #if EIGEN_MAJOR_VERSION < 5
 #error "Utils::Minimize_BBOX_SmallTRON requires Eigen 5 or newer"
@@ -78,12 +67,13 @@ namespace Utils::SmallTRON_details
    *
    * \tparam Real Scalar floating-point type.
    */
-  template <typename Real> using Vector         = Eigen::Matrix<Real, Eigen::Dynamic, 1>;
-  template <typename Real> using Matrix         = Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic>;
-  template <typename Real> using ConstVectorRef = Eigen::Ref<Vector<Real> const>;
-  template <typename Real> using VectorRef      = Eigen::Ref<Vector<Real>>;
-  template <typename Real> using ConstMatrixRef = Eigen::Ref<Matrix<Real> const>;
-  template <typename Real> using MatrixRef      = Eigen::Ref<Matrix<Real>>;
+  // Reuse common dense types (Ref/Map zero-copy)
+  template <typename Real> using Vector         = Utils::Vector<Real>;
+  template <typename Real> using Matrix         = Utils::Matrix<Real>;
+  template <typename Real> using ConstVectorRef = Utils::ConstVectorRef<Real>;
+  template <typename Real> using VectorRef      = Utils::VectorRef<Real>;
+  template <typename Real> using ConstMatrixRef = ::Utils::ConstMatrixRef<Real>;
+  template <typename Real> using MatrixRef      = Utils::MatrixRef<Real>;
 
   // ---------------------------------------------------------------------------
   // Problem interface
@@ -111,14 +101,14 @@ namespace Utils::SmallTRON_details
    *       must produce a vector/matrix compatible with the input dimension.
    * \note `H(x)` need not be supplied exactly symmetric: the solver
    *       symmetrizes it once, right after evaluation (see
-   *       `Solver::eval_hessian`), and relies on that single symmetrization
+   *       `Minimize_BBOX_SmallTRON::eval_hessian`), and relies on that single symmetrization
    *       point everywhere downstream.
    */
   template <typename Problem, typename Real>
-  concept ProblemFor = requires( Problem & p, ConstVectorRef<Real> x, VectorRef<Real> g, MatrixRef<Real> H ) {
-    { p.objective( x ) } -> std::convertible_to<Real>;
-    { p.gradient( x, g ) };
-    { p.hessian( x, H ) };
+  concept ProblemFor = requires( Problem & p, ConstVectorRef<Real> x, VectorRef<Real> g, MatrixRef<Real> H, Real & f ) {
+    { p.objective( x, f ) } -> std::convertible_to<bool>;
+    { p.gradient( x, g ) } -> std::convertible_to<bool>;
+    { p.hessian( x, H ) } -> std::convertible_to<bool>;
   };
 
   /**
@@ -138,9 +128,9 @@ namespace Utils::SmallTRON_details
   public:
     /**
      * \brief Construct the callable adapter.
-     * \param obj Objective callable.
-     * \param grad Gradient callable.
-     * \param hess Hessian callable.
+     * \param obj Objective callable returning bool.
+     * \param grad Gradient callable returning bool.
+     * \param hess Hessian callable returning bool.
      */
     CallableProblem( Obj obj, Grad grad, Hess hess )
       : obj_( std::move( obj ) ), grad_( std::move( grad ) ), hess_( std::move( hess ) )
@@ -148,13 +138,13 @@ namespace Utils::SmallTRON_details
     }
 
     /** \brief Evaluate the objective function at \p x. */
-    Real objective( ConstVectorRef<Real> x ) { return static_cast<Real>( obj_( x ) ); }
+    bool objective( ConstVectorRef<Real> x, Real & f ) { return static_cast<bool>( obj_( x, f ) ); }
 
     /** \brief Evaluate the objective gradient at \p x. */
-    void gradient( ConstVectorRef<Real> x, VectorRef<Real> g ) { grad_( x, g ); }
+    bool gradient( ConstVectorRef<Real> x, VectorRef<Real> g ) { return static_cast<bool>( grad_( x, g ) ); }
 
     /** \brief Evaluate the full Hessian matrix \f$H(x)\f$. */
-    void hessian( ConstVectorRef<Real> x, MatrixRef<Real> H ) { hess_( x, H ); }
+    bool hessian( ConstVectorRef<Real> x, MatrixRef<Real> H ) { return static_cast<bool>( hess_( x, H ) ); }
 
   private:
     Obj  obj_;
@@ -170,9 +160,7 @@ namespace Utils::SmallTRON_details
    * \param hess Hessian callable.
    * \return A callable problem object satisfying \ref ProblemFor.
    */
-  template <typename Real = double, typename Obj, typename Grad, typename Hess>
-  auto make_problem( Obj obj, Grad grad, Hess hess )
-  { return CallableProblem<Real, Obj, Grad, Hess>( std::move( obj ), std::move( grad ), std::move( hess ) ); }
+  // make_problem moved to Utils::make_problem in Common.hh
 
   // ---------------------------------------------------------------------------
   // Status and options
@@ -189,7 +177,7 @@ namespace Utils::SmallTRON_details
     small_step,  // Cauchy point step underflowed
     neg_pred,    // non-negative predicted reduction
     direct_solver_failure,
-    user  // stopped by the user callback
+    user_request
   };
 
   /**
@@ -209,7 +197,7 @@ namespace Utils::SmallTRON_details
       case Status::small_step: return "small step";
       case Status::neg_pred: return "non-negative predicted reduction";
       case Status::direct_solver_failure: return "direct trust-region solver failure";
-      case Status::user: return "user request";
+      case Status::user_request: return "user request";
     }
     return "unknown";
   }
@@ -270,9 +258,9 @@ namespace Utils::SmallTRON_details
     Real sigma = Real( 10 );               // in (1, inf): inter/extrapolation factor
 
     // Tolerances: stop when ||x - P(x - g)|| <= atol + rtol * ||x0 - P(x0 -
-    // g0)||.
-    Real atol = std::sqrt( eps );
-    Real rtol = std::sqrt( eps );
+    // g0)||. Unified to 1e-9 in inf-norm for all BBOX solvers.
+    Real atol = Real( 1e-9 );
+    Real rtol = Real( 1e-9 );
     // A non-positive value selects the scale-aware machine-precision floor.
     // Positive values are absolute user overrides, never allowed below that
     // floor.  Keeping these tests independent of the first-order tolerance
@@ -283,8 +271,8 @@ namespace Utils::SmallTRON_details
     Real projected_newton_tolerance = Real( 1 ) / Real( 10 );
 
     // Budgets.
-    int max_iter                        = 1000;
-    int max_eval                        = -1;  // objective evaluations, -1 = unlimited
+    int max_iterations                  = 1000;
+    int max_evaluations                 = -1;  // objective evaluations, -1 = unlimited
     int max_projected_newton_iterations = 50;
 
     // Trust region (TRONTrustRegion defaults).
@@ -335,7 +323,7 @@ namespace Utils::SmallTRON_details
     }
 
     // Unified setters (same name across all BBOX solvers)
-    void set_max_iterations( int n ) { max_iter = n; }
+    void set_max_iterations( int n ) { max_iterations = n; }
     void set_absolute_tolerance( Real t ) { atol = t; }
     void set_relative_tolerance( Real t ) { rtol = t; }
   };
@@ -359,10 +347,10 @@ namespace Utils::SmallTRON_details
     Real         cubic_radius                  = std::numeric_limits<Real>::infinity();
     Real         cubic_lambda                  = Real( 0 );
     Real         hessian_lipschitz_estimate    = Real( 0 );
-    int          iter                          = 0;
-    int          obj_evals                     = 0;
-    int          grad_evals                    = 0;
-    int          hess_evals                    = 0;
+    int          iterations                    = 0;
+    int          function_evaluations          = 0;
+    int          gradient_evaluations          = 0;
+    int          hessian_evaluations           = 0;
     Status       status                        = Status::unknown;
 
     /**
@@ -538,7 +526,7 @@ namespace Utils::SmallTRON_details
      *
      * \pre `hessian` is (numerically) symmetric.  The solver enforces this
      *      contract at a single point, right after every Hessian evaluation
-     *      (see `Solver::eval_hessian`), so every reduced block extracted from
+     *      (see `Minimize_BBOX_SmallTRON::eval_hessian`), so every reduced block extracted from
      *      it inherits the same symmetry and no further symmetrization is
      *      needed here.  In debug builds this precondition is checked with
      *      `assert`.
@@ -567,7 +555,7 @@ namespace Utils::SmallTRON_details
           "Utils::SmallTRON_details::detail::direct_trust_region: hessian is not "
           "symmetric; "
           "Problem::hessian(x,H) is expected to be symmetrized once by "
-          "Solver::eval_hessian." );
+          "Minimize_BBOX_SmallTRON::eval_hessian." );
       }
 #endif
 
@@ -742,7 +730,7 @@ namespace Utils::SmallTRON_details
    *
    * \tparam Real Scalar floating-point type.
    */
-  template <typename Real = double> class Solver
+  template <typename Real = double> class Minimize_BBOX_SmallTRON
   {
   public:
     using Vec = Vector<Real>;
@@ -752,7 +740,8 @@ namespace Utils::SmallTRON_details
      * \param nvar Problem dimension.
      * \param options Initial solver options.
      */
-    explicit Solver( Eigen::Index nvar, Options<Real> options = {} ) : m_options( options ) { resize( nvar ); }
+    explicit Minimize_BBOX_SmallTRON( Eigen::Index nvar = 0, Options<Real> options = {} ) : m_options( options )
+    { resize( nvar ); }
 
     /** \brief Mutable access to the solver options. */
     [[nodiscard]] Options<Real> & options() noexcept { return m_options; }
@@ -802,25 +791,6 @@ namespace Utils::SmallTRON_details
     }
 
     /**
-     * \brief Minimize a problem over a box without an iteration callback.
-     * \param problem Objective/derivative provider.
-     * \param x0 Initial point; it is projected onto the box before evaluation.
-     * \param lower Componentwise lower bounds.
-     * \param upper Componentwise upper bounds.
-     * \return Final iterate, termination status, and evaluation statistics.
-     */
-    template <typename Problem>
-      requires ProblemFor<Problem, Real>
-    Result<Real> solve(
-      Problem &            problem,
-      ConstVectorRef<Real> x0,
-      ConstVectorRef<Real> lower,
-      ConstVectorRef<Real> upper )
-    {
-      return solve( problem, x0, lower, upper, []( Result<Real> const & ) { return true; } );
-    }
-
-    /**
      * \brief Minimize a problem over a box with per-iteration user control.
      *
      * The initial point is first projected onto the feasible box.  The method
@@ -839,29 +809,22 @@ namespace Utils::SmallTRON_details
      * regardless of acceptance from this ratio and a one-dimensional quadratic
      * interpolation estimate.
      *
-     * The supplied callback is invoked with a snapshot after initialization and
-     * after each completed outer iteration.  Returning `false` terminates with
-     * \ref Status::user.
-     *
      * \param problem Objective/derivative provider.
      * \param x0 Initial point.
      * \param lower Componentwise lower bounds.
      * \param upper Componentwise upper bounds.
-     * \param callback Callable receiving `Result<Real> const&`; return `false`
-     *        to request termination.
      * \return Final iterate, diagnostic counters, and termination status.
      *
      * \note The code assumes compatible vector dimensions and consistent bounds.
      * \note `max_eval` counts objective evaluations only.
      */
-    template <typename Problem, typename Callback>
+    template <typename Problem>
       requires ProblemFor<Problem, Real>
     Result<Real> solve(
       Problem &            problem,
       ConstVectorRef<Real> x0,
       ConstVectorRef<Real> lower,
-      ConstVectorRef<Real> upper,
-      Callback &&          callback )
+      ConstVectorRef<Real> upper )
     {
       const Options<Real> & o   = m_options;
       constexpr Real        eps = std::numeric_limits<Real>::epsilon();
@@ -876,32 +839,76 @@ namespace Utils::SmallTRON_details
       m_cubic_lambda                            = Real( 0 );
 
       Result<Real> res;
+
       detail::project( m_x, x0, lower, upper );
 
-      Real fx = eval_objective( problem, m_x );
-      eval_gradient( problem, m_x, m_gx );
+      const Real machine_tolerance = Real( 32 ) * eps;
+      m_radius                     = std::min( std::max( Real( 1 ), m_x.stableNorm() / Real( 10 ) ), o.max_radius );
+      Real alpha_c                 = Real( 1 );
+      m_ratio                      = Real( 0 );
+      m_quad_min                   = Real( 0 );
+      int  num_success             = 0;
+      int  iter                    = 0;
+      Real last_step_norm          = Real( 0 );
+      Real minimum_eigenvalue      = std::numeric_limits<Real>::quiet_NaN();
+      Real effective_curvature_tolerance = std::numeric_limits<Real>::quiet_NaN();
+      NewtonStatus newton_status   = NewtonStatus::unknown;
+
+      Real fx;
+      if ( !eval_objective( problem, m_x, fx ) )
+      {
+        res.x                      = m_x;
+        res.objective              = std::numeric_limits<Real>::quiet_NaN();
+        res.dual_feas              = std::numeric_limits<Real>::quiet_NaN();
+        res.primal_feas            = bound_violation( m_x, lower, upper );
+        res.step_norm              = last_step_norm;
+        res.minimum_eigenvalue     = minimum_eigenvalue;
+        res.optimality_tolerance   = machine_tolerance;
+        res.effective_step_tolerance = machine_tolerance;
+        res.effective_curvature_tolerance = effective_curvature_tolerance;
+        res.radius                 = m_radius;
+        res.cubic_radius           = m_cubic_radius;
+        res.cubic_lambda           = m_cubic_lambda;
+        res.hessian_lipschitz_estimate = m_cubic_estimate;
+        res.iterations             = iter;
+        res.function_evaluations   = m_obj_evals;
+        res.gradient_evaluations   = m_grad_evals;
+        res.hessian_evaluations    = m_hess_evals;
+        res.status                 = Status::user_request;
+        return res;
+      }
+      if ( !eval_gradient( problem, m_x, m_gx ) )
+      {
+        res.x                      = m_x;
+        res.objective              = fx;
+        res.dual_feas              = std::numeric_limits<Real>::quiet_NaN();
+        res.primal_feas            = bound_violation( m_x, lower, upper );
+        res.step_norm              = last_step_norm;
+        res.minimum_eigenvalue     = minimum_eigenvalue;
+        res.optimality_tolerance   = machine_tolerance;
+        res.effective_step_tolerance = machine_tolerance;
+        res.effective_curvature_tolerance = effective_curvature_tolerance;
+        res.radius                 = m_radius;
+        res.cubic_radius           = m_cubic_radius;
+        res.cubic_lambda           = m_cubic_lambda;
+        res.hessian_lipschitz_estimate = m_cubic_estimate;
+        res.iterations             = iter;
+        res.function_evaluations   = m_obj_evals;
+        res.gradient_evaluations   = m_grad_evals;
+        res.hessian_evaluations    = m_hess_evals;
+        res.status                 = Status::user_request;
+        return res;
+      }
 
       detail::project_step( m_gpx, m_x, m_gx, lower, upper, Real( -1 ) );
       Real pi_x   = m_gpx.stableNorm();
       Real primal = bound_violation( m_x, lower, upper );
 
-      const Real machine_tolerance             = Real( 32 ) * eps;
       const Real relative_optimality_tolerance = o.rtol * std::max( Real( 1 ), pi_x );
       const Real optimality_tolerance          = std::max(
         machine_tolerance,
         std::min( o.atol, relative_optimality_tolerance ) );
       const Real fmin = std::min( Real( -1 ), fx ) / eps;
-
-      m_radius                                   = std::min( std::max( Real( 1 ), pi_x / Real( 10 ) ), o.max_radius );
-      Real alpha_c                               = Real( 1 );
-      m_ratio                                    = Real( 0 );
-      m_quad_min                                 = Real( 0 );
-      int          num_success                   = 0;
-      int          iter                          = 0;
-      Real         last_step_norm                = Real( 0 );
-      Real         minimum_eigenvalue            = std::numeric_limits<Real>::quiet_NaN();
-      Real         effective_curvature_tolerance = std::numeric_limits<Real>::quiet_NaN();
-      NewtonStatus newton_status                 = NewtonStatus::unknown;
 
       auto effective_step_tolerance = [&]
       {
@@ -925,25 +932,26 @@ namespace Utils::SmallTRON_details
         res.cubic_radius                  = m_cubic_radius;
         res.cubic_lambda                  = m_cubic_lambda;
         res.hessian_lipschitz_estimate    = m_cubic_estimate;
-        res.iter                          = iter;
-        res.obj_evals                     = m_obj_evals;
-        res.grad_evals                    = m_grad_evals;
-        res.hess_evals                    = m_hess_evals;
+        res.iterations                    = iter;
+        res.function_evaluations          = m_obj_evals;
+        res.gradient_evaluations          = m_grad_evals;
+        res.hessian_evaluations           = m_hess_evals;
         res.status                        = st;
         return res;
       };
+
       auto stopping_metrics_are_small = [&]
       {
         return pi_x <= optimality_tolerance && last_step_norm <= effective_step_tolerance() &&
                primal <= primal_tolerance();
       };
-      auto minimum_status = [&]
+      auto minimum_status = [&]() -> Status
       {
         if ( !stopping_metrics_are_small() ) return Status::unknown;
         if ( !m_hessian_valid )
         {
           m_xc = m_x;
-          eval_hessian( problem, m_xc, m_H );
+          if ( !eval_hessian( problem, m_xc, m_H ) ) return Status::user_request;
           m_hessian_valid = true;
         }
         const auto curvature = critical_curvature(
@@ -964,8 +972,8 @@ namespace Utils::SmallTRON_details
         const Status candidate = minimum_status();
         if ( candidate != Status::unknown ) return candidate;
         if ( fx < fmin ) return Status::unbounded;
-        if ( o.max_eval >= 0 && m_obj_evals >= o.max_eval ) return Status::max_eval;
-        if ( iter >= o.max_iter ) return Status::max_iter;
+        if ( o.max_evaluations >= 0 && m_obj_evals >= o.max_evaluations ) return Status::max_eval;
+        if ( iter >= o.max_iterations ) return Status::max_iter;
         return Status::unknown;
       };
 
@@ -984,7 +992,6 @@ namespace Utils::SmallTRON_details
 
       Status status = current_status();
       if ( status != Status::unknown ) return fill( status );
-      if ( !callback( fill( Status::unknown ) ) ) return fill( Status::user );
 
       while ( true )
       {
@@ -998,14 +1005,14 @@ namespace Utils::SmallTRON_details
           if ( m_hess_evals == 0 )
           {
             m_xc = m_x;
-            eval_hessian( problem, m_xc, m_H );
+            if ( !eval_hessian( problem, m_xc, m_H ) ) return fill( Status::user_request );
           }
           else
           {
             const Real dx = ( m_x - m_xc ).stableNorm();
             m_H_previous  = m_H;
             m_xc          = m_x;
-            eval_hessian( problem, m_xc, m_H );
+            if ( !eval_hessian( problem, m_xc, m_H ) ) return fill( Status::user_request );
 
             if ( o.use_cubic_radius && dx > effective_step_tolerance() )
             {
@@ -1064,7 +1071,8 @@ namespace Utils::SmallTRON_details
         const Real slope           = m_gx.dot( m_s );
         const Real qs              = Real( 0.5 ) * m_s.dot( m_hs ) + slope;
         const Real model_reduction = -qs;
-        const Real f_trial         = eval_objective( problem, m_x );
+        Real f_trial;
+        if ( !eval_objective( problem, m_x, f_trial ) ) return fill( Status::user_request );
 
         // Require genuine descent in the quadratic model.  Objective changes
         // below its floating-point resolution are handled by adding the same
@@ -1094,7 +1102,7 @@ namespace Utils::SmallTRON_details
         {
           ++num_success;
           fx = f_trial;
-          eval_gradient( problem, m_x, m_gx );
+          if ( !eval_gradient( problem, m_x, m_gx ) ) return fill( Status::user_request );
           detail::project_step( m_gpx, m_x, m_gx, lower, upper, Real( -1 ) );
           pi_x            = m_gpx.stableNorm();
           m_hessian_valid = false;  // x_ moved: H_ must be re-evaluated at xc_ =
@@ -1135,11 +1143,6 @@ namespace Utils::SmallTRON_details
 
         status = current_status();
         if ( status != Status::unknown ) break;
-        if ( !callback( fill( Status::unknown ) ) )
-        {
-          status = Status::user;
-          break;
-        }
       }
 
       fill( status );
@@ -1156,20 +1159,38 @@ namespace Utils::SmallTRON_details
       return res;
     }
 
+    template <typename Obj, typename Grad, typename Hess> Result<Real> solve(
+      Obj &&               obj,
+      Grad &&              grad,
+      Hess &&              hess,
+      ConstVectorRef<Real> x0,
+      ConstVectorRef<Real> lower,
+      ConstVectorRef<Real> upper )
+    {
+      auto prob =
+        ::Utils::make_problem<Real>( std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) );
+      return solve( prob, x0, lower, upper );
+    }
+
+    // Unified setters (same name across all BBOX solvers)
+    void set_tolerances( Real tol ) { this->options().set_tolerances( tol ); }
+    void set_max_iterations( int n ) { this->options().set_max_iterations( n ); }
+
+
   private:
     // --- objective / derivative wrappers -------------------------------------
     /** \brief Evaluate the objective and increment the objective counter. */
-    template <typename Problem> Real eval_objective( Problem & p, Vec const & x )
+    template <typename Problem> bool eval_objective( Problem & p, Vec const & x, Real & f )
     {
       ++m_obj_evals;
-      return p.objective( x );
+      return p.objective( x, f );
     }
 
     /** \brief Evaluate the gradient and increment the gradient counter. */
-    template <typename Problem> void eval_gradient( Problem & p, Vec const & x, Vec & g )
+    template <typename Problem> bool eval_gradient( Problem & p, Vec const & x, Vec & g )
     {
       ++m_grad_evals;
-      p.gradient( x, g );
+      return p.gradient( x, g );
     }
 
     /**
@@ -1181,11 +1202,12 @@ namespace Utils::SmallTRON_details
      * symmetrization is needed anywhere downstream (see \ref
      * detail::direct_trust_region).
      */
-    template <typename Problem> void eval_hessian( Problem & p, Vec const & x, Matrix<Real> & H )
+    template <typename Problem> bool eval_hessian( Problem & p, Vec const & x, Matrix<Real> & H )
     {
       ++m_hess_evals;
-      p.hessian( x, H );
+      bool ok = p.hessian( x, H );
       H = ( Real( 0.5 ) * ( H + H.transpose() ) ).eval();
+      return ok;
     }
 
     /**
@@ -1632,7 +1654,7 @@ namespace Utils::SmallTRON_details
     ConstVectorRef<Real>  upper,
     Options<Real> const & options = {} )
   {
-    Solver<Real> solver( x0.size(), options );
+    Minimize_BBOX_SmallTRON<Real> solver( x0.size(), options );
     return solver.solve( problem, x0, lower, upper );
   }
 
@@ -1646,7 +1668,7 @@ namespace Utils::SmallTRON_details
     requires ProblemFor<Problem, Real>
   Result<Real> minimize( Problem & problem, ConstVectorRef<Real> x0, Options<Real> const & options = {} )
   {
-    Solver<Real> solver( x0.size(), options );
+    Minimize_BBOX_SmallTRON<Real> solver( x0.size(), options );
     return solver.solve( problem, x0 );
   }
 
@@ -1654,57 +1676,12 @@ namespace Utils::SmallTRON_details
 
 namespace Utils
 {
-  namespace SmallTRON = SmallTRON_details; // source compatibility
+  namespace SmallTRON = SmallTRON_details;  // source compatibility
 
-  /** Public SmallTRON solver; implementation and support types are isolated
-   *  in Utils::SmallTRON_details. */
-  template <typename Real = double>
-  class Minimize_BBOX_SmallTRON : public SmallTRON_details::Solver<Real>
-  {
-    using Base = SmallTRON_details::Solver<Real>;
+  template <typename Real = double> using Minimize_BBOX_SmallTRON = SmallTRON_details::Minimize_BBOX_SmallTRON<Real>;
 
-  public:
-    using Vector  = SmallTRON_details::Vector<Real>;
-    using Matrix  = SmallTRON_details::Matrix<Real>;
-    using Options = SmallTRON_details::Options<Real>;
-    using Result  = SmallTRON_details::Result<Real>;
-    using Status  = SmallTRON_details::Status;
-    using Base::Base;
-    using Base::solve;
-    void set_tolerances( Real tol ) { this->options().set_tolerances( tol ); }
-    void set_max_iterations( int n ) { this->options().set_max_iterations( n ); }
+  using SmallTRON_details::to_string;
 
-    // --- lambda-based convenience overloads (dense Vector / Matrix) ---
-    template <typename Obj, typename Grad, typename Hess>
-    Result solve(
-      Obj &&                                      obj,
-      Grad &&                                     grad,
-      Hess &&                                     hess,
-      SmallTRON_details::ConstVectorRef<Real> x0,
-      SmallTRON_details::ConstVectorRef<Real> lower,
-      SmallTRON_details::ConstVectorRef<Real> upper )
-    {
-      auto prob = SmallTRON_details::make_problem<Real>(
-        std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) );
-      return Base::solve( prob, x0, lower, upper );
-    }
-
-    template <typename Obj, typename Grad, typename Hess, typename Callback>
-    Result solve(
-      Obj &&                                      obj,
-      Grad &&                                     grad,
-      Hess &&                                     hess,
-      SmallTRON_details::ConstVectorRef<Real> x0,
-      SmallTRON_details::ConstVectorRef<Real> lower,
-      SmallTRON_details::ConstVectorRef<Real> upper,
-      Callback &&                                 callback )
-    {
-      auto prob = SmallTRON_details::make_problem<Real>(
-        std::forward<Obj>( obj ), std::forward<Grad>( grad ), std::forward<Hess>( hess ) );
-      return Base::solve( prob, x0, lower, upper, std::forward<Callback>( callback ) );
-    }
-  };
-
-} // namespace Utils
+}  // namespace Utils
 
 #endif  // UTILS_MINIMIZE_BBOX_SMALL_TRON_DOT_HH

@@ -53,6 +53,7 @@
 #include "Utils/3rd/Eigen/Dense"
 #include "Utils/3rd/Eigen/QR"
 #include "Utils/3rd/Eigen/Sparse"
+#include "Utils/3rd/Eigen/Eigenvalues"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
