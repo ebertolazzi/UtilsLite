@@ -916,7 +916,7 @@ namespace Utils
 
     if ( dwStatus != ERROR_SUCCESS )
     {
-      // UTILS_ASSERT0 removed for simplicity
+      // Utils::Check removed for simplicity
       return;
     }
 

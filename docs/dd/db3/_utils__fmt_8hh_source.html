@@ -177,7 +177,7 @@ $(function(){initNavTree('dd/db3/_utils__fmt_8hh_source.html','../../'); initRes
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span> </div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span><span class="preprocessor">#ifndef UTILS_ASSERT0</span></div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="preprocessor">  #define UTILS_ASSERT0(COND,MSG) if ( !(COND) ) UTILS_ERROR0( MSG )</span></div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span><span class="preprocessor">  #define Utils::Debug(COND,MSG) if ( !(COND) ) UTILS_ERROR0( MSG )</span></div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span><span class="preprocessor">#ifndef UTILS_WARNING0</span></div>
@@ -190,7 +190,7 @@ $(function(){initNavTree('dd/db3/_utils__fmt_8hh_source.html','../../'); initRes
 <div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
 <div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span><span class="preprocessor">#ifndef UTILS_ASSERT</span></div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span><span class="preprocessor">  #define UTILS_ASSERT(COND,...) if ( !(COND) ) UTILS_ERROR( __VA_ARGS__ )</span></div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span><span class="preprocessor">  #define Utils::Debug(COND,...) if ( !(COND) ) UTILS_ERROR( __VA_ARGS__ )</span></div>
 <div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span><span class="preprocessor">#ifndef UTILS_WARNING</span></div>
@@ -206,10 +206,10 @@ $(function(){initNavTree('dd/db3/_utils__fmt_8hh_source.html','../../'); initRes
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span><span class="preprocessor">  #endif</span></div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span><span class="preprocessor">#else</span></div>
 <div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span><span class="preprocessor">  #ifndef UTILS_ASSERT0_DEBUG</span></div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span><span class="preprocessor">    #define UTILS_ASSERT0_DEBUG(COND,MSG) UTILS_ASSERT0(COND,MSG)</span></div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span><span class="preprocessor">    #define UTILS_ASSERT0_DEBUG(COND,MSG) Utils::Debug(COND,MSG)</span></div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span><span class="preprocessor">  #endif</span></div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span><span class="preprocessor">  #ifndef UTILS_ASSERT_DEBUG</span></div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span><span class="preprocessor">    #define UTILS_ASSERT_DEBUG(COND,...) UTILS_ASSERT(COND,__VA_ARGS__)</span></div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span><span class="preprocessor">    #define UTILS_ASSERT_DEBUG(COND,...) Utils::Debug(COND,__VA_ARGS__)</span></div>
 <div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span><span class="preprocessor">  #endif</span></div>
 <div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>

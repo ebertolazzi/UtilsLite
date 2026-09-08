@@ -231,10 +231,10 @@ namespace Utils
      * @param D Diagonal entries of \f$ \bm{D} \f$ matrix, \f$ D_i \ge 0 \f$ (default: empty → \f$ \bm{D} = \bm{I} \f$)
      * @param c Center vector \f$ \bm{c} \in \mathbb{R}^n \f$ (default: empty → \f$ \bm{c} = \bm{0} \f$)
      *
-     * @throws UTILS_ASSERT if \f$ \lambda < 0 \f$
-     * @throws UTILS_ASSERT if \f$ \text{size}(\bm{D}) \neq n \f$
-     * @throws UTILS_ASSERT if any \f$ D_i < 0 \f$
-     * @throws UTILS_ASSERT if \f$ \text{size}(\bm{c}) \neq n \f$
+     * @throws Utils::Check if \f$ \lambda < 0 \f$
+     * @throws Utils::Check if \f$ \text{size}(\bm{D}) \neq n \f$
+     * @throws Utils::Check if any \f$ D_i < 0 \f$
+     * @throws Utils::Check if \f$ \text{size}(\bm{c}) \neq n \f$
      *
      * @note If \f$ \bm{D} \f$ is empty, uses identity matrix \f$ \bm{I} \f$
      * @note If \f$ \bm{c} \f$ is empty, uses zero vector
@@ -309,7 +309,7 @@ namespace Utils
      * @param b Observation vector \f$ \bm{b} \in \mathbb{R}^m \f$
      * @return Solution vector \f$ \bm{x}^* \in \mathbb{R}^n \f$
      *
-     * @throws UTILS_ASSERT if \f$ \text{size}(\bm{b}) \neq m \f$
+     * @throws Utils::Check if \f$ \text{size}(\bm{b}) \neq m \f$
      */
     Vector solve( Vector const & b ) const
     {
@@ -535,8 +535,8 @@ namespace Utils
      * @param D Diagonal entries of \f$ \bm{D} \f$, \f$ D_i \ge 0 \f$ (default: empty → \f$ \bm{D} = \bm{I} \f$)
      * @param c Center vector \f$ \bm{c} \in \mathbb{R}^n \f$ (default: empty → \f$ \bm{c} = 0 \f$)
      *
-     * @throws UTILS_ASSERT if \f$ \lambda < 0 \f$
-     * @throws UTILS_ASSERT if size mismatches occur
+     * @throws Utils::Check if \f$ \lambda < 0 \f$
+     * @throws Utils::Check if size mismatches occur
      */
     explicit TikhonovSolver2(
       Matrix const & A,
@@ -591,7 +591,7 @@ namespace Utils
      * @param b Observation vector \f$ b \in \mathbb{R}^m \f$
      * @return Solution \f$ x^* \in \mathbb{R}^n \f$
      *
-     * @throws UTILS_ASSERT if size mismatch
+     * @throws Utils::Check if size mismatch
      */
     Vector solve( Vector const & b ) const
     {
@@ -789,7 +789,7 @@ namespace Utils
      * @param D Diagonal entries of \f$ \bm{D} \f$ (default: empty → identity)
      * @param c Center vector (default: empty → zero)
      *
-     * @throws UTILS_ASSERT on invalid parameters
+     * @throws Utils::Check on invalid parameters
      */
     explicit SP_TikhonovSolver(
       SparseMatrix const & A,

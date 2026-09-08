@@ -58,13 +58,13 @@ namespace Utils
     void lock()
     {
       DWORD res = WaitForSingleObject( m_mutex, INFINITE );
-      UTILS_ASSERT0( res == WAIT_OBJECT_0, "WinMutex::lock, WAIT_TIMEOUT" );
+      Utils::Check( res == WAIT_OBJECT_0, "WinMutex::lock, WAIT_TIMEOUT" );
     }
 
     void unlock()
     {
       DWORD res = ReleaseMutex( m_mutex );
-      UTILS_ASSERT0( res == WAIT_OBJECT_0, "WinMutex::unlock, WAIT_TIMEOUT" );
+      Utils::Check( res == WAIT_OBJECT_0, "WinMutex::unlock, WAIT_TIMEOUT" );
     }
   };
 

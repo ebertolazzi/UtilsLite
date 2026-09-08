@@ -191,29 +191,56 @@ namespace Utils
 
   //============================================================================
 
-  //! Checks if a NaN value is found in an array of doubles.
+  //! Checks if a NaN **or an infinite** value is found in an array of doubles.
   //!
   //! \param pv Pointer to the array of double values.
   //! \param DIM The dimension (size) of the array.
-  //! \return True if a NaN value is found, otherwise false.
-  static inline bool found_NaN( double const * pv, int const DIM )
+  //! \return True if a NaN or an infinity is found, otherwise false.
+  //!
+  //! \note This function used to be called `found_NaN`, a name that understated
+  //!       what it does: the test is `!is_finite`, so infinities are reported
+  //!       too, and every caller relied on that. The name now says it.
+  static inline bool found_NaN_or_Inf( double const * pv, int const DIM )
   {
     for ( int i = 0; i < DIM; ++i )
       if ( !is_finite( pv[i] ) ) return true;
     return false;
   }
 
-  //! Checks if a NaN value is found in an array of floats.
+  //! Checks if a NaN **or an infinite** value is found in an array of floats.
   //!
   //! \param pv Pointer to the array of float values.
   //! \param DIM The dimension (size) of the array.
-  //! \return True if a NaN value is found, otherwise false.
-  static inline bool found_NaN( float const * pv, int const DIM )
+  //! \return True if a NaN or an infinity is found, otherwise false.
+  static inline bool found_NaN_or_Inf( float const * pv, int const DIM )
   {
     for ( int i = 0; i < DIM; ++i )
       if ( !is_finite( pv[i] ) ) return true;
     return false;
   }
+
+  //! Checks that an array of doubles contains only regular values.
+  //!
+  //! \param pv Pointer to the array of double values.
+  //! \param DIM The dimension (size) of the array.
+  //! \return True if every value is finite, false as soon as a NaN or an
+  //!         infinity is found.
+  //!
+  //! Inverted counterpart of `found_NaN_or_Inf`, so that a caller can write
+  //! `if ( check_regular( v, n ) )` instead of `if ( !found_NaN_or_Inf( v, n ) )`:
+  //! most call sites want the positive form, and the double negation is where
+  //! the reading goes wrong.
+  static inline bool check_regular( double const * pv, int const DIM )
+  { return !found_NaN_or_Inf( pv, DIM ); }
+
+  //! Checks that an array of floats contains only regular values.
+  //!
+  //! \param pv Pointer to the array of float values.
+  //! \param DIM The dimension (size) of the array.
+  //! \return True if every value is finite, false as soon as a NaN or an
+  //!         infinity is found.
+  static inline bool check_regular( float const * pv, int const DIM )
+  { return !found_NaN_or_Inf( pv, DIM ); }
 
   //============================================================================
   /*
@@ -474,7 +501,7 @@ namespace Utils
   //! \return True if a NaN value is found, otherwise false.
   //! \deprecated
   static inline bool foundNaN( double const * pv, int DIM )
-  { return found_NaN( pv, DIM ); }
+  { return found_NaN_or_Inf( pv, DIM ); }
 
   //! Checks if a NaN value is found in an array of floats using camel case
   //! style.
@@ -484,7 +511,7 @@ namespace Utils
   //! \return True if a NaN value is found, otherwise false.
   //! \deprecated
   static inline bool foundNaN( float const * pv, int DIM )
-  { return found_NaN( pv, DIM ); }
+  { return found_NaN_or_Inf( pv, DIM ); }
 
   //! Checks for NaN values in an array of doubles and logs an error if found
   //! using camel case style.

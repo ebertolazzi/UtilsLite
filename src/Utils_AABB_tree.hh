@@ -520,7 +520,7 @@ namespace Utils
         Real const * pmax{ m_bbox_objs + j + m_dim };
         minj = *pmin;
         maxj = *pmax;
-        UTILS_ASSERT0( maxj >= minj, "AABBtree::build, bad bbox N.0 max < min" );
+        Utils::Check( maxj >= minj, "AABBtree::build, bad bbox N.0 max < min" );
         for ( integer i = 1; i < m_num_objects; ++i )
         {
           pmin += m_2dim;
