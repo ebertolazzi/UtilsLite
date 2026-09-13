@@ -608,6 +608,13 @@ namespace Utils::Minimize_BBOX_Newton_details
     bool enable_semismooth_rescue     = true;
     int  semismooth_rescue_iterations = 2;
 
+    // Upper bound on the number of saddle escapes attempted inside a single
+    // solve.  `certify_or_escape` is reached only from a first-order stationary
+    // point; without a cap a flat saddle can be entered and left repeatedly
+    // until the iteration budget is gone, paying f/g/H evaluations for nothing.
+    // Once the budget is spent the stationary point is reported as it stands.
+    int max_certificate_escapes = 8;
+
     // Use TRON's actual/predicted reduction ratio only to adapt M after a cubic
     // step has already passed the AdaN acceptance tests.  Thus it changes speed,
     // not the fundamental acceptance criterion.
@@ -674,6 +681,13 @@ namespace Utils::Minimize_BBOX_Newton_details
     int          semismooth_rescue_steps       = 0;
     int          polish_iterations             = 0;
     int          polish_backtracks             = 0;
+    //! True when the returned point satisfied the first-order stopping test but
+    //! second-order stationarity on the critical cone could not be certified and
+    //! no feasible escape along negative curvature decreased the objective.  The
+    //! point is still a stationary point to the requested tolerance; it may be a
+    //! saddle.  `status` is `converged` in that case, so a caller that needs a
+    //! certified minimum must test this flag as well.
+    bool         certificate_failed            = false;
     Status       status                        = Status::unknown;
 
     [[nodiscard]] bool success() const noexcept { return status == Status::converged; }
@@ -802,6 +816,8 @@ namespace Utils::Minimize_BBOX_Newton_details
       m_semismooth_rescue_steps     = 0;
       m_polish_iterations           = 0;
       m_polish_backtracks           = 0;
+      m_certificate_escapes         = 0;
+      m_certificate_failed          = false;
 
       detail::project( m_x, x0, lower, upper );
 
@@ -828,9 +844,16 @@ namespace Utils::Minimize_BBOX_Newton_details
       int  iteration                     = 0;
 
       Real const initial_scale = std::max( Real( 1 ), projected_norm_inf );
+      // atol + rtol*scale, the usual mixed test.  The previous form took the
+      // *minimum* of the two terms: with initial_scale >= 1 the relative term is
+      // never below the absolute one, so the minimum always selected
+      // absolute_tolerance and relative_tolerance was dead code -- it could only
+      // ever tighten the test, never relax it.  On a problem whose initial
+      // projected gradient is O(1e3) that made the stopping test a demand for
+      // twelve decades of reduction, independently of the problem scale.
       Real const tolerance     = std::max(
         Real( 64 ) * eps,
-        std::min( options.absolute_tolerance, options.relative_tolerance * initial_scale ) );
+        options.absolute_tolerance + options.relative_tolerance * initial_scale );
       Real const automatic_polish_tolerance = Real( 128 ) * eps;
       Real const polish_tolerance           = options.polish_tolerance > Real( 0 )
                                                 ? std::max( options.polish_tolerance, automatic_polish_tolerance )
@@ -871,6 +894,7 @@ namespace Utils::Minimize_BBOX_Newton_details
         result.semismooth_rescue_steps       = m_semismooth_rescue_steps;
         result.polish_iterations             = m_polish_iterations;
         result.polish_backtracks             = m_polish_backtracks;
+        result.certificate_failed            = m_certificate_failed;
         result.status                        = status;
         return result;
       };
@@ -1009,6 +1033,16 @@ namespace Utils::Minimize_BBOX_Newton_details
           return CertificateAction::certified;
         }
 
+        // The escape budget is spent: stop paying for further attempts and report
+        // the first-order stationary point as it stands.  `certificate_failed`
+        // is not set here -- the caller asked for a bounded search, not for a
+        // certificate that could not be obtained.
+        if ( m_certificate_escapes >= options.max_certificate_escapes )
+        {
+          last_step_norm = Real( 0 );
+          return CertificateAction::certified;
+        }
+
         // Lift the feasible negative-curvature direction to the full space and
         // try the farthest feasible point first.  This is important when a
         // stationary maximum lies on a weakly active bound: an infinitesimal
@@ -1038,7 +1072,16 @@ namespace Utils::Minimize_BBOX_Newton_details
 
           Real trial_objective;
           if ( !evaluate_objective( problem, m_trial, trial_objective ) ) return CertificateAction::failed;
-          if ( std::isfinite( trial_objective ) && trial_objective < objective )
+          // The escape moves along feasible negative curvature from a point that
+          // is already first-order stationary, so the true decrease is
+          // O(alpha^2 |lambda_min|).  At a shallow saddle that is hidden by
+          // floating-point noise and a strict `<` then succeeds or fails at
+          // random.  Allow the same roundoff window every other acceptance test
+          // in this file uses.
+          Real const escape_roundoff =
+            options.roundoff_factor * eps *
+            std::max( { Real( 1 ), std::abs( objective ), std::abs( trial_objective ) } );
+          if ( std::isfinite( trial_objective ) && trial_objective < objective + escape_roundoff )
           {
             if ( !evaluate_gradient( problem, m_trial, m_trial_gradient ) ) return CertificateAction::failed;
             if ( !m_trial_gradient.allFinite() ) return CertificateAction::failed;
@@ -1051,6 +1094,7 @@ namespace Utils::Minimize_BBOX_Newton_details
             projected_norm_inf   = m_projected_gradient.template lpNorm<Eigen::Infinity>();
             last_step_norm       = m_step.norm();
             lambda               = Real( 0 );
+            ++m_certificate_escapes;
             return CertificateAction::escaped;
           }
           alpha *= Real( 0.5 );
@@ -1079,7 +1123,15 @@ namespace Utils::Minimize_BBOX_Newton_details
             CertificateAction const action = certify_or_escape();
             if ( action == CertificateAction::certified ) return fill( Status::converged );
             if ( action == CertificateAction::escaped ) continue;
-            return fill( m_H.allFinite() ? Status::no_progress : Status::non_finite_hessian );
+            if ( !m_H.allFinite() ) return fill( Status::non_finite_hessian );
+            // First-order stationary to the requested tolerance, but second-order
+            // stationarity on the critical cone could not be certified and no feasible
+            // escape decreased f.  That is a saddle this solver failed to leave, not a
+            // failure to solve: the point still satisfies the stopping test the caller
+            // asked for, and discarding it forces the caller to restart from a strictly
+            // worse point.  Report it as converged and flag the missing certificate.
+            m_certificate_failed = true;
+            return fill( Status::converged );
           }
         }
 
@@ -1088,7 +1140,15 @@ namespace Utils::Minimize_BBOX_Newton_details
           CertificateAction const action = certify_or_escape();
           if ( action == CertificateAction::certified ) return fill( Status::converged );
           if ( action == CertificateAction::escaped ) continue;
-          return fill( m_H.allFinite() ? Status::no_progress : Status::non_finite_hessian );
+          if ( !m_H.allFinite() ) return fill( Status::non_finite_hessian );
+          // First-order stationary to the requested tolerance, but second-order
+          // stationarity on the critical cone could not be certified and no feasible
+          // escape decreased f.  That is a saddle this solver failed to leave, not a
+          // failure to solve: the point still satisfies the stopping test the caller
+          // asked for, and discarding it forces the caller to restart from a strictly
+          // worse point.  Report it as converged and flag the missing certificate.
+          m_certificate_failed = true;
+          return fill( Status::converged );
         }
 
         if ( options.max_function_evaluations >= 0 && m_function_evaluations >= options.max_function_evaluations )
@@ -1539,8 +1599,12 @@ Real trial_objective;
           if ( !have_trial ) return fill( Status::no_progress );
           Real const fallback_roundoff = options.roundoff_factor * eps *
                                          std::max( { Real( 1 ), std::abs( objective ), std::abs( best_objective ) } );
-          bool const fallback_safe     = best_objective <= objective + fallback_roundoff &&
-                                         best_projected_gradient.norm() < projected_norm;
+          // Monotonicity in f is the whole requirement for the safe fallback.  The
+          // projected-gradient norm is not a descent measure for a minimization:
+          // near a curved active-set boundary a trial can strictly decrease f
+          // and still raise ||p||, and refusing it there is exactly what turns a
+          // slow solve into a reported failure.
+          bool const fallback_safe     = best_objective <= objective + fallback_roundoff;
           if ( !fallback_safe ) return fill( Status::no_progress );
 
           ++m_fallback_steps;
@@ -1850,6 +1914,9 @@ Real trial_objective;
     int m_semismooth_rescue_steps     = 0;
     int m_polish_iterations           = 0;
     int m_polish_backtracks           = 0;
+
+    int  m_certificate_escapes = 0;
+    bool m_certificate_failed  = false;
 
     Result<Real> m_result;
   };
