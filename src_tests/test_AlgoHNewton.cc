@@ -73,7 +73,7 @@ static void print_line(
   fmt::print( "{}", left );
   for ( size_t i = 0; i < widths.size(); ++i )
   {
-    string fmt = fmt::format( "{{:{}^{{}}}}", mid );
+    string fmt = std::format( "{{:{}^{{}}}}", mid );
     fmt::print( fmt::runtime( fmt ), "", widths[i] );
     if ( i < widths.size() - 1 ) fmt::print( "{}", cross );
   }
@@ -203,7 +203,7 @@ static void print_results_table()
   fmt::print( "║" );
   fmt::print( " {:<{}} ", "Passed", w_lbl - 2 );
   fmt::print( "│" );
-  string passed_str = fmt::format(
+  string passed_str = std::format(
     "{} ({:.1f}%)",
     converged_count,
     100.0 * converged_count / static_cast<double>( test_results.size() ) );
@@ -249,7 +249,7 @@ static void do_solve(
   TestResult tr;
   tr.test_id    = ntest;
   tr.category   = category;  // ASSEGNAZIONE
-  tr.test_name  = test_name.empty() ? fmt::format( "Test {}", ntest ) : test_name;
+  tr.test_name  = test_name.empty() ? std::format( "Test {}", ntest ) : test_name;
   tr.iterations = solver.used_iter();
   tr.nfun       = solver.num_fun_eval();
   tr.nfun_D     = solver.num_fun_D_eval();
@@ -496,7 +496,7 @@ int main()
       power2( i ) + 1e-9,
       power2( i + 1 ) - 1e-9,
       &fun1,
-      fmt::format( "FUN1 (i={})", i ),
+      std::format( "FUN1 (i={})", i ),
       "Rational Functions" );
   }
 
@@ -548,12 +548,12 @@ int main()
   for ( int i = 1; i <= 5; ++i )
   {
     FUN4 f( i );
-    do_solve( 0, 1, &f, fmt::format( "FUN4: n={}", i ), "Exponential Equations" );
+    do_solve( 0, 1, &f, std::format( "FUN4: n={}", i ), "Exponential Equations" );
   }
   for ( int i = 20; i <= 100; i += 20 )
   {
     FUN4 f( i );
-    do_solve( 0, 1, &f, fmt::format( "FUN4: n={}", i ), "Exponential Equations" );
+    do_solve( 0, 1, &f, std::format( "FUN4: n={}", i ), "Exponential Equations" );
   }
 
   // Tests 36-38: FUN5
@@ -628,12 +628,12 @@ int main()
   for ( int i = 2; i <= 9; ++i )
   {
     FUN10 f( i );
-    do_solve( 1, 100, &f, fmt::format( "FUN10: n={}", i ), "Polynomials" );
+    do_solve( 1, 100, &f, std::format( "FUN10: n={}", i ), "Polynomials" );
   }
   for ( int i = 11; i <= 33; i += 2 )
   {
     FUN10 f( i );
-    do_solve( 1, 100, &f, fmt::format( "FUN10: n={}", i ), "Polynomials" );
+    do_solve( 1, 100, &f, std::format( "FUN10: n={}", i ), "Polynomials" );
   }
 
   // Test: FUN11
@@ -643,24 +643,24 @@ int main()
   for ( int i = 1; i <= 8; ++i )
   {
     FUN12 f( i );
-    do_solve( -1e4, m_pi / 2, &f, fmt::format( "FUN12: n={}", i ), "Trigonometric / Power" );
+    do_solve( -1e4, m_pi / 2, &f, std::format( "FUN12: n={}", i ), "Trigonometric / Power" );
   }
   for ( int i = 0; i <= 40; i += 10 )
   {
     FUN12 f( i );
-    do_solve( -1e4, m_pi / 2, &f, fmt::format( "FUN12: n={}", i ), "Trigonometric / Power" );
+    do_solve( -1e4, m_pi / 2, &f, std::format( "FUN12: n={}", i ), "Trigonometric / Power" );
   }
 
   // Tests: FUN13
   for ( int i = 20; i <= 40; ++i )
   {
     FUN13 f( i );
-    do_solve( -1e4, 1e-4, &f, fmt::format( "FUN13: n={}", i ), "Complex Roots / Special" );
+    do_solve( -1e4, 1e-4, &f, std::format( "FUN13: n={}", i ), "Complex Roots / Special" );
   }
   for ( int i = 100; i <= 1000; i += 100 )
   {
     FUN13 f( i );
-    do_solve( -1e4, 1e-4, &f, fmt::format( "FUN13: n={}", i ), "Complex Roots / Special" );
+    do_solve( -1e4, 1e-4, &f, std::format( "FUN13: n={}", i ), "Complex Roots / Special" );
   }
 
   // Additional miscellaneous tests

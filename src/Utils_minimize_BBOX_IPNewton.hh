@@ -815,7 +815,7 @@ namespace Utils
 
     std::string summary() const
     {
-      return fmt::format(
+      return std::format(
         "Status: {} | Outer iterations: {} | Inner iterations: {} | Function evaluations: {} | "
         "Hessian evaluations: {} | Final f: {:.6e} | Initial f: {:.6e} | Final μ: {:.1e} | "
         "Duality gap: {:.2e} | Primal infeasibility: {:.2e} | Dual infeasibility: {:.2e} | "

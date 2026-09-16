@@ -161,7 +161,7 @@ static void test_multiple_allocations()
 
   for ( int i = 0; i < num_allocs; ++i )
   {
-    std::string name  = fmt::format( "alloc_{}", i );
+    std::string name  = std::format( "alloc_{}", i );
     auto *      alloc = new Malloc<char>( name );
     alloc->allocate( 1000 * ( i + 1 ) );
     allocs.push_back( alloc );
@@ -293,7 +293,7 @@ static void test_thread_safety()
 
   auto worker = [allocs_per_thread]( int thread_id )
   {
-    std::string name = fmt::format( "thread_{}", thread_id );
+    std::string name = std::format( "thread_{}", thread_id );
     Malloc<int> mem( name );
 
     for ( int i = 0; i < allocs_per_thread; ++i )

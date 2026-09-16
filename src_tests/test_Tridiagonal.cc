@@ -106,8 +106,8 @@ void print_test_table( const std::vector<TestResult> & results, const std::strin
   for ( const auto & r : results )
   {
     auto        color     = r.passed ? fg( fmt::color::green ) : fg( fmt::color::red );
-    std::string error_str = r.error < 1e-10 ? "< 1e-10" : fmt::format( "{:.2e}", r.error );
-    std::string time_str  = fmt::format( "{:.1f}", r.time_mus );
+    std::string error_str = r.error < 1e-10 ? "< 1e-10" : std::format( "{:.2e}", r.error );
+    std::string time_str  = std::format( "{:.1f}", r.time_mus );
 
     fmt::print(
       color,
@@ -156,7 +156,7 @@ template <typename Scalar> TestResult test_scalar_non_cyclic( Eigen::Index n, Ei
   TestResult result;
   result.method        = "Thomas";
   result.type          = "Scalar";
-  result.configuration = fmt::format( "n={}, rhs={}", n, n_rhs );
+  result.configuration = std::format( "n={}, rhs={}", n, n_rhs );
 
   using Solver = TridiagonalSolver<Scalar>;
   using VecS   = typename Solver::VecS;
@@ -231,7 +231,7 @@ template <typename Scalar> TestResult test_scalar_non_cyclic_inplace( Eigen::Ind
   TestResult result;
   result.method        = "Inplace";
   result.type          = "Scalar";
-  result.configuration = fmt::format( "n={}, rhs={}", n, n_rhs );
+  result.configuration = std::format( "n={}, rhs={}", n, n_rhs );
 
   using Solver = TridiagonalSolver<Scalar>;
   using VecS   = typename Solver::VecS;
@@ -296,7 +296,7 @@ template <typename Scalar> TestResult test_scalar_non_cyclic_batch_inplace( Eige
   TestResult result;
   result.method        = "BatchInplace";
   result.type          = "Scalar";
-  result.configuration = fmt::format( "n={}, rhs={}", n, n_rhs );
+  result.configuration = std::format( "n={}, rhs={}", n, n_rhs );
 
   using Solver = TridiagonalSolver<Scalar>;
   using VecS   = typename Solver::VecS;
@@ -359,7 +359,7 @@ template <typename Scalar> TestResult test_scalar_cyclic( Eigen::Index n, Eigen:
   TestResult result;
   result.method        = "Cyclic";
   result.type          = "Scalar";
-  result.configuration = fmt::format( "n={}, rhs={}", n, n_rhs );
+  result.configuration = std::format( "n={}, rhs={}", n, n_rhs );
 
   using Solver = TridiagonalSolver<Scalar>;
   using VecS   = typename Solver::VecS;
@@ -435,7 +435,7 @@ template <typename Scalar> TestResult test_block_non_cyclic( Eigen::Index n, Eig
   TestResult result;
   result.method        = "Block";
   result.type          = "Non-Cyclic";
-  result.configuration = fmt::format( "n={}, m={}, rhs={}", n, m, n_rhs );
+  result.configuration = std::format( "n={}, m={}, rhs={}", n, m, n_rhs );
 
   using Solver = BlockTridiagonalSolver<Scalar, -1>;
   using Block  = typename Solver::Block;
@@ -543,7 +543,7 @@ TestResult test_block_non_cyclic_inplace( Eigen::Index n, Eigen::Index m, Eigen:
   TestResult result;
   result.method        = "BlockInplace";
   result.type          = "Non-Cyclic";
-  result.configuration = fmt::format( "n={}, m={}, rhs={}", n, m, n_rhs );
+  result.configuration = std::format( "n={}, m={}, rhs={}", n, m, n_rhs );
 
   using Solver = BlockTridiagonalSolver<Scalar, -1>;
   using Block  = typename Solver::Block;
@@ -635,7 +635,7 @@ template <typename Scalar> TestResult test_block_cyclic( Eigen::Index n, Eigen::
   TestResult result;
   result.method        = "Block-Cyclic";
   result.type          = "Cyclic";
-  result.configuration = fmt::format( "n={}, m={}, rhs={}", n, m, n_rhs );
+  result.configuration = std::format( "n={}, m={}, rhs={}", n, m, n_rhs );
 
   using Solver = BlockTridiagonalSolver<Scalar, -1>;
   using Block  = typename Solver::Block;
@@ -1240,7 +1240,7 @@ template <typename Scalar> TestResult test_scalar_non_cyclic_map( Eigen::Index n
   TestResult result;
   result.method        = "Thomas-Map";
   result.type          = "Scalar";
-  result.configuration = fmt::format( "n={}, rhs={}", n, n_rhs );
+  result.configuration = std::format( "n={}, rhs={}", n, n_rhs );
 
   using Solver = TridiagonalSolver<Scalar>;
   using VecS   = typename Solver::VecS;
@@ -1325,7 +1325,7 @@ template <typename Scalar> TestResult test_scalar_cyclic_map( Eigen::Index n, Ei
   TestResult result;
   result.method        = "Cyclic-Map";
   result.type          = "Scalar";
-  result.configuration = fmt::format( "n={}, rhs={}", n, n_rhs );
+  result.configuration = std::format( "n={}, rhs={}", n, n_rhs );
 
   using Solver = TridiagonalSolver<Scalar>;
   using VecS   = typename Solver::VecS;

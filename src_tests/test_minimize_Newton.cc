@@ -250,13 +250,13 @@ int main()
 
 #if 1
   integer k = 0;
-  for ( auto [ptr, name] : NL_list ) test( *ptr, fmt::format( "N.{} {}", ++k, name ) );
+  for ( auto [ptr, name] : NL_list ) test( *ptr, std::format( "N.{} {}", ++k, name ) );
 #else
   auto ilist = { 6, 12, 16, 19, 26, 27, 28, 29, 37, 41 };
   for ( auto k : ilist )
   {
     auto & NL = NL_list[k - 1];
-    test( *NL.first, fmt::format( "N.{} {}", k, NL.second ) );
+    test( *NL.first, std::format( "N.{} {}", k, NL.second ) );
   }
 #endif
 

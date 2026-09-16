@@ -152,7 +152,7 @@ namespace Utils
         }
 
         // Prepara le stringhe con colori
-        std::string res_str    = fmt::format( "{:.8e}", res );
+        std::string res_str    = std::format( "{:.8e}", res );
         std::string status_str = ok ? "✓  OK" : "✗  NO";
 
         fmt::print( "║ {:<{}} ║ {:>{}} ║ ", sys->title(), Wname, int( i + 1 ), Wsol );
@@ -375,7 +375,7 @@ namespace Utils
           {
             failed_tests++;
 
-            std::string pos_str = fmt::format( "({},{})", max_i, max_j );
+            std::string pos_str = std::format( "({},{})", max_i, max_j );
 
             fmt::print( "║ {:<{}} ║ {:>{}} ║ {:>{}} ║ ", sys->title(), Wname, int( ip + 1 ), Wpoint, pos_str, Wpos );
 

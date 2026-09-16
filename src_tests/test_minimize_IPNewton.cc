@@ -169,13 +169,13 @@ inline string format_reduced_vector( Vector const & v, integer max_size = 10 )
 
   if ( v_size <= max_size )
   {
-    for ( integer i = 0; i < v_size; ++i ) tmp += fmt::format( "{:.4f}, ", v( i ) );
+    for ( integer i = 0; i < v_size; ++i ) tmp += std::format( "{:.4f}, ", v( i ) );
   }
   else
   {
-    for ( integer i = 0; i < max_size - 3; ++i ) tmp += fmt::format( "{:.4f}, ", v( i ) );
+    for ( integer i = 0; i < max_size - 3; ++i ) tmp += std::format( "{:.4f}, ", v( i ) );
     tmp += "..., ";
-    for ( integer i = v_size - 3; i < v_size; ++i ) tmp += fmt::format( "{:.4f}, ", v( i ) );
+    for ( integer i = v_size - 3; i < v_size; ++i ) tmp += std::format( "{:.4f}, ", v( i ) );
   }
 
   if ( v_size > 0 )

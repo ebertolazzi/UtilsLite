@@ -596,7 +596,7 @@ public:
 
         auto format_time = [&]( double time, const std::string & unit )
         {
-          std::string formatted = fmt::format( "{:8.2f} {}", time, unit );
+          std::string formatted = std::format( "{:8.2f} {}", time, unit );
           if ( std::abs( time - best_time ) < 1e-6 )
           {
             return fmt::format( fg( fmt::color::green ) | fmt::emphasis::bold, "{}", formatted );

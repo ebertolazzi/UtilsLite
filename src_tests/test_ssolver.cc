@@ -380,7 +380,7 @@ bool testDenseSolverComprehensive()
     printTestResult(
       "Basic 3x3 system",
       passed,
-      fmt::format( "error={:.2e}, residual={:.2e}", rel_error, rel_residual ) );
+      std::format( "error={:.2e}, residual={:.2e}", rel_error, rel_residual ) );
   }
 
   // Test 2: Multiple right-hand sides with same factorization
@@ -414,9 +414,9 @@ bool testDenseSolverComprehensive()
     tests_passed += passed ? 1 : 0;
 
     printTestResult(
-      fmt::format( "{} RHS solves", num_rhs ),
+      std::format( "{} RHS solves", num_rhs ),
       passed,
-      fmt::format( "max residual={:.2e}", max_rel_residual ),
+      std::format( "max residual={:.2e}", max_rel_residual ),
       timer.elapsed_ms() );
   }
 
@@ -517,7 +517,7 @@ bool testDenseSolverComprehensive()
     bool passed = rel_residual < 1e-10;
     tests_passed += passed ? 1 : 0;
 
-    printTestResult( "Ill-conditioned system", passed, fmt::format( "residual={:.2e}", rel_residual ) );
+    printTestResult( "Ill-conditioned system", passed, std::format( "residual={:.2e}", rel_residual ) );
   }
 
   // Summary
@@ -608,9 +608,9 @@ bool testSparseSolverComprehensive()
     tests_passed += passed ? 1 : 0;
 
     printTestResult(
-      fmt::format( "{}-dimensional tridiagonal", n ),
+      std::format( "{}-dimensional tridiagonal", n ),
       passed,
-      fmt::format( "residual={:.2e}", rel_residual ),
+      std::format( "residual={:.2e}", rel_residual ),
       timer.elapsed_ms() );
   }
 
@@ -677,7 +677,7 @@ bool testSparseSolverComprehensive()
       printTestResult(
         "Consistency with dense solver",
         passed,
-        fmt::format(
+        std::format(
           "error={:.2e}, sparse_res={:.2e}, dense_res={:.2e}",
           rel_error,
           sparse_residual,
@@ -833,7 +833,7 @@ bool testSparseSolverComprehensive()
       "  Average per solve: {:.2f} ms\n",
       subsequent_solves_time / static_cast<Scalar>( num_solves - 1 ) );
 
-    printTestResult( "Multiple RHS solves", passed, fmt::format( "max residual={:.2e}", max_residual ) );
+    printTestResult( "Multiple RHS solves", passed, std::format( "max residual={:.2e}", max_residual ) );
   }
 
   // Summary
@@ -898,11 +898,11 @@ bool testUnifiedSymmetricSolver()
       bool   passed       = rel_residual < 1e-12;
       tests_passed += passed ? 1 : 0;
 
-      printTestResult( "Sparse matrix via unified interface", passed, fmt::format( "residual={:.2e}", rel_residual ) );
+      printTestResult( "Sparse matrix via unified interface", passed, std::format( "residual={:.2e}", rel_residual ) );
     }
     catch ( const std::exception & e )
     {
-      printTestResult( "Sparse matrix via unified interface", false, fmt::format( "Exception: {}", e.what() ) );
+      printTestResult( "Sparse matrix via unified interface", false, std::format( "Exception: {}", e.what() ) );
     }
   }
 
@@ -928,7 +928,7 @@ bool testUnifiedSymmetricSolver()
     printTestResult(
       "Automatic backend selection (sparse only)",
       passed,
-      fmt::format( "sparse_res={:.2e}", res_sparse ) );
+      std::format( "sparse_res={:.2e}", res_sparse ) );
   }
 
   // Test 3: Performance comparison within unified interface (sparse only)
@@ -1044,7 +1044,7 @@ bool testSparsityPatternAnalysis()
     printTestResult(
       "Basic sparsity metrics",
       passed,
-      fmt::format( "target={:.1f}%, actual={:.1f}%", sparsity * 100, actual_sparsity * 100 ) );
+      std::format( "target={:.1f}%, actual={:.1f}%", sparsity * 100, actual_sparsity * 100 ) );
   }
 
   // Test 2: Pattern recognition - Tridiagonal
@@ -1097,7 +1097,7 @@ bool testSparsityPatternAnalysis()
     bool passed = is_tridiagonal && ( bandwidth == 1 );
     tests_passed += passed ? 1 : 0;
 
-    printTestResult( "Tridiagonal recognition", passed, fmt::format( "bandwidth={}", bandwidth ) );
+    printTestResult( "Tridiagonal recognition", passed, std::format( "bandwidth={}", bandwidth ) );
   }
 
   // Test 3: Pattern recognition - Block diagonal
@@ -1195,7 +1195,7 @@ bool testSparsityPatternAnalysis()
     printTestResult(
       "Block diagonal recognition",
       passed,
-      fmt::format( "expected={}, detected={}", num_blocks, detected_blocks ) );
+      std::format( "expected={}, detected={}", num_blocks, detected_blocks ) );
   }
 
   // Test 4: Pattern-based optimization opportunities
@@ -1542,7 +1542,7 @@ bool testEdgeCasesAndLimits()
       bool passed = rel_error < 1e-6;
       tests_passed += passed ? 1 : 0;
 
-      printTestResult( "λ = 1e12 (dominant diagonal)", passed, fmt::format( "error={:.2e}", rel_error ) );
+      printTestResult( "λ = 1e12 (dominant diagonal)", passed, std::format( "error={:.2e}", rel_error ) );
     }
 
     // Very small lambda (near singular)
@@ -1561,7 +1561,7 @@ bool testEdgeCasesAndLimits()
       bool passed = rel_residual < 1e-10;
       tests_passed += passed ? 1 : 0;
 
-      printTestResult( "λ = 1e-15 (near machine epsilon)", passed, fmt::format( "residual={:.2e}", rel_residual ) );
+      printTestResult( "λ = 1e-15 (near machine epsilon)", passed, std::format( "residual={:.2e}", rel_residual ) );
     }
   }
 
@@ -1585,7 +1585,7 @@ bool testEdgeCasesAndLimits()
     bool passed = rel_error < 1e-14;
     tests_passed += passed ? 1 : 0;
 
-    printTestResult( "Identity matrix", passed, fmt::format( "error={:.2e}", rel_error ) );
+    printTestResult( "Identity matrix", passed, std::format( "error={:.2e}", rel_error ) );
   }
 
   // Test 3: Negative eigenvalues (indefinite matrix)
@@ -1614,7 +1614,7 @@ bool testEdgeCasesAndLimits()
     bool passed = rel_residual < 1e-12;
     tests_passed += passed ? 1 : 0;
 
-    printTestResult( "Indefinite matrix with regularization", passed, fmt::format( "residual={:.2e}", rel_residual ) );
+    printTestResult( "Indefinite matrix with regularization", passed, std::format( "residual={:.2e}", rel_residual ) );
   }
 
   // Test 4: 1x1 and 2x2 systems
@@ -1639,7 +1639,7 @@ bool testEdgeCasesAndLimits()
       bool passed = error < 1e-14;
       tests_passed += passed ? 1 : 0;
 
-      printTestResult( "1x1 system", passed, fmt::format( "error={:.2e}", error ) );
+      printTestResult( "1x1 system", passed, std::format( "error={:.2e}", error ) );
     }
 
     // 2x2 system with known inverse
@@ -1662,7 +1662,7 @@ bool testEdgeCasesAndLimits()
       bool passed = rel_error < 1e-14;
       tests_passed += passed ? 1 : 0;
 
-      printTestResult( "2x2 system", passed, fmt::format( "error={:.2e}", rel_error ) );
+      printTestResult( "2x2 system", passed, std::format( "error={:.2e}", rel_error ) );
     }
   }
 
@@ -1690,9 +1690,9 @@ bool testEdgeCasesAndLimits()
     tests_passed += passed ? 1 : 0;
 
     printTestResult(
-      fmt::format( "{} different λ values", lambdas.size() ),
+      std::format( "{} different λ values", lambdas.size() ),
       passed,
-      fmt::format( "max residual={:.2e}", max_rel_residual ) );
+      std::format( "max residual={:.2e}", max_rel_residual ) );
   }
 
   // Summary
@@ -1820,7 +1820,7 @@ int main()
   fmt::print(
     "│ Overall Result         │ {:^11} │ {:>19} │\n",
     ( passed_count == total_count ) ? "PASS" : "FAIL",
-    fmt::format( "{}/{} passed", passed_count, total_count ) );
+    std::format( "{}/{} passed", passed_count, total_count ) );
   fmt::print( "├────────────────────────┼─────────────┼─────────────────────┤\n" );
   fmt::print( "│ Total Execution Time   │ {:^11.3f} │ {:>19} │\n", tm.elapsed_s(), "seconds" );
   fmt::print( "└────────────────────────┴─────────────┴─────────────────────┘\n" );

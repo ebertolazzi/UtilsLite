@@ -433,7 +433,7 @@ namespace Utils
           fmt::print(
             fmt::fg( fmt::color::light_blue ),
             "[{:5}] ‖f‖ = {:.2e}",
-            fmt::format( "{}", m_num_iterations + 1 ),
+            std::format( "{}", m_num_iterations + 1 ),
             norm_f );
           fmt::print( ", reduction = {:.3e}\n", reduction );
         }
@@ -619,7 +619,7 @@ namespace Utils
           fmt::print(
             fmt::fg( fmt::color::light_blue ),
             "[{:5}] ‖f‖ = {:.2e}",
-            fmt::format( "{}", m_num_iterations + 1 ),
+            std::format( "{}", m_num_iterations + 1 ),
             norm_f );
           fmt::print( ", reduction = {:.3e}\n", reduction );
         }

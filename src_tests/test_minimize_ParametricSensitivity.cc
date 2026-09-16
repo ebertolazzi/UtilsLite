@@ -175,10 +175,10 @@ void example_unconstrained()
     x_exact( 1 ) );
 
   Scalar error = ( optimizer.solution() - x_exact ).norm();
-  if ( error < 1e-6 ) { print_success( fmt::format( "Solution accuracy: {:.2e} ✓\n", error ) ); }
+  if ( error < 1e-6 ) { print_success( std::format( "Solution accuracy: {:.2e} ✓\n", error ) ); }
   else
   {
-    print_warning( fmt::format( "Solution accuracy: {:.2e}\n", error ) );
+    print_warning( std::format( "Solution accuracy: {:.2e}\n", error ) );
   }
 
   print_subsection( "Parametric Sensitivity" );
@@ -189,10 +189,10 @@ void example_unconstrained()
     print_matrix_info( "Exact ∂x*/∂p", sensitivity_exact, true );
 
     Scalar max_error = ( sensitivity_analyzer.sensitivity() - sensitivity_exact ).template lpNorm<Eigen::Infinity>();
-    if ( max_error < 1e-8 ) { print_success( fmt::format( "Maximum sensitivity error: {:.2e} ✓\n", max_error ) ); }
+    if ( max_error < 1e-8 ) { print_success( std::format( "Maximum sensitivity error: {:.2e} ✓\n", max_error ) ); }
     else
     {
-      print_warning( fmt::format( "Maximum sensitivity error: {:.2e}\n", max_error ) );
+      print_warning( std::format( "Maximum sensitivity error: {:.2e}\n", max_error ) );
     }
 
     if ( sensitivity_analyzer.condition_number() > 0 )
@@ -202,7 +202,7 @@ void example_unconstrained()
   }
   else
   {
-    print_error( fmt::format( "Sensitivity computation failed: {}\n", sensitivity_analyzer.error_message() ) );
+    print_error( std::format( "Sensitivity computation failed: {}\n", sensitivity_analyzer.error_message() ) );
   }
 }
 
@@ -310,10 +310,10 @@ void example_box_constrained()
     x_exact( 1 ) );
 
   Scalar error = ( x_opt - x_exact ).norm();
-  if ( error < 1e-6 ) { print_success( fmt::format( "Solution accuracy: {:.2e} ✓\n", error ) ); }
+  if ( error < 1e-6 ) { print_success( std::format( "Solution accuracy: {:.2e} ✓\n", error ) ); }
   else
   {
-    print_warning( fmt::format( "Solution accuracy: {:.2e}\n", error ) );
+    print_warning( std::format( "Solution accuracy: {:.2e}\n", error ) );
   }
 
   print_subsection( "Constraint Analysis" );
@@ -349,10 +349,10 @@ void example_box_constrained()
     print_matrix_info( "Exact ∂x*/∂p", sensitivity_exact, true );
 
     Scalar max_error = ( sens_analyzer.sensitivity() - sensitivity_exact ).norm();
-    if ( max_error < 1e-8 ) { print_success( fmt::format( "Maximum sensitivity error: {:.2e} ✓\n", max_error ) ); }
+    if ( max_error < 1e-8 ) { print_success( std::format( "Maximum sensitivity error: {:.2e} ✓\n", max_error ) ); }
     else
     {
-      print_warning( fmt::format( "Maximum sensitivity error: {:.2e}\n", max_error ) );
+      print_warning( std::format( "Maximum sensitivity error: {:.2e}\n", max_error ) );
     }
 
     if ( sens_analyzer.condition_number() > 0 )
@@ -362,7 +362,7 @@ void example_box_constrained()
   }
   else
   {
-    print_error( fmt::format( "Sensitivity computation failed: {}\n", sens_analyzer.error_message() ) );
+    print_error( std::format( "Sensitivity computation failed: {}\n", sens_analyzer.error_message() ) );
   }
 }
 
@@ -372,7 +372,7 @@ void example_box_constrained()
 void example_regularized()
 {
   Scalar epsilon = 0.1;
-  print_section_title( fmt::format( "EXAMPLE 3: Regularized Problem (ε = {:.2f})", epsilon ) );
+  print_section_title( std::format( "EXAMPLE 3: Regularized Problem (ε = {:.2f})", epsilon ) );
 
   fmt::print(
     fmt::fg( fmt::color::white ),
@@ -464,7 +464,7 @@ void example_regularized()
     if ( sens_analyzer.condition_number() > 1000 ) { print_warning( "Poor conditioning detected (κ > 1000)\n" ); }
   }
 
-  print_subsection( fmt::format( "With Regularization (ε = {:.2f})", epsilon ) );
+  print_subsection( std::format( "With Regularization (ε = {:.2f})", epsilon ) );
   {
     ParametricSensitivity<Scalar>::Options sens_opts;
     sens_opts.verbosity_level            = 0;
@@ -491,7 +491,7 @@ void example_regularized()
 
     if ( cond_improvement > 1.1 )
     {
-      print_success( fmt::format( "Conditioning improved by factor: {:.1f}x ✓\n", cond_improvement ) );
+      print_success( std::format( "Conditioning improved by factor: {:.1f}x ✓\n", cond_improvement ) );
     }
     if ( sens_analyzer.max_sensitivity() < 1.0 ) { print_success( "Sensitivity reduced (max < 1.0) ✓\n" ); }
 
@@ -499,7 +499,7 @@ void example_regularized()
     print_matrix_info( "Exact regularized sensitivity", sensitivity_exact_reg, true );
 
     Scalar error = ( sens_analyzer.sensitivity() - sensitivity_exact_reg ).norm();
-    if ( error < 1e-8 ) { print_success( fmt::format( "Sensitivity accuracy: {:.2e} ✓\n", error ) ); }
+    if ( error < 1e-8 ) { print_success( std::format( "Sensitivity accuracy: {:.2e} ✓\n", error ) ); }
   }
 }
 
@@ -548,7 +548,7 @@ int main()
   }
   catch ( const std::exception & e )
   {
-    print_error( fmt::format( "Exception occurred: {}\n", e.what() ) );
+    print_error( std::format( "Exception occurred: {}\n", e.what() ) );
     return 1;
   }
 

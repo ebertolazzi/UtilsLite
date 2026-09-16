@@ -544,18 +544,18 @@ namespace Utils
       fmt::print( "╔══════════════════════════════════════════════════════════════════════╗\n" );
       print_box_title( "NEWTON OPTIMIZER WITH ANALYTICAL HESSIAN" );
       fmt::print( "╠══════════════════════════════════════════════════════════════════════╣\n" );
-      print_box_row( fmt::format(
+      print_box_row( std::format(
         "Dimension: {:4d}        MaxIter: {:4d}        GTol: {:8.2e}", n, m_opts.max_iter, m_opts.g_tol ) );
-      print_box_row( fmt::format(
+      print_box_row( std::format(
         "λ₀={:<8.2e}     Range=[{:<8.2e}, {:<8.2e}]", m_opts.lambda_init, m_opts.lambda_min, m_opts.lambda_max ) );
       if ( m_box.is_active() )
       {
         integer n_active = m_box.num_active( m_x );
-        print_box_row( fmt::format( "Box constraints: ACTIVE ({:d}/{:d} variabili vincolate)", n_active, n ) );
+        print_box_row( std::format( "Box constraints: ACTIVE ({:d}/{:d} variabili vincolate)", n_active, n ) );
       }
       else
         print_box_row( "Box constraints: INACTIVE" );
-      print_box_row( fmt::format( "Initial F = {:.6e}", m_f_init ) );
+      print_box_row( std::format( "Initial F = {:.6e}", m_f_init ) );
       fmt::print( "╚══════════════════════════════════════════════════════════════════════╝\n" );
       if ( m_opts.verbosity >= 2 ) fmt::print( " Iter     F(x)          ΔF         ‖∇f‖         λ          α\n" );
     }
@@ -576,19 +576,19 @@ namespace Utils
       fmt::print( "\n╔══════════════════════════════════════════════════════════════════════╗\n" );
       print_box_title( "OPTIMIZATION SUMMARY" );
       fmt::print( "╠══════════════════════════════════════════════════════════════════════╣\n" );
-      fmt::print( color, "║ {:<68} ║\n", fmt::format( "Status: {}", to_string( m_status ) ) );
-      print_box_row( fmt::format( "Iterations: {}", m_iter ) );
-      print_box_row( fmt::format( "Function evals: {}", m_f_evals ) );
-      print_box_row( fmt::format( "Hessian evals: {}", m_h_evals ) );
-      print_box_row( fmt::format( "Line search evals: {}", m_ls_evals ) );
-      print_box_row( fmt::format( "Newton fails: {}", m_newton_fails ) );
+      fmt::print( color, "║ {:<68} ║\n", std::format( "Status: {}", to_string( m_status ) ) );
+      print_box_row( std::format( "Iterations: {}", m_iter ) );
+      print_box_row( std::format( "Function evals: {}", m_f_evals ) );
+      print_box_row( std::format( "Hessian evals: {}", m_h_evals ) );
+      print_box_row( std::format( "Line search evals: {}", m_ls_evals ) );
+      print_box_row( std::format( "Newton fails: {}", m_newton_fails ) );
       fmt::print( "╠══════════════════════════════════════════════════════════════════════╣\n" );
-      print_box_row( fmt::format( "Final ‖∇f‖: {:.2e}", m_gnorm ) );
-      print_box_row( fmt::format( "Final f: {:.6e}", m_f ) );
-      print_box_row( fmt::format( "Initial f: {:.6e}", m_f_init ) );
-      print_box_row( fmt::format( "Reduction: {:.6e}", m_f_init - m_f ) );
+      print_box_row( std::format( "Final ‖∇f‖: {:.2e}", m_gnorm ) );
+      print_box_row( std::format( "Final f: {:.6e}", m_f ) );
+      print_box_row( std::format( "Initial f: {:.6e}", m_f_init ) );
+      print_box_row( std::format( "Reduction: {:.6e}", m_f_init - m_f ) );
       if ( m_opts.keep_best_point && m_best_f < m_f - m_eps )
-        print_box_row( fmt::format( "Best f found: {:.6e}", m_best_f ) );
+        print_box_row( std::format( "Best f found: {:.6e}", m_best_f ) );
       fmt::print( "╚══════════════════════════════════════════════════════════════════════╝\n" );
     }
 

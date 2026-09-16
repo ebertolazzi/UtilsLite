@@ -106,13 +106,13 @@ inline std::string format_reduced_vector( Vector const & v, size_t max_size = 10
   integer     v_size = v.size();
   if ( static_cast<size_t>( v_size ) <= max_size )
   {
-    for ( integer i = 0; i < v_size; ++i ) tmp += fmt::format( "{:.4f}, ", v( i ) );
+    for ( integer i = 0; i < v_size; ++i ) tmp += std::format( "{:.4f}, ", v( i ) );
   }
   else
   {
-    for ( size_t i = 0; i < max_size - 3; ++i ) tmp += fmt::format( "{:.4f}, ", v( static_cast<integer>( i ) ) );
+    for ( size_t i = 0; i < max_size - 3; ++i ) tmp += std::format( "{:.4f}, ", v( static_cast<integer>( i ) ) );
     tmp += "..., ";
-    for ( integer i{ v_size - 3 }; i < v_size; ++i ) tmp += fmt::format( "{:.4f}, ", v( i ) );
+    for ( integer i{ v_size - 3 }; i < v_size; ++i ) tmp += std::format( "{:.4f}, ", v( i ) );
   }
   tmp.pop_back();
   tmp.pop_back();

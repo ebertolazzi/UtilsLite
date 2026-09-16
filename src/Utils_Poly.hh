@@ -1960,7 +1960,7 @@ namespace Utils
   template <typename Real> inline string Poly<Real>::to_string() const
   {
     if ( this->order() <= 0 ) return "EMPTY!";
-    if ( this->order() == 1 ) return fmt::format( "{}", this->coeff( 0 ) );
+    if ( this->order() == 1 ) return std::format( "{:.5g}", this->coeff( 0 ) );
     if ( ( *this ).cwiseAbs().maxCoeff() == 0 ) return "0";
 
     bool   empty = true;  // true indica che i coefficienti finora sono nulli
@@ -1972,7 +1972,7 @@ namespace Utils
     // controlla se esiste il primo coefficiente (grado 0)
     if ( this->coeff( 0 ) != 0 )
     {
-      res   = fmt::format( "{}", this->coeff( 0 ) );
+      res   = std::format( "{:.5g}", this->coeff( 0 ) );
       empty = false;
     }
 
@@ -2021,7 +2021,7 @@ namespace Utils
       if ( i == 1 )
         e = "x";
       else
-        e = fmt::format( "x^{}", i );
+        e = std::format( "x^{}", i );
 
       // se il coeff è 1 non lo stampo
       if ( c == 1 )
@@ -2030,7 +2030,7 @@ namespace Utils
         res += e;
       }
       else
-        res += fmt::format( "{}{} {}", s, c, e );
+        res += std::format( "{}{:.5g} {}", s, c, e );
     }
     return res;
   }

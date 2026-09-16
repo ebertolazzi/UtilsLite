@@ -26,7 +26,7 @@
   "}\n"
 
 static inline string ini_msg_HAS64( real_type tau )
-{ return fmt::format( "HAS 64, tau = {}", tau ); }
+{ return std::format( "HAS 64, tau = {}", tau ); }
 
 class HAS64 : public NonlinearSystem
 {
@@ -264,7 +264,7 @@ public:
 \*/
 
 static inline string ini_msg_HAS93( real_type tau )
-{ return fmt::format( "HAS 93, tau = {}", tau ); }
+{ return std::format( "HAS 93, tau = {}", tau ); }
 
 class HAS93 : public NonlinearSystem
 {

@@ -165,7 +165,7 @@ void print_summary_table( const vector<TestResult> & results )
     total_width );
 
   // Linea divisoria
-  fmt::print( fg( fmt::color::cyan ), "┏{}┓\n", fmt::format( "{:━^{}}", "", total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "┏{}┓\n", std::format( "{:━^{}}", "", total_width - 2 ) );
 
   // Intestazione delle colonne
   fmt::print( fg( fmt::color::cyan ), "┃ " );
@@ -184,7 +184,7 @@ void print_summary_table( const vector<TestResult> & results )
   fmt::print( fg( fmt::color::cyan ), "┃\n" );
 
   // Linea divisoria
-  fmt::print( fg( fmt::color::cyan ), "┠{}┨\n", fmt::format( "{:─^{}}", "", total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "┠{}┨\n", std::format( "{:─^{}}", "", total_width - 2 ) );
 
   // Dati
   for ( size_t i = 0; i < results.size(); ++i )
@@ -266,7 +266,7 @@ void print_summary_table( const vector<TestResult> & results )
   }
 
   // Linea finale
-  fmt::print( fg( fmt::color::cyan ), "┗{}┛\n", fmt::format( "{:━^{}}", "", total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "┗{}┛\n", std::format( "{:━^{}}", "", total_width - 2 ) );
 }
 
 // Funzione per calcolare e stampare le statistiche
@@ -333,7 +333,7 @@ void print_statistics( const vector<TestResult> & results )
   // Stampa delle statistiche
   fmt::print( "\n" );
   fmt::print( fg( fmt::color::cyan ) | fmt::emphasis::bold, "{:━^{}}\n", " STATISTICAL SUMMARY ", stat_total_width );
-  fmt::print( fg( fmt::color::cyan ), "┏{}┓\n", fmt::format( "{:━^{}}", "", stat_total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "┏{}┓\n", std::format( "{:━^{}}", "", stat_total_width - 2 ) );
 
   // Total Tests
   fmt::print( fg( fmt::color::cyan ), "┃ " );
@@ -347,7 +347,7 @@ void print_statistics( const vector<TestResult> & results )
   fmt::print(
     fg( fmt::color::green ),
     "{:>{}}",
-    fmt::format( "{} ({:.1f}%)", stats.converged_tests, stats.success_rate ),
+    std::format( "{} ({:.1f}%)", stats.converged_tests, stats.success_rate ),
     stat_col_value );
   fmt::print( fg( fmt::color::cyan ), " ┃\n" );
 
@@ -357,12 +357,12 @@ void print_statistics( const vector<TestResult> & results )
   fmt::print(
     fg( fmt::color::red ),
     "{:>{}}",
-    fmt::format( "{} ({:.1f}%)", stats.failed_tests, 100.0 - stats.success_rate ),
+    std::format( "{} ({:.1f}%)", stats.failed_tests, 100.0 - stats.success_rate ),
     stat_col_value );
   fmt::print( fg( fmt::color::cyan ), " ┃\n" );
 
   // Linea divisoria
-  fmt::print( fg( fmt::color::cyan ), "┠{}┨\n", fmt::format( "{:─^{}}", "", stat_total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "┠{}┨\n", std::format( "{:─^{}}", "", stat_total_width - 2 ) );
 
   if ( stats.converged_tests > 0 )
   {
@@ -424,7 +424,7 @@ void print_statistics( const vector<TestResult> & results )
     fmt::print( fg( fmt::color::cyan ), " ┃\n" );
   }
 
-  fmt::print( fg( fmt::color::cyan ), "┗{}┛\n", fmt::format( "{:━^{}}", "", stat_total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "┗{}┛\n", std::format( "{:━^{}}", "", stat_total_width - 2 ) );
 }
 
 int main( int argc, char * argv[] )

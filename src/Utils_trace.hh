@@ -57,7 +57,7 @@
  * \param ... Format string and arguments (compatible with fmt::format)
  */
 #ifndef UTILS_ERROR_TRACE
-#define UTILS_ERROR_TRACE( ... ) throw Utils::Runtime_TraceError( fmt::format( __VA_ARGS__ ), __FILENAME__, __LINE__ )
+#define UTILS_ERROR_TRACE( ... ) throw Utils::Runtime_TraceError( std::format( __VA_ARGS__ ), __FILENAME__, __LINE__ )
 #endif
 
 /**
@@ -264,7 +264,7 @@ namespace Utils
    * \return Formatted error message string
    */
   inline string Runtime_TraceError::grab_backtrace( string_view const reason, string_view const file, int const line )
-  { return fmt::format( "\n{}\nOn File:{}:{}\n", reason, file, line ); }
+  { return std::format( "\n{}\nOn File:{}:{}\n", reason, file, line ); }
 
 #else
 
@@ -278,7 +278,7 @@ namespace Utils
    */
   static std::string addr_to_line( std::string const & binary_path, void * addr )
   {
-    string cmd{ fmt::format( "atos -o {} {}", binary_path, addr ) };
+    string cmd{ std::format( "atos -o {} {}", binary_path, addr ) };
 
     FILE * pipe = popen( cmd.data(), "r" );
     if ( !pipe ) return "??";

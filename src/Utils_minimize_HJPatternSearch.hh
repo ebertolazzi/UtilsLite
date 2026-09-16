@@ -417,7 +417,7 @@ namespace Utils
     {
       std::string result = "\n";
       result += "╔══════════════════════════════════════════════════════════════╗\n";
-      result += fmt::format( "║ Hooke-Jeeves Pattern Search Results {:>25} ║\n", " " );
+      result += std::format( "║ Hooke-Jeeves Pattern Search Results {:>25} ║\n", " " );
       result += "╠══════════════════════════════════════════════════════════════╣\n";
 
       // Termination reason
@@ -434,21 +434,21 @@ namespace Utils
       }
 
       // Statistics
-      result += fmt::format( "║   Iterations: {:5d} / {:5d}\n", m_iteration_count, m_max_iterations );
+      result += std::format( "║   Iterations: {:5d} / {:5d}\n", m_iteration_count, m_max_iterations );
       result +=
-        fmt::format( "║   Function evaluations: {:5d} / {:5d}\n", m_fun_evaluation_count, m_max_fun_evaluations );
-      result += fmt::format( "║   Final step size: {:.3e} (tol = {:.1e})\n", m_h, m_tolerance );
-      result += fmt::format( "║   Best function value: {:.10e}\n", m_f_best );
+        std::format( "║   Function evaluations: {:5d} / {:5d}\n", m_fun_evaluation_count, m_max_fun_evaluations );
+      result += std::format( "║   Final step size: {:.3e} (tol = {:.1e})\n", m_h, m_tolerance );
+      result += std::format( "║   Best function value: {:.10e}\n", m_f_best );
 
       // Solution (truncated if many dimensions)
       result += "║   Solution: [";
       integer show_dims = std::min( m_dim, 5 );
       for ( integer i = 0; i < show_dims; ++i )
       {
-        result += fmt::format( "{:.6e}", m_x_best( i ) );
+        result += std::format( "{:.6e}", m_x_best( i ) );
         if ( i < show_dims - 1 ) result += ", ";
       }
-      if ( m_dim > show_dims ) { result += fmt::format( ", ... (+{} more)", m_dim - show_dims ); }
+      if ( m_dim > show_dims ) { result += std::format( ", ... (+{} more)", m_dim - show_dims ); }
       result += "]\n";
 
       result += "╚══════════════════════════════════════════════════════════════╝\n";
@@ -497,7 +497,7 @@ namespace Utils
         if ( m_verbose > 0 && m_console )
         {
           std::string line = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
-          std::string msg  = fmt::format(
+          std::string msg  = std::format(
             "⎧ Iteration {:4d}: f = {:.6e}, feval = {:4d}, h = {:.3e}\n",
             m_iteration_count,
             m_f_best,
@@ -506,9 +506,9 @@ namespace Utils
 
           if ( m_verbose > 2 )
           {
-            for ( integer i = 0; i < m_dim; ++i ) { msg += fmt::format( "⎪ x[{:2d}] = {:.6e}\n", i, m_x_best( i ) ); }
+            for ( integer i = 0; i < m_dim; ++i ) { msg += std::format( "⎪ x[{:2d}] = {:.6e}\n", i, m_x_best( i ) ); }
           }
-          msg += fmt::format( "⎩{}\n", line );
+          msg += std::format( "⎩{}\n", line );
           // Assuming Console has a log method
           // m_console->log(msg);
         }

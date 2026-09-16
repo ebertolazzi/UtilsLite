@@ -219,7 +219,7 @@ void test_network_functions()
     map<string, string> mac_addr;
     get_MAC_address( mac_addr );
 
-    print_info( fmt::format( "Found {} network interface(s):", mac_addr.size() ) );
+    print_info( std::format( "Found {} network interface(s):", mac_addr.size() ) );
 
     for ( const auto & [iface, addr] : mac_addr )
     {
@@ -236,7 +236,7 @@ void test_network_functions()
     vector<string> ip_addr;
     get_IP_address( ip_addr );
 
-    print_info( fmt::format( "Found {} IP address(es):", ip_addr.size() ) );
+    print_info( std::format( "Found {} IP address(es):", ip_addr.size() ) );
 
     for ( size_t i = 0; i < ip_addr.size(); ++i )
     {
@@ -458,7 +458,7 @@ void test_performance()
 
     print_result(
       "Architecture Check",
-      fmt::format(
+      std::format(
         "{} iterations: {} µs ({:.2f} µs/iter)",
         iterations,
         duration.count(),
@@ -476,7 +476,7 @@ void test_performance()
     end      = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::microseconds>( end - start );
 
-    print_result( "Hostname Lookup", fmt::format( "100 iterations: {} µs", duration.count() ) );
+    print_result( "Hostname Lookup", std::format( "100 iterations: {} µs", duration.count() ) );
 
     print_success( "Performance tests completed" );
   }

@@ -482,7 +482,7 @@ namespace Utils
     }
     catch ( std::exception const & e )
     {
-      mexErrMsgTxt( fmt::format( "AABB_treeMexWrapper Error: {}", e.what() ).data() );
+      mexErrMsgTxt( std::format( "AABB_treeMexWrapper Error: {}", e.what() ).data() );
     }
     catch ( ... )
     {

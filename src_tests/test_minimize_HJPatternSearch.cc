@@ -144,11 +144,11 @@ std::string format_vector( const std::vector<real_type> & vec, size_t max_show =
 
   for ( size_t i = 0; i < show; ++i )
   {
-    result += fmt::format( "{:.4f}", vec[i] );
+    result += std::format( "{:.4f}", vec[i] );
     if ( i < show - 1 ) result += ", ";
   }
 
-  if ( vec.size() > max_show ) { result += fmt::format( ", ... (+{})", vec.size() - show ); }
+  if ( vec.size() > max_show ) { result += std::format( ", ... (+{})", vec.size() - show ); }
 
   result += "]";
   return result;
@@ -184,7 +184,7 @@ void update_statistics( const TestResultHJ & result )
   }
 
   // Update configuration statistics
-  std::string config_key = fmt::format( "tol={:.0e},ρ={:.2f}", result.tolerance, result.rho );
+  std::string config_key = std::format( "tol={:.0e},ρ={:.2f}", result.tolerance, result.rho );
   configuration_stats[config_key]++;
 }
 
@@ -251,7 +251,7 @@ TestResultHJ run_hj_test(
   catch ( const std::exception & e )
   {
     result.success     = false;
-    result.status      = fmt::format( "Error: {}", e.what() );
+    result.status      = std::format( "Error: {}", e.what() );
     result.final_value = std::numeric_limits<real_type>::max();
   }
 
@@ -391,10 +391,10 @@ void test_different_starting_points()
 
   for ( const auto & [name, start] : test_cases )
   {
-    auto result = run_hj_test( fmt::format( "Rosenbrock_{}", name ), "Rosenbrock", rosenbrock, 2, start.data(), 0.5 );
+    auto result = run_hj_test( std::format( "Rosenbrock_{}", name ), "Rosenbrock", rosenbrock, 2, start.data(), 0.5 );
 
     auto        symbol  = get_status_symbol( result.success, result.final_value );
-    std::string sol_str = fmt::format( "({:.3f},{:.3f})", result.solution[0], result.solution[1] );
+    std::string sol_str = std::format( "({:.3f},{:.3f})", result.solution[0], result.solution[1] );
 
     fmt::print(
       "║ {}{:<20} │ {:<22} │ {:>8} │ {:>14.2e} │ {:>12.2e} │ {:>8} ║\n",
@@ -427,13 +427,13 @@ void test_configurations()
   // Test different tolerances
   for ( real_type tol : { 1e-4, 1e-6, 1e-8 } )
   {
-    auto result = run_hj_test( fmt::format( "tol_{:.0e}", tol ), "Rosenbrock", rosenbrock, 2, x0, 0.5, tol );
+    auto result = run_hj_test( std::format( "tol_{:.0e}", tol ), "Rosenbrock", rosenbrock, 2, x0, 0.5, tol );
 
     auto symbol = get_status_symbol( result.success, result.final_value, tol );
     fmt::print(
       "║ {}{:<20} │ {:>12.0e} │ {:>8.2f} │ {:>12} │ {:>12.2e} │ {:>9.2e} │ {:>8} ║\n",
       symbol,
-      fmt::format( "Tolerance {:.0e}", tol ),
+      std::format( "Tolerance {:.0e}", tol ),
       tol,
       result.rho,
       result.iterations,
@@ -445,13 +445,13 @@ void test_configurations()
   // Test different rho values
   for ( real_type rho : { 0.5, 0.7, 0.9, 0.95 } )
   {
-    auto result = run_hj_test( fmt::format( "rho_{:.2f}", rho ), "Rosenbrock", rosenbrock, 2, x0, 0.5, 1e-6, rho );
+    auto result = run_hj_test( std::format( "rho_{:.2f}", rho ), "Rosenbrock", rosenbrock, 2, x0, 0.5, 1e-6, rho );
 
     auto symbol = get_status_symbol( result.success, result.final_value );
     fmt::print(
       "║ {}{:<20} │ {:>12.0e} │ {:>8.2f} │ {:>12} │ {:>12.2e} │ {:>9.2e} │ {:>8} ║\n",
       symbol,
-      fmt::format( "ρ = {:.2f}", rho ),
+      std::format( "ρ = {:.2f}", rho ),
       1e-6,
       rho,
       result.iterations,
@@ -497,7 +497,7 @@ void print_function_statistics()
                          : stats.success_rate >= 60.0 ? fmt::fg( fmt::color::yellow )
                                                       : fmt::fg( fmt::color::red );
 
-    std::string value_range = fmt::format( "[{:.2e}, {:.2e}]", stats.min_final_value, stats.max_final_value );
+    std::string value_range = std::format( "[{:.2e}, {:.2e}]", stats.min_final_value, stats.max_final_value );
 
     fmt::print( "║ {:<16} │ {:>6} │ {:>8} │ ", name, stats.dimension, stats.total_tests );
 
@@ -573,7 +573,7 @@ void print_performance_comparison()
     std::string best_str = "N/A";
     if ( best_result )
     {
-      best_str = fmt::format( "f={:.2e} ({} iter)", best_result->final_value, best_result->iterations );
+      best_str = std::format( "f={:.2e} ({} iter)", best_result->final_value, best_result->iterations );
     }
 
     auto time_color = avg_time < 10.0   ? fmt::fg( fmt::color::green )

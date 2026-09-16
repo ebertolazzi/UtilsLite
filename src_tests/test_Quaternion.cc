@@ -276,7 +276,7 @@ private:
       r.passed      = ( abs( norm_after - 1.0 ) < tolerance );
       r.error       = abs( norm_after - 1.0 );
       r.duration_ms = timer.elapsed_ms();
-      r.message     = fmt::format( "📏 Norm: {:.2f}→{:.2f}", norm_before, norm_after );
+      r.message     = std::format( "📏 Norm: {:.2f}→{:.2f}", norm_before, norm_after );
       results.push_back( r );
     }
 
@@ -891,7 +891,7 @@ private:
       r.passed      = true;
       r.error       = 0;
       r.duration_ms = timer.elapsed_ms();
-      r.message     = fmt::format( "⚡ {} ops", NUM_ITERATIONS );
+      r.message     = std::format( "⚡ {} ops", NUM_ITERATIONS );
       results.push_back( r );
     }
 
@@ -919,7 +919,7 @@ private:
       r.passed      = true;
       r.error       = 0;
       r.duration_ms = timer.elapsed_ms();
-      r.message     = fmt::format( "⚡ {} ops", NUM_ITERATIONS );
+      r.message     = std::format( "⚡ {} ops", NUM_ITERATIONS );
       results.push_back( r );
     }
 
@@ -948,7 +948,7 @@ private:
       r.passed      = true;
       r.error       = 0;
       r.duration_ms = timer.elapsed_ms();
-      r.message     = fmt::format( "⚡ {} quats", NUM_ITERATIONS );
+      r.message     = std::format( "⚡ {} quats", NUM_ITERATIONS );
       results.push_back( r );
     }
 
@@ -977,7 +977,7 @@ private:
       r.passed      = true;
       r.error       = 0;
       r.duration_ms = timer.elapsed_ms();
-      r.message     = fmt::format( "⚡ {} ops", NUM_ITERATIONS / 10 );
+      r.message     = std::format( "⚡ {} ops", NUM_ITERATIONS / 10 );
       results.push_back( r );
     }
 

@@ -1304,14 +1304,14 @@ public:
                                                       : Style::ERROR;
 
       // Formatta la riga
-      std::string step_str = fmt::format( "min:{:.3f} avg:{:.3f} max:{:.3f}", min_step, avg_step, max_step );
+      std::string step_str = std::format( "min:{:.3f} avg:{:.3f} max:{:.3f}", min_step, avg_step, max_step );
 
       algo_table.print_row(
         { algo,
           step_str,
-          fmt::format( "{:.2g}", avg_evals ),
-          fmt::format( "{:.3g} mus", avg_time ),
-          fmt::format( "{:.2g}%", 100 * avg_reduction ) },
+          std::format( "{:.2g}", avg_evals ),
+          std::format( "{:.3g} mus", avg_time ),
+          std::format( "{:.2g}%", 100 * avg_reduction ) },
         row_styles );
     }
 
@@ -1422,14 +1422,14 @@ public:
       else
         eval_style = Style::ERROR;
 
-      std::string reduction_str = fmt::format(
+      std::string reduction_str = std::format(
         "min:{:.1f}% avg:{:.1f}% max:{:.1f}%",
         100 * min_reduction,
         100 * avg_reduction,
         100 * max_reduction_value );
 
       func_table.print_row(
-        { func, reduction_str, fmt::format( "{:.1f}", avg_evals ), difficulty },
+        { func, reduction_str, std::format( "{:.1f}", avg_evals ), difficulty },
         { Style::NONE, reduction_style, eval_style, diff_style } );
     }
 
@@ -1652,9 +1652,9 @@ public:
       comparison_table.print_row(
         { stat.algorithm,
           stat.function,
-          fmt::format( "{:.1f}%", 100 * stat.avg_reduction ),
-          fmt::format( "[{:.1f}%, {:.1f}%]", 100 * stat.min_reduction, 100 * stat.max_reduction ),
-          fmt::format( "{:.1f}%", success_rate ) },
+          std::format( "{:.1f}%", 100 * stat.avg_reduction ),
+          std::format( "[{:.1f}%, {:.1f}%]", 100 * stat.min_reduction, 100 * stat.max_reduction ),
+          std::format( "{:.1f}%", success_rate ) },
         { Style::NONE, Style::NONE, reduction_style, Style::NONE, success_style } );
     }
 
@@ -2028,8 +2028,8 @@ private:
       double success_rate = 100.0 * ( static_cast<double>( success ) + 0.5 * static_cast<double>( warning ) ) /
                             total_count;
 
-      std::string success_str = fmt::format( "{}{}", success, Unicode::CHECK );
-      if ( warning > 0 ) success_str += fmt::format( " {}{}", warning, Unicode::WARNING );
+      std::string success_str = std::format( "{}{}", success, Unicode::CHECK );
+      if ( warning > 0 ) success_str += std::format( " {}{}", warning, Unicode::WARNING );
 
       std::vector<fmt::text_style> row_styles( 7, Style::NONE );
 
@@ -2058,12 +2058,12 @@ private:
 
       summary_table.print_row(
         { algo_name,
-          fmt::format( "{}", total ),
+          std::format( "{}", total ),
           success_str,
-          fmt::format( "{:.2g}%", success_rate ),
-          fmt::format( "{:.2g}", avg_evals ),
-          fmt::format( "{:.3g} mus", avg_time ),
-          fmt::format( "{:.2g}%", 100 * avg_reduction ) },
+          std::format( "{:.2g}%", success_rate ),
+          std::format( "{:.2g}", avg_evals ),
+          std::format( "{:.3g} mus", avg_time ),
+          std::format( "{:.2g}%", 100 * avg_reduction ) },
         row_styles );
     }
 
@@ -2129,17 +2129,17 @@ private:
         fmt::text_style status_style;
         if ( success == total )
         {
-          status_str   = fmt::format( "{}{}/{}", Unicode::CHECK, success, total );
+          status_str   = std::format( "{}{}/{}", Unicode::CHECK, success, total );
           status_style = Style::SUCCESS;
         }
         else if ( success == 0 )
         {
-          status_str   = fmt::format( "{}{}/{}", Unicode::CROSS, success, total );
+          status_str   = std::format( "{}{}/{}", Unicode::CROSS, success, total );
           status_style = Style::ERROR;
         }
         else
         {
-          status_str   = fmt::format( "{}{}/{}", Unicode::WARNING, success, total );
+          status_str   = std::format( "{}{}/{}", Unicode::WARNING, success, total );
           status_style = Style::WARNING;
         }
 
@@ -2162,10 +2162,10 @@ private:
         detail_table.print_row(
           { algo_name,
             status_str,
-            fmt::format( "{:.3g}", avg_step ),
-            fmt::format( "{:.2g}%", 100.0 * avg_reduction ),
-            fmt::format( "{:.2g}", avg_evals ),
-            fmt::format( "{:.3g} mus", avg_time ) },
+            std::format( "{:.3g}", avg_step ),
+            std::format( "{:.2g}%", 100.0 * avg_reduction ),
+            std::format( "{:.2g}", avg_evals ),
+            std::format( "{:.3g} mus", avg_time ) },
           row_styles );
       }
 

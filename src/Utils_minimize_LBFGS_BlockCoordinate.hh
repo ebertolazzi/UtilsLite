@@ -357,7 +357,7 @@ namespace Utils
         "  ║ Status:           {:<43} ║\n"
         "  ╚═══════════════════════════════════════════════════════════════╝\n"
         "\n",
-        fmt::format( "{}/{}", m_outer_iteration_count, total_outer_iters ),
+        std::format( "{}/{}", m_outer_iteration_count, total_outer_iters ),
         m_outer_iteration_count,
         total_inner_iters,
         total_evals,
@@ -382,12 +382,12 @@ namespace Utils
         "║ {:62} ║\n"
         "╚════════════════════════════════════════════════════════════════╝"
         "\n",
-        fmt::format( "Dimension:            {}", n ),
-        fmt::format( "Block Size:           {}", m_options.block_size ),
-        fmt::format( "Max Outer Iterations: {}", m_options.max_outer_iterations ),
-        fmt::format( "Overlap Ratio:        {:.4e}", m_options.overlap_ratio ),
-        fmt::format( "Initial f:            {:.6e}", f0 ),
-        fmt::format( "‖g‖∞                  {:.6e}", g0 ) );
+        std::format( "Dimension:            {}", n ),
+        std::format( "Block Size:           {}", m_options.block_size ),
+        std::format( "Max Outer Iterations: {}", m_options.max_outer_iterations ),
+        std::format( "Overlap Ratio:        {:.4e}", m_options.overlap_ratio ),
+        std::format( "Initial f:            {:.6e}", f0 ),
+        std::format( "‖g‖∞                  {:.6e}", g0 ) );
     }
 
     // ===========================================================================

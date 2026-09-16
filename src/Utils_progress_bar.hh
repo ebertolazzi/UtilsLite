@@ -88,7 +88,7 @@ namespace Utils
       else
         res += '_';
     }
-    res += fmt::format( "] {:3d}%", pct );
+    res += std::format( "] {:3d}%", pct );
     return res;
   }
 
@@ -125,7 +125,7 @@ namespace Utils
         res += ch[frac8];
     }
     res += "] ";
-    res += fmt::format( "{:3.0f}% {}", ceil( 100 * p ), msg );
+    res += std::format( "{:3.0f}% {}", ceil( 100 * p ), msg );
     return res;
   }
 

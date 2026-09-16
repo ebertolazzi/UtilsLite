@@ -559,7 +559,7 @@ namespace Utils
 
       real_type reduction = initial_norm > EPSILON ? initial_norm / norm_f : 1.0;
 
-      fmt::print( fmt::fg( fmt::color::light_blue ), "[{:5}] ‖f‖ = {:.2e}", fmt::format( "{}", iter + 1 ), norm_f );
+      fmt::print( fmt::fg( fmt::color::light_blue ), "[{:5}] ‖f‖ = {:.2e}", std::format( "{}", iter + 1 ), norm_f );
       fmt::print( ", λ = {:.2e}, ρ = {:.3f}", lambda, rho );
       fmt::print( ", ‖dx‖ = {:.2e}", dx_norm );
       fmt::print( ", reduction = {:.3e}\n", reduction );

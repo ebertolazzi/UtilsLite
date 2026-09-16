@@ -111,13 +111,13 @@ inline void header( std::string const & msg )
 }
 
 inline std::string sci( double v )
-{ return fmt::format( "{:>12.3e}", v ); }
+{ return std::format( "{:>12.3e}", v ); }
 inline std::string ms_format( double v )
-{ return fmt::format( "    {}", fmt::format( "{:.2f} ms", v ) ); }
+{ return fmt::format( "    {}", std::format( "{:.2f} ms", v ) ); }
 inline std::string ratio_format( double v )
-{ return fmt::format( "    {}", fmt::format( "{:.2f}x", v ) ); }
+{ return fmt::format( "    {}", std::format( "{:.2f}x", v ) ); }
 inline std::string small_ms_format( double v )
-{ return fmt::format( "    {}", fmt::format( "{:.4f} ms", v ) ); }
+{ return fmt::format( "    {}", std::format( "{:.4f} ms", v ) ); }
 
 //==============================================================================
 // RUN TEST STANDARD (D = I)
@@ -126,7 +126,7 @@ static void run_test_standard( int m, int n, double lambda )
 {
   Utils::TicToc tm;
 
-  header( fmt::format( "STANDARD TEST (D=I): m={}, n={}, λ={}", m, n, lambda ) );
+  header( std::format( "STANDARD TEST (D=I): m={}, n={}, λ={:.5g}", m, n, lambda ) );
 
   // Genera matrice sparsa casuale
   SparseMatrix<double> AS = generate_random_sparse_matrix<double>( m, n, 0.3 );
@@ -344,7 +344,7 @@ static void run_test_with_diagonal( int m, int n, double lambda )
 {
   Utils::TicToc tm;
 
-  header( fmt::format( "TEST WITH DIAGONAL D ≠ I: m={}, n={}, λ={}", m, n, lambda ) );
+  header( std::format( "TEST WITH DIAGONAL D ≠ I: m={}, n={}, λ={:.5g}", m, n, lambda ) );
 
   // ===========================================================================
   // 1. SETUP PROBLEM DATA
@@ -637,7 +637,7 @@ int main()
       "┃ {:^76} ┃\n"
       "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
       "\n\n",
-      fmt::format( "lambda = {}", lambda ) );
+      std::format( "lambda = {:.5g}", lambda ) );
     for ( auto sz : sizes )
     {
       ++current_test;

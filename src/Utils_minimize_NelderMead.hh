@@ -91,14 +91,14 @@ namespace Utils
       integer v_size = v.size();
       if ( v_size <= max_size )
       {
-        for ( integer i = 0; i < v_size; ++i ) tmp += fmt::format( "{:.4f}, ", v( i ) );
+        for ( integer i = 0; i < v_size; ++i ) tmp += std::format( "{:.4f}, ", v( i ) );
       }
       else
       {
-        for ( integer i = 0; i < max_size - 3; ++i ) tmp += fmt::format( "{:.4f}, ", v( i ) );
+        for ( integer i = 0; i < max_size - 3; ++i ) tmp += std::format( "{:.4f}, ", v( i ) );
         tmp.pop_back();
         tmp += "...";
-        for ( integer i = v_size - 3; i < v_size; ++i ) tmp += fmt::format( "{:.4f}, ", v( i ) );
+        for ( integer i = v_size - 3; i < v_size; ++i ) tmp += std::format( "{:.4f}, ", v( i ) );
       }
       tmp.pop_back();
       tmp.pop_back();
@@ -357,7 +357,7 @@ namespace Utils
       auto   color = improved ? PrintColors::SUCCESS : PrintColors::WARNING;
       string icon  = improved ? "✓" : "✗";
 
-      string coords = m_dim <= 5 ? fmt::format( " | x = {}", NelderMead::format_vector<Scalar>( m_trial_point ) ) : "";
+      string coords = m_dim <= 5 ? std::format( " | x = {}", NelderMead::format_vector<Scalar>( m_trial_point ) ) : "";
 
       fmt::print( color, "{}  {} {:>12}: F = {:<12.6e}{}\n", m_indent, icon, operation, fval, coords );
     }
@@ -1162,9 +1162,9 @@ namespace Utils
         "{}└─────────────────────────┴───────────────┴───────────────┘\n",
         m_indent,
         m_indent,
-        fmt::format( "Iteration {}", iter ),
-        fmt::format( "F = {:.4e}", best_value ),
-        fmt::format( "Diam = {:.4e}", diameter ),
+        std::format( "Iteration {}", iter ),
+        std::format( "F = {:.4e}", best_value ),
+        std::format( "Diam = {:.4e}", diameter ),
         m_indent );
     }
 
@@ -1176,7 +1176,7 @@ namespace Utils
       string icon  = improved ? "↗" : "↘";
 
       // Stampare le coordinate solo per problemi piccoli
-      string tmp = m_dim > 5 ? "" : fmt::format( " | x = {}", NelderMead::format_vector<Scalar>( m_trial_point ) );
+      string tmp = m_dim > 5 ? "" : std::format( " | x = {}", NelderMead::format_vector<Scalar>( m_trial_point ) );
       fmt::print(
         color,
         "{}{:4} {} {:>12}: F = {:<12.6e}{}\n",
@@ -1326,17 +1326,17 @@ namespace Utils
         m_indent,
         m_indent,
         m_indent,
-        fmt::format( "Dimension: {:d}", x0.size() ),
+        std::format( "Dimension: {:d}", x0.size() ),
         m_indent,
-        fmt::format( "Max Iterations: {:d}", m_options.max_iterations ),
+        std::format( "Max Iterations: {:d}", m_options.max_iterations ),
         m_indent,
-        fmt::format( "Max Evaluations: {:d}", m_options.max_function_evaluations ),
+        std::format( "Max Evaluations: {:d}", m_options.max_function_evaluations ),
         m_indent,
-        fmt::format( "Tolerance: {:.2e}", m_options.tolerance ),
+        std::format( "Tolerance: {:.2e}", m_options.tolerance ),
         m_indent,
-        fmt::format( "Bounds: {}", ( m_use_bounds ? "Active" : "None" ) ),
+        std::format( "Bounds: {}", ( m_use_bounds ? "Active" : "None" ) ),
         m_indent,
-        fmt::format( "Adaptive Parameters: {}", ( m_options.adaptive_parameters ? "Yes" : "No" ) ),
+        std::format( "Adaptive Parameters: {}", ( m_options.adaptive_parameters ? "Yes" : "No" ) ),
         m_indent );
       fmt::print( "{}Initial point: {}\n", m_indent, NelderMead::format_vector<Scalar>( x0 ) );
     }

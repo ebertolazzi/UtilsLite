@@ -40,7 +40,7 @@ static void fun1( int const i )
   if ( i > 0 ) { fun2( i - 1 ); }
   else
   {
-    std::string const str{ fmt::format( "format {}", i ) };
+    std::string const str{ std::format( "format {}", i ) };
     fun5( str.data() );
   }
 }
@@ -51,7 +51,7 @@ static void fun2( int i )
   if ( i > 0 ) { fun3( i - 1 ); }
   else
   {
-    std::string const str{ fmt::format( "format {}", i ) };
+    std::string const str{ std::format( "format {}", i ) };
     fun5( str.data() );
   }
 }
@@ -62,7 +62,7 @@ static void fun3( int i )
   if ( i > 0 ) { fun4( i - 1 ); }
   else
   {
-    std::string const str{ fmt::format( "format {}", i ) };
+    std::string const str{ std::format( "format {}", i ) };
     fun5( str.data() );
   }
 }
@@ -73,7 +73,7 @@ static void fun4( int i )
   if ( i > 0 ) { fun1( i - 1 ); }
   else
   {
-    std::string const str{ fmt::format( "format {}", i ) };
+    std::string const str{ std::format( "format {}", i ) };
     fun5( str.data() );
   }
 }

@@ -251,7 +251,7 @@ namespace Utils
     }
     catch ( std::exception const & e )
     {
-      mexErrMsgTxt( fmt::format( "Segment2DMexWrapper Error: {}", e.what() ).data() );
+      mexErrMsgTxt( std::format( "Segment2DMexWrapper Error: {}", e.what() ).data() );
     }
     catch ( ... )
     {

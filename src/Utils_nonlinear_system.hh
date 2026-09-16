@@ -87,7 +87,7 @@ namespace Utils
 
   public:
     NonlinearSystem( string const & title, string const & bibtex, integer dim )
-      : m_title( fmt::format( "{} neq={}", title, dim ) ), m_bibtex( bibtex ), n( dim )
+      : m_title( std::format( "{} neq={}", title, dim ) ), m_bibtex( bibtex ), n( dim )
     {
     }
 

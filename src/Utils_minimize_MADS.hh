@@ -569,8 +569,8 @@ namespace Utils
      */
     string get_state_info() const
     {
-      return fmt::format(
-        "MADS State: f={}, mesh_size={}, evaluations={}, visited_points={}",
+      return std::format(
+        "MADS State: f={:.5g}, mesh_size={:.5g}, evaluations={}, visited_points={}",
         m_current_f,
         m_mesh_size,
         m_eval_count,

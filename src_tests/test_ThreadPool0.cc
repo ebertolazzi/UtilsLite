@@ -125,13 +125,13 @@ void print_simple_table( const std::vector<std::tuple<std::string, double, doubl
   for ( const auto & [name, time, stddev] : results )
   {
     std::string time_str;
-    std::string stddev_str = fmt::format( "{:>8.1f}%", ( stddev / time ) * 100.0 );
+    std::string stddev_str = std::format( "{:>8.1f}%", ( stddev / time ) * 100.0 );
 
-    if ( time < 1000 ) { time_str = fmt::format( "{:>8.2f} µs", time ); }
-    else if ( time < 1'000'000 ) { time_str = fmt::format( "{:>8.3f} ms", time / 1000 ); }
+    if ( time < 1000 ) { time_str = std::format( "{:>8.2f} µs", time ); }
+    else if ( time < 1'000'000 ) { time_str = std::format( "{:>8.3f} ms", time / 1000 ); }
     else
     {
-      time_str = fmt::format( "{:>8.3f} s", time / 1'000'000 );
+      time_str = std::format( "{:>8.3f} s", time / 1'000'000 );
     }
 
     // Color code based on performance
@@ -146,7 +146,7 @@ void print_simple_table( const std::vector<std::tuple<std::string, double, doubl
     }
 
     double      efficiency = ( best_time > 0 ) ? best_time / time * 100.0 : 0.0;
-    std::string eff_str    = fmt::format( "{:>8.1f}%", efficiency );
+    std::string eff_str    = std::format( "{:>8.1f}%", efficiency );
 
     fmt::print( "│ {:<25} │ {} │ {:>14} │ {:>14} │\n", name, time_str, stddev_str, eff_str );
   }
@@ -175,11 +175,11 @@ void print_scaling_results( const std::vector<std::tuple<int, double, double>> &
     double efficiency = ( speedup / threads ) * 100.0;
 
     std::string time_str;
-    if ( time < 1000 ) { time_str = fmt::format( "{:>8.2f} µs", time ); }
-    else if ( time < 1'000'000 ) { time_str = fmt::format( "{:>8.3f} ms", time / 1000 ); }
+    if ( time < 1000 ) { time_str = std::format( "{:>8.2f} µs", time ); }
+    else if ( time < 1'000'000 ) { time_str = std::format( "{:>8.3f} ms", time / 1000 ); }
     else
     {
-      time_str = fmt::format( "{:>8.3f} s", time / 1'000'000 );
+      time_str = std::format( "{:>8.3f} s", time / 1'000'000 );
     }
 
     std::string efficiency_str;

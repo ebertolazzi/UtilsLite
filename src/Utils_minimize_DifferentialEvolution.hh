@@ -1068,7 +1068,7 @@ namespace Utils
       real_type diversity = calculate_diversity();
       if ( diversity < m_diversity_threshold )
       {
-        m_convergence_reason = fmt::format( "Low diversity: {:.2e}", diversity );
+        m_convergence_reason = std::format( "Low diversity: {:.2e}", diversity );
         return true;
       }
 

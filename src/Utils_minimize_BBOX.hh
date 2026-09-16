@@ -983,7 +983,7 @@ namespace Utils
       integer n      = dimension();
       Scalar  volume = ( m_upper - m_lower ).prod();
 
-      return fmt::format( "Box[dim={}, volume={:.3e}, active={}]", n, volume, m_active ? "yes" : "no" );
+      return std::format( "Box[dim={}, volume={:.3e}, active={}]", n, volume, m_active ? "yes" : "no" );
     }
 
     /**
@@ -1003,7 +1003,7 @@ namespace Utils
       Scalar  max_width = ( m_upper - m_lower ).maxCoeff();
       Scalar  min_width = ( m_upper - m_lower ).minCoeff();
 
-      return fmt::format(
+      return std::format(
         "Box Constraints Statistics:\n"
         "  Dimension: {}\n"
         "  Lower bounds: [{:.3e}, {:.3e}]\n"

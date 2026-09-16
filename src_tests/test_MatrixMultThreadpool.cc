@@ -167,12 +167,12 @@ void print_table_row( const BenchmarkResult & result, bool is_fastest = false )
   if ( is_fastest ) { name_style = fmt::emphasis::bold | fg( fmt::terminal_color::bright_green ); }
 
   // Format values
-  std::string mean_str          = fmt::format( "{:>9.3g}", result.mean_time );
-  std::string std_str           = fmt::format( "{:>9.3g}", result.std_dev );
-  std::string error_str         = result.is_standard ? "      N/A" : fmt::format( "{:>9.2g}", result.error_norm );
-  std::string speedup_str       = result.is_standard ? "     1.00x" : fmt::format( "{:>9.2g}x", result.speedup );
-  std::string flop_rate_str     = fmt::format( "{:>10.4g}", result.flop_rate );
-  std::string time_per_cost_str = fmt::format( "{:>10.4g}", result.time_per_cost );
+  std::string mean_str          = std::format( "{:>9.3g}", result.mean_time );
+  std::string std_str           = std::format( "{:>9.3g}", result.std_dev );
+  std::string error_str         = result.is_standard ? "      N/A" : std::format( "{:>9.2g}", result.error_norm );
+  std::string speedup_str       = result.is_standard ? "     1.00x" : std::format( "{:>9.2g}x", result.speedup );
+  std::string flop_rate_str     = std::format( "{:>10.4g}", result.flop_rate );
+  std::string time_per_cost_str = std::format( "{:>10.4g}", result.time_per_cost );
 
   // Print row
   fmt::print( "│ " );
@@ -500,7 +500,7 @@ int main()
       run_benchmark_for_size( N, P, M, n_runs );
 
       // Store best results for summary
-      best_methods.push_back( fmt::format( "{}x{}x{}", N, P, M ) );
+      best_methods.push_back( std::format( "{}x{}x{}", N, P, M ) );
 
       // We could collect more statistics here if needed
     }

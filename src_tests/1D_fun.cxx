@@ -58,7 +58,7 @@ public:
   fun1D() = delete;
 
   explicit fun1D( real_type a0, real_type b0, string_view info, FUN1D && f )
-    : m_a0( a0 ), m_b0( b0 ), m_fun( f ), m_info( fmt::format( "{} ini:[{},{}]", info, a0, b0 ) )
+    : m_a0( a0 ), m_b0( b0 ), m_fun( f ), m_info( std::format( "{} ini:[{},{}]", info, a0, b0 ) )
   {
   }
 
@@ -98,7 +98,7 @@ public:
     , m_x_min( std::clamp( unconstrained_minimum, a, b ) )
     , m_fun( std::move( fun ) )
     , m_fun_D( std::move( fun_D ) )
-    , m_info( fmt::format( "{} on [{},{}]", info, a, b ) )
+    , m_info( std::format( "{} on [{},{}]", info, a, b ) )
   {
   }
 
@@ -170,7 +170,7 @@ public:
       std::unique_ptr<fun1D>( new fun1D(
         0,
         1,
-        fmt::format( "f(x) = 2 * x * exp( -n ) - 2 * exp( -n * x )+1, n={}", n ),
+        std::format( "f(x) = 2 * x * exp( -n ) - 2 * exp( -n * x )+1, n={}", n ),
         [n]( real_type x ) -> real_type { return 2 * x * exp( -n ) - 2 * exp( -n * x ) + 1; } ) ) );
 
   for ( int n : { 2, 5, 15, 20, 200 } )
@@ -178,7 +178,7 @@ public:
       std::unique_ptr<fun1D>( new fun1D(
         0,
         1,
-        fmt::format( "f(x) = ( 1 + (1-n)^2 ) * x - ( 1 - n * x )^2, n={}", n ),
+        std::format( "f(x) = ( 1 + (1-n)^2 ) * x - ( 1 - n * x )^2, n={}", n ),
         [n]( real_type x ) -> real_type { return ( 1 + power2( 1 - n ) ) * x - power2( 1 - n * x ); } ) ) );
 
   for ( int i : { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 } ) f_list.emplace_back( std::unique_ptr<fun1>( new fun1( i ) ) );
@@ -439,7 +439,7 @@ public:
       std::unique_ptr<fun1D>( new fun1D(
         0,
         1,
-        fmt::format( "f(x) = x^2-(1-x)^n, n={}", n ),
+        std::format( "f(x) = x^2-(1-x)^n, n={}", n ),
         [n]( real_type x ) -> real_type { return power2( x ) - pow( 1 - x, n ); } ) ) );
 
   for ( int n : { 1, 2, 3, 5, 8, 15, 20 } )
@@ -447,7 +447,7 @@ public:
       std::unique_ptr<fun1D>( new fun1D(
         0,
         1,
-        fmt::format( "f(x) = (1+(1-n)^4)*x-(1-n*x)^4, n={}", n ),
+        std::format( "f(x) = (1+(1-n)^4)*x-(1-n*x)^4, n={}", n ),
         [n]( real_type x ) -> real_type { return ( 1 + power4( 1 - n ) ) * x - power4( 1 - n * x ); } ) ) );
 
   for ( int n : { 1, 5, 10, 15, 20 } )
@@ -455,7 +455,7 @@ public:
       std::unique_ptr<fun1D>( new fun1D(
         0,
         1,
-        fmt::format( "f(x) = exp(-n*x)*(x-1)+x^n, n={}", n ),
+        std::format( "f(x) = exp(-n*x)*(x-1)+x^n, n={}", n ),
         [n]( real_type x ) -> real_type { return exp( -n * x ) * ( x - 1 ) + pow( x, n ); } ) ) );
 
   for ( int n : { 2, 5, 10, 15, 20 } )
@@ -463,7 +463,7 @@ public:
       std::unique_ptr<fun1D>( new fun1D(
         0.01,
         1,
-        fmt::format( "f(x) = (n*x-1)/((n-1)*x), n={}", n ),
+        std::format( "f(x) = (n*x-1)/((n-1)*x), n={}", n ),
         [n]( real_type x ) -> real_type { return ( n * x - 1 ) / ( ( n - 1 ) * x ); } ) ) );
 
   for ( int n : { 2, 3, 6, 9, 11, 15, 20, 25, 33 } )
@@ -471,7 +471,7 @@ public:
       std::unique_ptr<fun1D>( new fun1D(
         0,
         100,
-        fmt::format( "f(x) = x^(1/n)-n^(1/n), n={}", n ),
+        std::format( "f(x) = x^(1/n)-n^(1/n), n={}", n ),
         [n]( real_type x ) -> real_type
         {
           real_type p{ real_type( 1.0 / n ) };
@@ -490,7 +490,7 @@ public:
       std::unique_ptr<fun1D>( new fun1D(
         -1e4,
         m_pi / 2,
-        fmt::format( "f(x) = x < 0 ? -n/20 : (n/20)*(x/1.5+sin(x)-1), n={}", n ),
+        std::format( "f(x) = x < 0 ? -n/20 : (n/20)*(x/1.5+sin(x)-1), n={}", n ),
         [n]( real_type x ) -> real_type
         {
           if ( x < 0 ) return -n / 20.0;
@@ -502,7 +502,7 @@ public:
       std::unique_ptr<fun1D>( new fun1D(
         -1e4,
         1e-4,
-        fmt::format( "f(x) = [exp(1)-1.859,-0.859,exp( (n+1)*0.5e3*x )-1.859], n={}", n ),
+        std::format( "f(x) = [exp(1)-1.859,-0.859,exp( (n+1)*0.5e3*x )-1.859], n={}", n ),
         [n]( real_type x ) -> real_type
         {
           if ( x > 2e-3 / ( 1 + n ) ) return exp( 1 ) - 1.859;
@@ -538,14 +538,14 @@ public:
     add_zero(
       0,
       2,
-      fmt::format( "multiple root: f(x)=(x-1)^{}, root=1", n ),
+      std::format( "multiple root: f(x)=(x-1)^{}, root=1", n ),
       [n]( real_type x ) { return std::pow( x - 1, n ); } );
 
   for ( int n : { 3, 5, 7, 9, 15 } )
     add_zero(
       -1,
       1,
-      fmt::format( "flat sign-changing root: f(x)=x^{}, root=0", n ),
+      std::format( "flat sign-changing root: f(x)=x^{}, root=0", n ),
       [n]( real_type x ) { return std::pow( x, n ); } );
 
   add_zero(
@@ -559,7 +559,7 @@ public:
     add_zero(
       0,
       1,
-      fmt::format( "near-left-endpoint root: x-eps, eps={:.1e}", eps ),
+      std::format( "near-left-endpoint root: x-eps, eps={:.1e}", eps ),
       [eps]( real_type x ) { return x - eps; } );
 
   add_zero( 0, 1, "endpoint root: f(x)=x", []( real_type x ) { return x; } );
@@ -572,9 +572,9 @@ public:
     add_zero(
       0,
       2,
-      fmt::format( "bad scaling: exp({}*(x-1))-1", k ),
+      std::format( "bad scaling: exp({}*(x-1))-1", k ),
       [scale, k]( real_type x ) { return std::exp( k * ( x - 1 ) ) - 1; } );
-    add_zero( 0, 2, fmt::format( "bad scaling: 1e{}*(x-1)", k ), [scale]( real_type x ) { return scale * ( x - 1 ); } );
+    add_zero( 0, 2, std::format( "bad scaling: 1e{}*(x-1)", k ), [scale]( real_type x ) { return scale * ( x - 1 ); } );
   }
 
   // Oscillatory problems.  Brackets contain several roots on purpose.
@@ -582,7 +582,7 @@ public:
     add_zero(
       0.01,
       1,
-      fmt::format( "oscillatory: sin({}*x), multiple zeros", n ),
+      std::format( "oscillatory: sin({}*x), multiple zeros", n ),
       [n]( real_type x ) { return std::sin( n * x ); } );
 
   add_zero( 0.1, 1, "oscillatory: sin(1/x), multiple zeros", []( real_type x ) { return std::sin( 1 / x ); } );
@@ -605,7 +605,7 @@ public:
       std::unique_ptr<fun1D>( new fun1D(
         -100,
         100,
-        fmt::format( "f(x) = penalty(x) RHS={}", RHS ),
+        std::format( "f(x) = penalty(x) RHS={}", RHS ),
         [RHS]( real_type x_in ) -> real_type
         {
           real_type m_h       = 0.01;
@@ -684,7 +684,7 @@ public:
   {
     real_type slope{ std::exp( x_min ) };
     add_problem(
-      fmt::format( "shifted exponential, x*={}", x_min ),
+      std::format( "shifted exponential, x*={:.5g}", x_min ),
       x_min,
       [slope]( real_type x ) { return std::exp( x ) - slope * x; },
       [slope]( real_type x ) { return std::exp( x ) - slope; } );
@@ -757,7 +757,7 @@ public:
   {
     real_type const xmin{ std::log( p / ( 1 - p ) ) };
     add_problem(
-      fmt::format( "softplus-p*x, p={}", p ),
+      std::format( "softplus-p*x, p={}", p ),
       xmin,
       [p]( real_type x )
       {
@@ -777,7 +777,7 @@ public:
   {
     real_type const xmin{ 0.125 };
     add_problem(
-      fmt::format( "even-power bowl degree {}, x*=1/8", n ),
+      std::format( "even-power bowl degree {}, x*=1/8", n ),
       xmin,
       [xmin, n]( real_type x ) { return std::pow( x - xmin, n ); },
       [xmin, n]( real_type x ) { return n * std::pow( x - xmin, n - 1 ); } );
@@ -788,7 +788,7 @@ public:
   {
     real_type const xmin{ -0.375 };
     add_problem(
-      fmt::format( "scaled quadratic, scale={:.1e}", scale ),
+      std::format( "scaled quadratic, scale={:.1e}", scale ),
       xmin,
       [xmin, scale]( real_type x ) { return scale * power2( x - xmin ); },
       [xmin, scale]( real_type x ) { return 2 * scale * ( x - xmin ); } );
@@ -800,7 +800,7 @@ public:
   {
     real_type const xmin{ 0.6 };
     add_problem(
-      fmt::format( "quartic + eps quadratic, eps={:.1e}", eps ),
+      std::format( "quartic + eps quadratic, eps={:.1e}", eps ),
       xmin,
       [xmin, eps]( real_type x )
       {
@@ -819,7 +819,7 @@ public:
   {
     real_type const xmin{ -0.2 };
     add_problem(
-      fmt::format( "pseudo-Huber, delta={:.1e}", delta ),
+      std::format( "pseudo-Huber, delta={:.1e}", delta ),
       xmin,
       [xmin, delta]( real_type x )
       {

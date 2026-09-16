@@ -417,7 +417,7 @@ public:
 };
 
 static inline string ini_msg_CutlipsSteadyStateForReactionRateEquations( int k_set )
-{ return fmt::format( "Cutlips steady state for reaction rate equations, k set N.{}", k_set ); }
+{ return std::format( "Cutlips steady state for reaction rate equations, k set N.{}", k_set ); }
 
 /*\
  | - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -555,7 +555,7 @@ public:
 };
 
 static inline string ini_msg_Hiebert3ChemicalEquilibriumProblem( real_type R )
-{ return fmt::format( "Hiebert's 3rd Chemical Equilibrium Problem, R={}", R ); }
+{ return std::format( "Hiebert's 3rd Chemical Equilibrium Problem, R={}", R ); }
 
 /*\
  | - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1490,7 +1490,7 @@ public:
 \*/
 
 static inline string ini_msg_ModelEquationsForCombustionOfPropane( real_type R_set )
-{ return fmt::format( "Model equations for combustion of propane, R={}", R_set ); }
+{ return std::format( "Model equations for combustion of propane, R={}", R_set ); }
 
 class ModelEquationsForCombustionOfPropane : public NonlinearSystem
 {

@@ -241,25 +241,25 @@ std::string format_time_auto( double time_mus, int width = 12 )
   {
     value = time_mus;
     unit  = "µs";
-    return fmt::format( "{:>{}.2f} {}", value, width - 3, unit );
+    return std::format( "{:>{}.2f} {}", value, width - 3, unit );
   }
   else if ( time_mus < 1'000'000 )
   {
     value = time_mus / 1000;
     unit  = "ms";
-    return fmt::format( "{:>{}.3f} {}", value, width - 3, unit );
+    return std::format( "{:>{}.3f} {}", value, width - 3, unit );
   }
   else if ( time_mus < 60'000'000 )
   {
     value = time_mus / 1'000'000;
     unit  = "s";
-    return fmt::format( "{:>{}.3f} {}", value, width - 2, unit );
+    return std::format( "{:>{}.3f} {}", value, width - 2, unit );
   }
   else
   {
     value = time_mus / 60'000'000;
     unit  = "min";
-    return fmt::format( "{:>{}.3f} {}", value, width - 4, unit );
+    return std::format( "{:>{}.3f} {}", value, width - 4, unit );
   }
 }
 
@@ -280,9 +280,9 @@ std::string format_time_with_ranking( double time_mus, bool is_best, int width =
 
 std::string format_std_dev( double std_mus, double mean_mus, int width = 8 )
 {
-  if ( mean_mus == 0 ) return fmt::format( "{:>{}}", "N/A", width );
+  if ( mean_mus == 0 ) return std::format( "{:>{}}", "N/A", width );
   double cv_percent = ( std_mus / mean_mus ) * 100.0;
-  return fmt::format( "{:>{}.1f}%", cv_percent, width );
+  return std::format( "{:>{}.1f}%", cv_percent, width );
 }
 
 // ===========================================================================
@@ -437,7 +437,7 @@ template <class TP> TestResult test_TP_multiple_runs( int const NN, int nt, int 
 
 void print_test_header( int NN, int nt, int sz, int run_num = 1, int total_runs = 1 )
 {
-  std::string run_info = ( total_runs > 1 ) ? fmt::format( "Run {}/{} | ", run_num, total_runs ) : "";
+  std::string run_info = ( total_runs > 1 ) ? std::format( "Run {}/{} | ", run_num, total_runs ) : "";
 
   fmt::print(
     fg( fmt::color::steel_blue ) | fmt::emphasis::bold,
@@ -478,13 +478,13 @@ void print_detailed_results_table( const std::vector<TestResult> & results )
     std::string total_str = format_time_with_ranking( res.total_time_mus, res.is_best_total, 10 );
     std::string total_cv  = format_std_dev( res.total_std_mus, res.total_time_mus, 4 );
 
-    std::string throughput_str = fmt::format( "{:8.1f}", res.throughput );
+    std::string throughput_str = std::format( "{:8.1f}", res.throughput );
     if ( res.is_best_throughput )
     {
       throughput_str = fmt::format( fg( fmt::color::green ) | fmt::emphasis::bold, "{}", throughput_str );
     }
 
-    std::string efficiency_str = fmt::format( "{:8.2f}", res.efficiency );
+    std::string efficiency_str = std::format( "{:8.2f}", res.efficiency );
     if ( res.is_best_efficiency )
     {
       efficiency_str = fmt::format( fg( fmt::color::green ) | fmt::emphasis::bold, "{}", efficiency_str );
@@ -525,12 +525,12 @@ void print_compact_results_table( const std::vector<TestResult> & results )
   for ( const auto & res : results )
   {
     std::string total_str      = format_time_with_ranking( res.total_time_mus, res.is_best_total, 14 );
-    std::string throughput_str = fmt::format( "{:>8.1f} t/ms", res.throughput );
+    std::string throughput_str = std::format( "{:>8.1f} t/ms", res.throughput );
     if ( res.is_best_throughput )
     {
       throughput_str = fmt::format( fg( fmt::color::green ) | fmt::emphasis::bold, "{}", throughput_str );
     }
-    std::string efficiency_str = fmt::format( "{:>8.2f}x", res.efficiency );
+    std::string efficiency_str = std::format( "{:>8.2f}x", res.efficiency );
     if ( res.is_best_efficiency )
     {
       efficiency_str = fmt::format( fg( fmt::color::green ) | fmt::emphasis::bold, "{}", efficiency_str );
@@ -658,7 +658,7 @@ void export_to_csv( const std::vector<TestResult> & results, const std::string &
 
   for ( const auto & res : results )
   {
-    file << fmt::format(
+    file << std::format(
       "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
       timestamp,
       NN,
@@ -693,36 +693,36 @@ void export_to_json( const std::vector<TestResult> & results, const std::string 
   }
 
   file << "{\n";
-  file << fmt::format( "  \"metadata\": {{\n" );
-  file << fmt::format( "    \"task_count\": {},\n", NN );
-  file << fmt::format( "    \"thread_count\": {},\n", nt );
-  file << fmt::format( "    \"task_size\": {},\n", sz );
-  file << fmt::format( "    \"timestamp\": {}\n", std::time( nullptr ) );
-  file << fmt::format( "  }},\n" );
-  file << fmt::format( "  \"results\": [\n" );
+  file << std::format( "  \"metadata\": {{\n" );
+  file << std::format( "    \"task_count\": {},\n", NN );
+  file << std::format( "    \"thread_count\": {},\n", nt );
+  file << std::format( "    \"task_size\": {},\n", sz );
+  file << std::format( "    \"timestamp\": {}\n", std::time( nullptr ) );
+  file << std::format( "  }},\n" );
+  file << std::format( "  \"results\": [\n" );
 
   for ( size_t i = 0; i < results.size(); ++i )
   {
     const auto & res = results[i];
-    file << fmt::format( "    {{\n" );
-    file << fmt::format( "      \"pool_name\": \"{}\",\n", res.pool_name );
-    file << fmt::format( "      \"result\": {},\n", res.result );
-    file << fmt::format( "      \"launch_time_avg_us\": {:.2f},\n", res.launch_avg_mus );
-    file << fmt::format( "      \"launch_time_std_us\": {:.2f},\n", res.launch_std_mus );
-    file << fmt::format( "      \"wait_time_avg_us\": {:.2f},\n", res.wait_time_mus );
-    file << fmt::format( "      \"wait_time_std_us\": {:.2f},\n", res.wait_std_mus );
-    file << fmt::format( "      \"total_time_avg_us\": {:.2f},\n", res.total_time_mus );
-    file << fmt::format( "      \"total_time_std_us\": {:.2f},\n", res.total_std_mus );
-    file << fmt::format( "      \"throughput\": {:.2f},\n", res.throughput );
-    file << fmt::format( "      \"efficiency\": {:.2f},\n", res.efficiency );
-    file << fmt::format( "      \"max_rss_kb\": {}\n", res.max_rss_kb );
-    file << fmt::format( "    }}" );
+    file << std::format( "    {{\n" );
+    file << std::format( "      \"pool_name\": \"{}\",\n", res.pool_name );
+    file << std::format( "      \"result\": {},\n", res.result );
+    file << std::format( "      \"launch_time_avg_us\": {:.2f},\n", res.launch_avg_mus );
+    file << std::format( "      \"launch_time_std_us\": {:.2f},\n", res.launch_std_mus );
+    file << std::format( "      \"wait_time_avg_us\": {:.2f},\n", res.wait_time_mus );
+    file << std::format( "      \"wait_time_std_us\": {:.2f},\n", res.wait_std_mus );
+    file << std::format( "      \"total_time_avg_us\": {:.2f},\n", res.total_time_mus );
+    file << std::format( "      \"total_time_std_us\": {:.2f},\n", res.total_std_mus );
+    file << std::format( "      \"throughput\": {:.2f},\n", res.throughput );
+    file << std::format( "      \"efficiency\": {:.2f},\n", res.efficiency );
+    file << std::format( "      \"max_rss_kb\": {}\n", res.max_rss_kb );
+    file << std::format( "    }}" );
     if ( i < results.size() - 1 ) file << ",";
     file << "\n";
   }
 
-  file << fmt::format( "  ]\n" );
-  file << fmt::format( "}}\n" );
+  file << std::format( "  ]\n" );
+  file << std::format( "}}\n" );
 
   file.close();
   fmt::print( fg( fmt::color::light_green ), "  📁 Results exported to: {}\n", filename );
@@ -1041,7 +1041,7 @@ int main( int const argc, char * argv[] )
     }
     if ( config.export_json )
     {
-      std::string filename = fmt::format( "benchmark_N{}_T{}_S{}.json", NN, config.num_threads, config.task_size );
+      std::string filename = std::format( "benchmark_N{}_T{}_S{}.json", NN, config.num_threads, config.task_size );
       export_to_json( results, filename, NN, config.num_threads, config.task_size );
     }
 

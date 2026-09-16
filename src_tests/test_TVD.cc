@@ -394,12 +394,12 @@ private:
       // Save results
       if ( !test_case.filename_prefix.empty() )
       {
-        std::string   filename = fmt::format( "{}/{}_{:.3f}.csv", output_dir, test_case.filename_prefix, lambda );
+        std::string   filename = std::format( "{}/{}_{:.3f}.csv", output_dir, test_case.filename_prefix, lambda );
         std::ofstream file( filename );
         file << "index,original,noisy,denoised\n";
         for ( integer i = 0; i < N; ++i )
         {
-          file << fmt::format(
+          file << std::format(
             "{},{:.6f},{:.6f},{:.6f}\n",
             i,
             test_case.original( i ),

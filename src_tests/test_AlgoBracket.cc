@@ -39,7 +39,7 @@ template <typename FUN> void do_solve( string_view name, real_type a, real_type 
   fmt::print(
     fmt::fg( fmt::color::light_blue ),
     "  ┌──────────────────────────────────────────────────────────────────────────┐\n" );
-  fmt::print( fmt::fg( fmt::color::light_blue ), "  │{:^74}│\n", fmt::format( "Test #{:03d}", ++ntest ) );
+  fmt::print( fmt::fg( fmt::color::light_blue ), "  │{:^74}│\n", std::format( "Test #{:03d}", ++ntest ) );
   fmt::print(
     fmt::fg( fmt::color::light_blue ),
     "  └──────────────────────────────────────────────────────────────────────────┘\n" );
@@ -77,14 +77,14 @@ template <typename FUN> void do_solve( string_view name, real_type a, real_type 
     if ( abs( res ) < 1e-10 ) { x_str = fmt::format( fmt::fg( fmt::color::dark_gray ), "{:12.2e}", res ); }
     else
     {
-      x_str = fmt::format( "{:12.6f}", res );
+      x_str = std::format( "{:12.6f}", res );
     }
 
     // Formatta f(x_min)
     if ( abs( fres ) < 1e-10 ) { f_str = fmt::format( fmt::fg( fmt::color::dark_gray ), "{:16.2e}", fres ); }
     else
     {
-      f_str = fmt::format( "{:16.6e}", fres );
+      f_str = std::format( "{:16.6e}", fres );
     }
 
     // Formatta b-a
@@ -93,7 +93,7 @@ template <typename FUN> void do_solve( string_view name, real_type a, real_type 
     else if ( interval > 1.0 ) { interval_str = fmt::format( fmt::fg( fmt::color::yellow ), "{:10.6f}", interval ); }
     else
     {
-      interval_str = fmt::format( "{:10.6f}", interval );
+      interval_str = std::format( "{:10.6f}", interval );
     }
 
     // Status di convergenza

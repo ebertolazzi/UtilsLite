@@ -1394,16 +1394,16 @@ namespace Utils
           ++nlong;
       }
       std::string res;
-      res += fmt::format( "{}┌───────── AABB tree info ────────┐\n", indent );
-      res += fmt::format( "{}│  Dimension                {:<5} │\n", indent, m_dim );
-      res += fmt::format( "{}│  Number of nodes          {:<5} │\n", indent, m_num_tree_nodes );
-      res += fmt::format( "{}│  Number of leaf           {:<5} │\n", indent, nleaf );
-      res += fmt::format( "{}│  Number of long node      {:<5} │\n", indent, nlong );
-      res += fmt::format( "{}│  Number of objects        {:<5} │\n", indent, m_num_objects );
-      res += fmt::format( "{}│  max_num_objects_per_node {:<5} │\n", indent, m_max_num_objects_per_node );
-      res += fmt::format( "{}│  bbox_long_edge_ratio     {:<5} │\n", indent, m_bbox_long_edge_ratio );
-      res += fmt::format( "{}│  bbox_overlap_tolerance   {:<5} │\n", indent, m_bbox_overlap_tolerance );
-      res += fmt::format( "{}└─────────────────────────────────┘\n", indent );
+      res += std::format( "{}┌───────── AABB tree info ────────┐\n", indent );
+      res += std::format( "{}│  Dimension                {:<5} │\n", indent, m_dim );
+      res += std::format( "{}│  Number of nodes          {:<5} │\n", indent, m_num_tree_nodes );
+      res += std::format( "{}│  Number of leaf           {:<5} │\n", indent, nleaf );
+      res += std::format( "{}│  Number of long node      {:<5} │\n", indent, nlong );
+      res += std::format( "{}│  Number of objects        {:<5} │\n", indent, m_num_objects );
+      res += std::format( "{}│  max_num_objects_per_node {:<5} │\n", indent, m_max_num_objects_per_node );
+      res += std::format( "{}│  bbox_long_edge_ratio     {:<5} │\n", indent, m_bbox_long_edge_ratio );
+      res += std::format( "{}│  bbox_overlap_tolerance   {:<5} │\n", indent, m_bbox_overlap_tolerance );
+      res += std::format( "{}└─────────────────────────────────┘\n", indent );
       return res;
     }
   };

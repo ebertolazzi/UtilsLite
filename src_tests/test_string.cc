@@ -610,13 +610,13 @@ void test_border_characters( TestRunner & runner )
                         const char *        vertical,
                         const std::string & title )
       {
-        std::string top_line = fmt::format( "{}{}{}", top_left, Utils::repeat( horizontal, 20 ), top_right );
+        std::string top_line = std::format( "{}{}{}", top_left, Utils::repeat( horizontal, 20 ), top_right );
 
-        std::string middle_line = fmt::format( "{}{: ^20}{}", vertical, title, vertical );
+        std::string middle_line = std::format( "{}{: ^20}{}", vertical, title, vertical );
 
-        std::string bottom_line = fmt::format( "{}{}{}", bottom_left, Utils::repeat( horizontal, 20 ), bottom_right );
+        std::string bottom_line = std::format( "{}{}{}", bottom_left, Utils::repeat( horizontal, 20 ), bottom_right );
 
-        return fmt::format( "{}\n{}\n{}", top_line, middle_line, bottom_line );
+        return std::format( "{}\n{}\n{}", top_line, middle_line, bottom_line );
       };
 
       fmt::print( fg( fmt::color::cyan ), "\n    Single Line Box:\n" );

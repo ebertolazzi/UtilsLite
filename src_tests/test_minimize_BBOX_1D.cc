@@ -86,7 +86,7 @@ namespace
     }
     if ( !close_to( x, data.x_min() ) )
     {
-      reason = fmt::format( "x error={:.3e}", x - data.x_min() );
+      reason = std::format( "x error={:.3e}", x - data.x_min() );
       return false;
     }
     if ( solver.num_fun_eval() <= 0 )

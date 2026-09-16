@@ -161,7 +161,7 @@ public:
       if ( function_last != class_result.first )
       {
         result.note +=
-          fmt::format( " | Discrepancy: function_idx={}, class_idx={}", function_last, class_result.first );
+          std::format( " | Discrepancy: function_idx={}, class_idx={}", function_last, class_result.first );
         result.function_correct = false;
         result.class_correct    = false;
       }
@@ -781,7 +781,7 @@ public:
       else if ( speedup > 2.0 )
         speedup_str = fmt::format( fg( fmt::color::green ), "{:.4g}x ⚡", speedup );
       else if ( speedup > 1.0 )
-        speedup_str = fmt::format( "{:.4g}x ↗", speedup );
+        speedup_str = std::format( "{:.4g}x ↗", speedup );
       else if ( speedup < 1.0 )
         speedup_str = fmt::format( fg( fmt::color::yellow ), "{:.4g}x ↘", speedup );
       else
@@ -1202,11 +1202,11 @@ public:
 
     for ( const auto & [is_closed, closed_name] : closed_cases )
     {
-      print_section( fmt::format( "{} CASE", closed_name ) );
+      print_section( std::format( "{} CASE", closed_name ) );
 
       for ( const auto & scenario : scenarios )
       {
-        print_progress( fmt::format( "Running {}", scenario.name ) );
+        print_progress( std::format( "Running {}", scenario.name ) );
 
         fmt::print(
           "\n{:<12} {:<12} {:<12} {:<12} {:<12} {:<12} {:<12}\n",
@@ -1239,7 +1239,7 @@ public:
 
           // Run test
           string test_name =
-            fmt::format( "{}_{}_{}_{}", closed_name, scenario.name, num_intervals, is_closed ? "closed" : "open" );
+            std::format( "{}_{}_{}_{}", closed_name, scenario.name, num_intervals, is_closed ? "closed" : "open" );
 
           auto result = run_performance_test( test_name, X, queries, is_closed, true );
           results.push_back( result );
@@ -1438,7 +1438,7 @@ public:
       // Theoretical complexities
       // double log_n = log2(num_intvls); // Variable non usata, commentata
       double log_sqrt_n = log2( sqrt( num_intvls ) );
-      string theory     = fmt::format( "O(log √n)≈{:.1f}", log_sqrt_n );
+      string theory     = std::format( "O(log √n)≈{:.1f}", log_sqrt_n );
 
       fmt::print(
         "{:<12} {:<12.2f} {:<12.2f} {:<12.2f} {:<12.2f} {:<12}\n",
@@ -1728,7 +1728,7 @@ public:
     if ( stats.discrepancies_found == 0 ) { print_success( "Both implementations are functionally equivalent" ); }
     else
     {
-      print_warning( fmt::format( "Found {} discrepancies - needs investigation", stats.discrepancies_found ) );
+      print_warning( std::format( "Found {} discrepancies - needs investigation", stats.discrepancies_found ) );
     }
 
     if ( stats.avg_speedup > 2.0 )
@@ -1807,7 +1807,7 @@ int main()
   }
   catch ( const exception & e )
   {
-    print_error( fmt::format( "Fatal error during tests: {}", e.what() ) );
+    print_error( std::format( "Fatal error during tests: {}", e.what() ) );
     return 1;
   }
   print_header( "ALL DONE", fmt::color::green );

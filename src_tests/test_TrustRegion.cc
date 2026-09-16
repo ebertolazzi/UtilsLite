@@ -833,7 +833,7 @@ int main()
   fmt::print(
     "│ Overall Result         │ {:^11} │ {:>19} │\n",
     ( passed_count == total_count ) ? "PASS" : "FAIL",
-    fmt::format( "{}/{} passed", passed_count, total_count ) );
+    std::format( "{}/{} passed", passed_count, total_count ) );
   fmt::print( "├────────────────────────┼─────────────┼─────────────────────┤\n" );
   fmt::print( "│ Total Execution Time   │ {:^11.3f} │ {:>19} │\n", tm.elapsed_s(), "seconds" );
   fmt::print( "└────────────────────────┴─────────────┴─────────────────────┘\n" );

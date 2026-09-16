@@ -646,7 +646,7 @@ void test_multi_variable()
   {
     double x_val = point[0], y_val = point[1];
 
-    print_subheader( fmt::format( "Test point: (x,y) = ({}, {})", x_val, y_val ) );
+    print_subheader( fmt::format( "Test point: (x,y) = ({:.5g}, {:.5g})", x_val, y_val ) );
 
     // Test g1
     dual x = x_val, y = y_val;

@@ -13,7 +13,7 @@
 \*/
 
 static inline string ini_msg_SSTnonlinearityTerm( int item )
-{ return fmt::format( "SST nonlinearity term, N.{}", item ); }
+{ return std::format( "SST nonlinearity term, N.{}", item ); }
 
 class SSTnonlinearityTerm : public NonlinearSystem
 {

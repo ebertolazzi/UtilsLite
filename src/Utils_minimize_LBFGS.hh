@@ -352,11 +352,11 @@ namespace Utils
         "║ {:62} ║\n"
         "║ {:62} ║\n"
         "╚══════════════════════════════════════════════════════════════╝\n",
-        fmt::format( "Dimension: {:d}", n ),
-        fmt::format( "Max Iterations: {:d}", m_options.max_iter ),
-        fmt::format( "Memory (m): {:d}", m_options.m ),
-        fmt::format( "Gradient Tolerance: {:.2e}", m_options.g_tol ),
-        fmt::format( "Bounds: {}", ( m_box_handler.is_active() ? "Active" : "None" ) ) );
+        std::format( "Dimension: {:d}", n ),
+        std::format( "Max Iterations: {:d}", m_options.max_iter ),
+        std::format( "Memory (m): {:d}", m_options.m ),
+        std::format( "Gradient Tolerance: {:.2e}", m_options.g_tol ),
+        std::format( "Bounds: {}", ( m_box_handler.is_active() ? "Active" : "None" ) ) );
       fmt::print( "Initial F = {:.6e}\n", f0 );
     }
 

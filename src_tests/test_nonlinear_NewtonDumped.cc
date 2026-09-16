@@ -438,7 +438,7 @@ void print_statistics( const vector<TestResult> & results )
   fmt::print(
     fg( fmt::color::green ),
     "{:>{}}",
-    fmt::format( "{} ({:.1f}%)", stats.converged_tests, stats.success_rate ),
+    std::format( "{} ({:.1f}%)", stats.converged_tests, stats.success_rate ),
     stat_col_value );
   fmt::print( fg( fmt::color::cyan ), " │\n" );
 
@@ -448,7 +448,7 @@ void print_statistics( const vector<TestResult> & results )
   fmt::print(
     fg( fmt::color::red ),
     "{:>{}}",
-    fmt::format( "{} ({:.1f}%)", stats.failed_tests, 100.0 - stats.success_rate ),
+    std::format( "{} ({:.1f}%)", stats.failed_tests, 100.0 - stats.success_rate ),
     stat_col_value );
   fmt::print( fg( fmt::color::cyan ), " │\n" );
 
@@ -701,22 +701,22 @@ void print_strategy_comparison_table( const vector<StrategyStatistics> & strateg
   // Stampa statistiche aggregate
   fmt::print( fg( fmt::color::cyan ) | fmt::emphasis::bold, "\n╭{:─^{}}╮\n", " OVERALL SUMMARY ", 50 );
   fmt::print( fg( fmt::color::cyan ), "│" );
-  fmt::print( fg( fmt::color::white ), "{:^50}", fmt::format( "Total Strategies: {}", strategy_stats.size() ) );
+  fmt::print( fg( fmt::color::white ), "{:^50}", std::format( "Total Strategies: {}", strategy_stats.size() ) );
   fmt::print( fg( fmt::color::cyan ), "│\n" );
 
   fmt::print( fg( fmt::color::cyan ), "│" );
-  fmt::print( fg( fmt::color::white ), "{:^50}", fmt::format( "Total Tests: {}", overall.total_tests ) );
+  fmt::print( fg( fmt::color::white ), "{:^50}", std::format( "Total Tests: {}", overall.total_tests ) );
   fmt::print( fg( fmt::color::cyan ), "│\n" );
 
   fmt::print( fg( fmt::color::cyan ), "│" );
-  fmt::print( fg( fmt::color::green ), "{:^50}", fmt::format( "Overall Success Rate: {:.1f}%", overall.success_rate ) );
+  fmt::print( fg( fmt::color::green ), "{:^50}", std::format( "Overall Success Rate: {:.1f}%", overall.success_rate ) );
   fmt::print( fg( fmt::color::cyan ), "│\n" );
 
   fmt::print( fg( fmt::color::cyan ), "│" );
   fmt::print(
     fg( fmt::color::white ),
     "{:^50}",
-    fmt::format( "Average Time per Test: {:.1f} ms", overall.avg_time_ms ) );
+    std::format( "Average Time per Test: {:.1f} ms", overall.avg_time_ms ) );
   fmt::print( fg( fmt::color::cyan ), "│\n" );
 
   fmt::print( fg( fmt::color::cyan ), "╰{:─^{}}╯\n", "", 50 );
@@ -1417,7 +1417,7 @@ int main( int argc, char * argv[] )
         print_statistics( stats.detailed_results );
 
         // Stampa un riepilogo finale
-        auto msg = fmt::format(
+        auto msg = std::format(
           " FINAL SUMMARY: {}/{} tests converged ({:.1f}%) ",
           stats.converged_tests,
           stats.total_tests,

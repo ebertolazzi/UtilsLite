@@ -185,7 +185,7 @@ namespace Utils
         fmt::print(
           "    Function n.{} F(X) = {:15}   X: {}\n",
           m_num_f_eval,
-          fmt::format( "{:.9}", f ),
+          std::format( "{:.9}", f ),
           print_vec( x, 6 ) );
       return f;
     }
@@ -280,7 +280,7 @@ namespace Utils
         for ( integer i = 0; i < x_size; ++i )
         {
           if ( i != 0 ) result += ", ";
-          result += fmt::format( "{:.6}", x[i] );
+          result += std::format( "{:.6}", x[i] );
         }
       }
       else
@@ -288,7 +288,7 @@ namespace Utils
         for ( int i = 0; i < max_elem; ++i )
         {
           if ( i != 0 ) result += ", ";
-          result += fmt::format( "{}", x[i] );
+          result += std::format( "{:.5g}", x[i] );
         }
         result += ", ...";
         // Nota: non mostriamo gli elementi finali in questo caso, ma potremmo se volessimo

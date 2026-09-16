@@ -246,7 +246,7 @@ int main()
     "\n" );
 
   integer k = 0;
-  for ( auto [ptr, name] : NL_list ) test( *ptr, fmt::format( " n.{} {} ", ++k, name ) );
+  for ( auto [ptr, name] : NL_list ) test( *ptr, std::format( " n.{} {} ", ++k, name ) );
   // auto [ptr, name] = NL_list[12];
   // test( *ptr, name );
 

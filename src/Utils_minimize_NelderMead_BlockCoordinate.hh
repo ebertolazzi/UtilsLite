@@ -184,7 +184,7 @@ namespace Utils
         "║ Best Value:       {:<43.6e} ║\n"
         "║ Status:           {:<43} ║\n"
         "╚═══════════════════════════════════════════════════════════════╝\n",
-        fmt::format( "{}/{}", outer_iter, total_outer_iters ),
+        std::format( "{}/{}", outer_iter, total_outer_iters ),
         outer_iter,
         total_inner_iters,
         total_evals,

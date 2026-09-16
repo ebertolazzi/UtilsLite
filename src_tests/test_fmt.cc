@@ -39,11 +39,11 @@ int main()
   using namespace fmt::literals;
   fmt::print( "Hello, {name}! The answer is {number}. Goodbye, {name}.\n\n", "name"_a = "World", "number"_a = 42 );
 
-  std::string const message{ fmt::format( "The answer is {}.", 42 ) };
+  std::string const message{ std::format( "The answer is {}.", 42 ) };
   std::cout << message << "\n\n";
 
   //  run time error
-  // std::string s = fmt::format(FMT_STRING("{:d}"), "foo");
+  // std::string s = std::format(FMT_STRING("{:d}"), "foo");
   std::time_t const t{ std::time( nullptr ) };
 
   // Prints "The date is 2020-11-07." (with the current date):

@@ -159,14 +159,14 @@ void print_summary_table( const vector<TestResult> & results )
     fmt::print( "{:>{}} │ ", r.total_iterations, col_titer );
     fmt::print( "{:>{}} │ ", r.function_evals, col_feval );
     fmt::print( "{:>{}} │ ", r.jacobian_evals, col_jeval );
-    fmt::print( "{:>10} │ ", fmt::format( "{:.2e}", r.final_residual ) );
-    fmt::print( "{:>10} │ ", fmt::format( "{:.3f}", r.elapsed_time_ms ) );
+    fmt::print( "{:>10} │ ", std::format( "{:.2e}", r.final_residual ) );
+    fmt::print( "{:>10} │ ", std::format( "{:.3f}", r.elapsed_time_ms ) );
     fmt::print( "{:<{}} ", truncate_string( r.test_name, col_name ), col_name );
 
     fmt::print( fg( fmt::color::cyan ), "┃\n" );
   }
 
-  fmt::print( fg( fmt::color::cyan ), "┗{}┛\n", fmt::format( "{:━^{}}", "", total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "┗{}┛\n", std::format( "{:━^{}}", "", total_width - 2 ) );
 }
 
 void print_statistics( const vector<TestResult> & results )
@@ -221,7 +221,7 @@ void print_statistics( const vector<TestResult> & results )
     "╭{:─^{}}╮\n",
     " STATISTICAL SUMMARY ",
     stat_total_width - 2 );
-  fmt::print( fg( fmt::color::cyan ), "├{}┤\n", fmt::format( "{:─^{}}", "", stat_total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "├{}┤\n", std::format( "{:─^{}}", "", stat_total_width - 2 ) );
   fmt::print( fg( fmt::color::cyan ), "│" );
   fmt::print( "{:^{}}", "", stat_total_width - 2 );
   fmt::print( fg( fmt::color::cyan ), "│\n" );
@@ -236,7 +236,7 @@ void print_statistics( const vector<TestResult> & results )
   fmt::print(
     fg( fmt::color::green ),
     "{:>{}}",
-    fmt::format( "{} ({:.1f}%)", stats.converged_tests, stats.success_rate ),
+    std::format( "{} ({:.1f}%)", stats.converged_tests, stats.success_rate ),
     stat_col_value );
   fmt::print( fg( fmt::color::cyan ), " │\n" );
 
@@ -245,11 +245,11 @@ void print_statistics( const vector<TestResult> & results )
   fmt::print(
     fg( fmt::color::red ),
     "{:>{}}",
-    fmt::format( "{} ({:.1f}%)", stats.failed_tests, 100.0 - stats.success_rate ),
+    std::format( "{} ({:.1f}%)", stats.failed_tests, 100.0 - stats.success_rate ),
     stat_col_value );
   fmt::print( fg( fmt::color::cyan ), " │\n" );
 
-  fmt::print( fg( fmt::color::cyan ), "├{}┤\n", fmt::format( "{:─^{}}", "", stat_total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "├{}┤\n", std::format( "{:─^{}}", "", stat_total_width - 2 ) );
 
   if ( stats.converged_tests > 0 )
   {
@@ -292,7 +292,7 @@ void print_statistics( const vector<TestResult> & results )
   fmt::print( fg( fmt::color::cyan ), "│" );
   fmt::print( "{:^{}}", "", stat_total_width - 2 );
   fmt::print( fg( fmt::color::cyan ), "│\n" );
-  fmt::print( fg( fmt::color::cyan ), "╰{}╯\n", fmt::format( "{:─^{}}", "", stat_total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "╰{}╯\n", std::format( "{:─^{}}", "", stat_total_width - 2 ) );
 }
 
 int main( int argc, char * argv[] )
