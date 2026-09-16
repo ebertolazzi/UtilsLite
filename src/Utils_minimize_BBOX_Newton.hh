@@ -843,7 +843,20 @@ namespace Utils::Minimize_BBOX_Newton_details
       Real cauchy_alpha                  = Real( 1 );
       int  iteration                     = 0;
 
-      Real const initial_scale = std::max( Real( 1 ), projected_norm_inf );
+      // The scale must come from the GRADIENT, not from the projected gradient.
+      // p(x) = x - P(x-g) SATURATES on a bounded box: it can never exceed the box
+      // width, whatever the gradient does.  A cell whose gradient is O(10) on a box
+      // of half width 1.3 reports p ~ 1.3, `initial_scale` stays pinned at 1, and
+      // the test becomes ABSOLUTE (atol + rtol) however badly scaled the problem
+      // is -- nine decades of reduction demanded of a quantity that is bounded
+      // below by the geometry of the box.  That is what made every PROJECTION
+      // control cell stop on `maximum_iterations` with its projected gradient
+      // frozen, while the same cells under a logarithmic barrier converged: a
+      // barrier is handed an UNBOUNDED box, there P = I and p = g identically, and
+      // the relative term saw the true scale.  Taking the max of the two leaves
+      // the unbounded case bit for bit and fixes only the bounded one.
+      Real const initial_scale = std::max(
+        Real( 1 ), std::max( projected_norm_inf, m_gradient.template lpNorm<Eigen::Infinity>() ) );
       // atol + rtol*scale, the usual mixed test.  The previous form took the
       // *minimum* of the two terms: with initial_scale >= 1 the relative term is
       // never below the absolute one, so the minimum always selected
