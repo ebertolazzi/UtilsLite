@@ -593,6 +593,27 @@ namespace Utils
         std::forward<Args>( args )... );
     }
 
+    //! Output a message in an ARBITRARY 24-bit colour.
+    /*!
+     * The named helpers above are fixed CSS colours and several of them are
+     * unusable on one background or the other -- `yellow` and `cyan` have a
+     * relative luminance above 0.78 and vanish on white, `blue` is at 0.07 and
+     * vanishes on black.  A caller that needs a palette readable on BOTH picks
+     * its own values and passes them here: `fmt::color` is an
+     * `enum class ... : uint32_t` holding a packed RGB, so any
+     * `static_cast<fmt::color>( 0xRRGGBB )` is a legal argument.
+     *
+     * \param f         Foreground colour, background left to the terminal.
+     * \param msg       The message to output.
+     * \param msg_level The \ref console_level "level of the message".
+     */
+    void styled( fmt::color const f, string_view const msg, integer const msg_level = 0 ) const
+    { print_styled( fmt::fg( f ), msg, msg_level ); }
+    //! Output a formatted message in an arbitrary 24-bit colour at a specified \ref console_level "level".
+    template <typename... Args>
+    void styled( fmt::color const f, integer const msg_level, fmt::format_string<Args...> fmt_msg, Args &&... args ) const
+    { print_styled( fmt::fg( f ), msg_level, fmt_msg, std::forward<Args>( args )... ); }
+
     // ------------------------------------------------------------------
     // Style setters
     // ------------------------------------------------------------------
