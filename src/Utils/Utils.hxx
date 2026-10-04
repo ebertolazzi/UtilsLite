@@ -93,6 +93,25 @@
 #error "Utils library must be compiled using C++ >= C++17"
 #endif
 
+// `<format>` is a LIBRARY feature and not a language one: `-std=c++20` does not
+// bring it in.  It landed in libstdc++ 13 and in libc++ 17, so GCC 11 and GCC 12
+// fail on the include below whatever the standard flag says -- and they fail with
+// `fatal error: format: No such file or directory`, which names the symptom and
+// not the requirement.  std::format is used for real here (UTILS_ERROR_TRACE in
+// Utils_trace.hh, std::vformat in Utils_mex.hh, the whole Utils_nonlinear_system
+// family), so this is a requirement and not an include that could be dropped.
+//
+// Tested with __has_include and NOT with __GLIBCXX__: that macro is a release DATE
+// and is not ordered across branches, so a GCC 12.3 released after a GCC 13.1
+// carries the later stamp together with the older library.  __cpp_lib_format is
+// deliberately not tested either: some shipping libc++ versions provide a <format>
+// that serves this library without advertising the macro, and refusing those would
+// break builds that are fine today.  This guard fires only where the include below
+// already fails, and says what to install instead.
+#if !__has_include( <format> )
+#error "Utils library needs <format>: use libstdc++ 13+ (GCC 13+), libc++ 17+ (clang -stdlib=libc++) or MSVC 19.29+. -std=c++20 alone is not enough: <format> is part of the standard LIBRARY, not of the language."
+#endif
+
 // ============================================================================
 // Standard Library Headers
 // ============================================================================
