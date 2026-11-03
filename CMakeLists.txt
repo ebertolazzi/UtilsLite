@@ -110,6 +110,13 @@ if(MSVC)
   endforeach()
 endif()
 
+# CMake only emits /external:I for SYSTEM include directories once it knows
+# which flag carries that meaning on this compiler.
+if(MSVC)
+  set(CMAKE_INCLUDE_SYSTEM_FLAG_C   "/external:I ")
+  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "/external:I ")
+endif()
+
 # --------------------------------------------------------------------------
 # Project-wide naming and source-root variables
 # --------------------------------------------------------------------------
@@ -783,10 +790,17 @@ function(utils_configure_target target_name)
   # Public include paths distinguish between build-tree and install-tree usage.
   # Private include paths expose implementation-only subdirectories while
   # compiling this target.
+  # The vendored third-party headers (fmt, Eigen, autodiff, TinyAD) are included
+  # with quotes from this project's own sources, so /external:anglebrackets does
+  # not reach them: mark the directory SYSTEM instead, here and for consumers.
+  target_include_directories(
+    ${target_name} SYSTEM
+    PUBLIC
+      "$<BUILD_INTERFACE:${SOURCE_DIR}/Utils/3rd>"
+  )
   target_include_directories(
     ${target_name}
     PUBLIC
-      "$<BUILD_INTERFACE:${SOURCE_DIR}/Utils/3rd>"
       "$<BUILD_INTERFACE:${SOURCE_DIR}>"
       "$<BUILD_INTERFACE:${SOURCE_DIR}/Utils>"
       "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
