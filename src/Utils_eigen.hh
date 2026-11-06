@@ -49,11 +49,11 @@
 
 #include <type_traits>
 
-#include <Eigen/Core>
-#include <Eigen/Dense>
-#include <Eigen/QR>
-#include <Eigen/Sparse>
-#include <Eigen/Eigenvalues>
+#include "Utils/3rd/Eigen/Core"
+#include "Utils/3rd/Eigen/Dense"
+#include "Utils/3rd/Eigen/QR"
+#include "Utils/3rd/Eigen/Sparse"
+#include "Utils/3rd/Eigen/Eigenvalues"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 

@@ -56,8 +56,8 @@
 #pragma warning( disable : 4127 )  ///< Disable warning for constant conditional expressions
 #endif
 
-#include <autodiff/forward/dual.hpp>
-#include <autodiff/forward/real.hpp>
+#include "Utils/3rd/autodiff/forward/dual.hpp"
+#include "Utils/3rd/autodiff/forward/real.hpp"
 
 namespace fmt
 {

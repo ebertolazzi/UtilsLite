@@ -36,11 +36,11 @@
 #define FMT_HEADER_ONLY
 #endif
 
-#include <fmt/color.h>
-#include <fmt/std.h>
-#include <fmt/chrono.h>
-#include <fmt/ostream.h>
-#include <fmt/printf.h>
+#include "Utils/3rd/fmt/color.h"
+#include "Utils/3rd/fmt/std.h"
+#include "Utils/3rd/fmt/chrono.h"
+#include "Utils/3rd/fmt/ostream.h"
+#include "Utils/3rd/fmt/printf.h"
 
 namespace Utils
 {

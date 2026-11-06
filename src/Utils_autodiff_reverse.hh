@@ -26,7 +26,7 @@
 #define UTILS_AUTODIFF_REVERSE_dot_HH
 
 #include "Utils.hh"
-#include <autodiff/reverse/var.hpp>
+#include "Utils/3rd/autodiff/reverse/var.hpp"
 #include "Utils_fmt.hh"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
