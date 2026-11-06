@@ -21,7 +21,7 @@
 // file: ThreadPool3.hxx
 //
 
-#include "3rd/BS_thread_pool.hpp"
+#include <BS_thread_pool.hpp>
 
 namespace Utils
 {

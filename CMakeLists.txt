@@ -800,13 +800,25 @@ function(utils_configure_target target_name)
   # Public include paths distinguish between build-tree and install-tree usage.
   # Private include paths expose implementation-only subdirectories while
   # compiling this target.
-  # The vendored third-party headers (fmt, Eigen, autodiff, TinyAD) are included
-  # with quotes from this project's own sources, so /external:anglebrackets does
-  # not reach them: mark the directory SYSTEM instead, here and for consumers.
+  # Gli header di terze parti (fmt, Eigen, autodiff, TinyAD, CLI11,
+  # BS_thread_pool) si includono con <> e vengono risolti da questa directory,
+  # marcata SYSTEM: cosi' GCC/Clang ne sopprimono i warning e MSVC li tratta
+  # come /external.
+  #
+  # Prima erano inclusi con le virgolette e un percorso relativo
+  # (#include "3rd/Eigen/ThreadPool"): la regola delle virgolette li risolveva
+  # a partire dalla directory del file includente, quindi NON passavano da
+  # questa directory e marcarla SYSTEM non aveva alcun effetto.  La build
+  # usciva con centinaia di warning di Eigen (-Wduplicated-branches,
+  # -Winterference-size, -Wunused-parameter) che non sono nostri.
+  #
+  # L'INSTALL_INTERFACE deve esporre la stessa directory, altrimenti nel
+  # install tree <Eigen/Core> non si trova.
   target_include_directories(
     ${target_name} SYSTEM
     PUBLIC
       "$<BUILD_INTERFACE:${SOURCE_DIR}/Utils/3rd>"
+      "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/Utils/3rd>"
   )
   target_include_directories(
     ${target_name}

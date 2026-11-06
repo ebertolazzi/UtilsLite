@@ -52,7 +52,7 @@ namespace Utils
       Callable callable;
 
     public:
-      explicit ConcreteTask( Callable && callable ) : callable( std::move( callable ) ) {}
+      explicit ConcreteTask( Callable && c ) : callable( std::move( c ) ) {}
       void execute() override { callable(); }
     };
 

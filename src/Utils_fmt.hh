@@ -36,11 +36,11 @@
 #define FMT_HEADER_ONLY
 #endif
 
-#include "Utils/3rd/fmt/color.h"
-#include "Utils/3rd/fmt/std.h"
-#include "Utils/3rd/fmt/chrono.h"
-#include "Utils/3rd/fmt/ostream.h"
-#include "Utils/3rd/fmt/printf.h"
+#include <fmt/color.h>
+#include <fmt/std.h>
+#include <fmt/chrono.h>
+#include <fmt/ostream.h>
+#include <fmt/printf.h>
 
 namespace Utils
 {
@@ -245,6 +245,15 @@ namespace Utils
     tmp += "]";
     return tmp;
   }
+
+  // Rete di sicurezza: se una unita' di compilazione ha gia' incluso
+  // <windows.h> senza NOGDI prima di arrivare qui, `ERROR` e' una macro di
+  // wingdi.h e la riga sotto diventa `constexpr auto 0 = ...`.  Utils.hxx
+  // definisce NOGDI, ma non puo' farlo per chi include windows.h per conto
+  // proprio.
+#ifdef ERROR
+#undef ERROR
+#endif
 
   namespace PrintColors
   {

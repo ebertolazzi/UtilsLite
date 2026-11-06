@@ -28,7 +28,7 @@
 #define UTILS_AUTODIFF_EIGEN_dot_HH
 
 #include "Utils.hh"
-#include "Utils/3rd/autodiff/forward/dual/eigen.hpp"
+#include <autodiff/forward/dual/eigen.hpp>
 #include "Utils_fmt.hh"
 
 #endif

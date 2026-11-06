@@ -27,7 +27,7 @@
 #define UTILS_CLI11_dot_HH
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-#include "Utils/3rd/CLI11.hpp"
+#include <CLI11.hpp>
 #endif
 
 #endif

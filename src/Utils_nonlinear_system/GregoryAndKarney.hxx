@@ -15,7 +15,7 @@
 class GregoryAndKarney : public NonlinearSystem
 {
 public:
-  GregoryAndKarney( integer n )
+  GregoryAndKarney( integer n_dim )
     : NonlinearSystem(
         "Gregory and Karney Tridiagonal Matrix Function",
         "@book{brent2013,\n"
@@ -26,7 +26,7 @@ public:
         "  year      = {2013},\n"
         "  publisher = {Dover Publications}\n"
         "}\n",
-        n )
+        n_dim )
   {
   }
 

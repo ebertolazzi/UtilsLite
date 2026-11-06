@@ -120,7 +120,7 @@ class Hammarling3x3matrixSquareRootProblem : public NonlinearSystem
 
 public:
   Hammarling3x3matrixSquareRootProblem(
-    string const & n,
+    string const & name,
     real_type      x0,
     real_type      x1,
     real_type      x2,
@@ -130,7 +130,7 @@ public:
     real_type      x6,
     real_type      x7,
     real_type      x8 )
-    : NonlinearSystem( n, HAMMARLING_BIBTEX, 9 )
+    : NonlinearSystem( name, HAMMARLING_BIBTEX, 9 )
   {
     xe.resize( 9 );
 

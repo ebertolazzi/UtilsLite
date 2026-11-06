@@ -40,7 +40,7 @@ class test_dennis_gay_6 : public NonlinearSystem
 
 public:
   test_dennis_gay_6(
-    string const & n,
+    string const & name,
     real_type      _summx,
     real_type      _summy,
     real_type      _suma,
@@ -55,7 +55,7 @@ public:
     real_type      _x3,
     real_type      _x4,
     real_type      _x5 )
-    : NonlinearSystem( n, DENNIS_AND_GAY_BIBTEX, 6 )
+    : NonlinearSystem( name, DENNIS_AND_GAY_BIBTEX, 6 )
     , summx( _summx )
     , summy( _summy )
     , suma( _suma )
@@ -361,7 +361,7 @@ class test_dennis_gay_8 : public NonlinearSystem
 
 public:
   test_dennis_gay_8(
-    string const & n,
+    string const & name,
     real_type      _summx,
     real_type      _summy,
     real_type      _suma,
@@ -378,7 +378,7 @@ public:
     real_type      _x5,
     real_type      _x6,
     real_type      _x7 )
-    : NonlinearSystem( n, DENNIS_AND_GAY_BIBTEX, 8 )
+    : NonlinearSystem( name, DENNIS_AND_GAY_BIBTEX, 8 )
     , summx( _summx )
     , summy( _summy )
     , suma( _suma )

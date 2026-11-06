@@ -15,7 +15,7 @@
 class Hilbert : public NonlinearSystem
 {
 public:
-  Hilbert( integer n )
+  Hilbert( integer n_dim )
     : NonlinearSystem(
         "Hilbert Matrix Function F = x'Ax",
         "@book{brent2013,\n"
@@ -26,7 +26,7 @@ public:
         "  year      = {2013},\n"
         "  publisher = {Dover Publications}\n"
         "}\n",
-        n )
+        n_dim )
   {
   }
 

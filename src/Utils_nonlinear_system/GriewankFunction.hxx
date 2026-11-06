@@ -15,7 +15,7 @@
 class GriewankFunction : public NonlinearSystem
 {
 public:
-  GriewankFunction( integer n )
+  GriewankFunction( integer n_dim )
     : NonlinearSystem(
         "Griewank function",
         "@Article{Griewan:k1981,\n"
@@ -28,8 +28,8 @@ public:
         "  pages   = {11--39},\n"
         "  doi     = {10.1007/BF00933356}\n"
         "}\n",
-        n )
-  { Utils::Check( n >= 2 && n <= 20, "GriewankFunction(n={}) must be in range [2..20]", n ); }
+        n_dim )
+  { Utils::Check( n_dim >= 2 && n_dim <= 20, "GriewankFunction(n={}) must be in range [2..20]", n_dim ); }
 
   real_type grad( Vector const & x, integer k ) const
   {

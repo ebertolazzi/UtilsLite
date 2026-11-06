@@ -27,7 +27,7 @@
 #pragma clang diagnostic ignored "-Wunused-parameter"
 #endif
 
-#include "3rd/Eigen/ThreadPool"
+#include <Eigen/ThreadPool>
 
 namespace Utils
 {

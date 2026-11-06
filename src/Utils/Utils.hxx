@@ -67,6 +67,15 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+// NOGDI esclude wingdi.h, che definisce `ERROR` come macro (`#define ERROR 0`).
+// WIN32_LEAN_AND_MEAN non lo esclude, e la macro rompe qualunque
+// identificatore chiamato ERROR: in Utils_fmt.hh c'e'
+// `constexpr auto ERROR = fmt::fg( fmt::color::red )` dentro
+// `namespace Utils::PrintColors`, e il preprocessore non guarda i namespace.
+// Qui non si usa GDI, quindi la via pulita e' non farsi includere wingdi.h.
+#ifndef NOGDI
+#define NOGDI
+#endif
 #include <Winsock2.h>
 #include <Ws2tcpip.h>
 #include <Windows.h>

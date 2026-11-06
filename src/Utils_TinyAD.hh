@@ -23,9 +23,9 @@
 #define UTILS_TINYAD_DOT_HH
 
 #include "Utils.hh"
-#include "Utils/3rd/TinyAD/Scalar.hh"
-#include "Utils/3rd/TinyAD/ScalarFunction.hh"
-#include "Utils/3rd/TinyAD/VectorFunction.hh"
+#include <TinyAD/Scalar.hh>
+#include <TinyAD/ScalarFunction.hh>
+#include <TinyAD/VectorFunction.hh>
 
 #include <functional>
 #include <tuple>
