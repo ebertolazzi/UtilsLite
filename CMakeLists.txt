@@ -838,6 +838,17 @@ function(utils_configure_target target_name)
       # TinyAD is header-only: publish the Release setting so downstream
       # consumers compile its headers without costly runtime assertions.
       $<$<CONFIG:Release>:TINYAD_ENABLE_RUNTIME_CHECKS=0>
+      # M_PI e compagnia non sono standard: su Windows (MSVC e MinGW)
+      # <math.h> le definisce solo se _USE_MATH_DEFINES e' gia' definita
+      # quando l'header viene incluso la prima volta.  Deve quindi arrivare
+      # dalla riga di comando, non da un #define in un nostro header: a quel
+      # punto <cmath> puo' essere gia' stato incluso e la include guard
+      # impedisce di recuperarle.
+      #
+      # PUBLIC perche' la usano anche header pubblici
+      # (Utils_Quaternion.hh, Utils_minimize_DifferentialEvolution.hh) e
+      # quindi serve pure a chi compila contro la libreria installata.
+      $<$<OR:$<BOOL:${WIN32}>,$<BOOL:${MINGW}>>:_USE_MATH_DEFINES>
   )
 
   # Diagnostics and conformance warnings.  Keep them target-local so UtilsLite
