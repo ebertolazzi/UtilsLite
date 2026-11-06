@@ -849,6 +849,24 @@ function(utils_configure_target target_name)
       # (Utils_Quaternion.hh, Utils_minimize_DifferentialEvolution.hh) e
       # quindi serve pure a chi compila contro la libreria installata.
       $<$<OR:$<BOOL:${WIN32}>,$<BOOL:${MINGW}>>:_USE_MATH_DEFINES>
+      # EIGEN_MAX_ALIGN_BYTES fissato, e PUBLIC.
+      #
+      # Senza, l'allineamento (e quindi sizeof e il layout) dei tipi Eigen a
+      # dimensione fissa dipende dalle opzioni -march della singola unita' di
+      # compilazione: 16 byte con solo SSE2, 32 con AVX, 64 con AVX-512.
+      # Qui la libreria si compila con -march=native mentre i test e i
+      # progetti a valle (Splines, PINS) no: gli stessi tipi avevano due
+      # layout diversi nei due insiemi di unita', un'violazione della ODR.
+      # Un oggetto costruito nella libreria e distrutto nel test corrompeva
+      # l'heap -> 0xC0000374 su Windows, "double free or corruption" con
+      # glibc, e nessuna diagnosi dai sanitizer perche' ogni unita' presa da
+      # sola e' coerente.
+      #
+      # Fissando il valore l'ABI non dipende piu' da -march.  32 e' il
+      # massimo che serve ad AVX2; con AVX-512 Eigen usa load non allineate
+      # invece di pretendere 64 byte, il che costa poco e vale molto meno di
+      # una corruzione dell'heap.
+      EIGEN_MAX_ALIGN_BYTES=32
   )
 
   # Diagnostics and conformance warnings.  Keep them target-local so UtilsLite
@@ -1161,6 +1179,21 @@ if(UTILS_ENABLE_TESTS)
     # TinyAD and autodiff are header-only, so their hot paths are instantiated
     # in each test executable rather than in the UtilsLite library. Mirror the
     # selected Release optimizations here to make benchmark results meaningful.
+    # UTILS_USE_NATIVE_ARCH va rispecchiata qui come le altre: mancava, e i
+    # test venivano compilati senza -march=native mentre la libreria con.
+    # Oltre a falsare i benchmark, cambiava l'allineamento dei tipi Eigen a
+    # dimensione fissa fra i due insiemi di unita' di compilazione (vedi il
+    # commento su EIGEN_MAX_ALIGN_BYTES piu' sopra).
+    if(UTILS_USE_NATIVE_ARCH AND NOT UTILS_APPLE_MULTI_ARCH)
+      target_compile_options(
+        ${TEST_NAME}
+        PRIVATE
+          $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-march=native>
+          $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-mtune=native>
+          $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:IntelLLVM>>:-xHost>
+          $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/arch:AVX2>
+      )
+    endif()
     if(UTILS_UNROLL_LOOPS)
       target_compile_options(
         ${TEST_NAME}

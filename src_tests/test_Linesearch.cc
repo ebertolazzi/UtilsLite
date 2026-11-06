@@ -13,6 +13,9 @@
  |                                                                          |
 \*--------------------------------------------------------------------------*/
 
+#include <locale>
+#include <stdexcept>
+
 #include "Utils_eigen.hh"
 #include "Utils_minimize_linesearch.hh"
 #include "Utils_TicToc.hh"
@@ -2376,7 +2379,20 @@ struct CLIOptions
 
 int main( int argc, char ** argv )
 {
-  std::locale::global( std::locale( "en_US.UTF-8" ) );
+  // I locale con nome non sono portabili: esistono solo se il sistema li ha
+  // generati.  Su MinGW/MSYS2 "en_US.UTF-8" non c'e' e std::locale lancia
+  // std::runtime_error ("locale::facet::_S_create_c_locale name not valid"),
+  // che non essendo intercettata qui terminava il test prima del main.
+  // Il locale serve solo alla formattazione dell'output, quindi se manca si
+  // prosegue con quello classico.
+  try
+  {
+    std::locale::global( std::locale( "en_US.UTF-8" ) );
+  }
+  catch ( std::exception const & )
+  {
+    std::locale::global( std::locale::classic() );
+  }
 
   CLIOptions opts = CLIOptions::parse( argc, argv );
 
