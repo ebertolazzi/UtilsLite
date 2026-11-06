@@ -849,24 +849,6 @@ function(utils_configure_target target_name)
       # (Utils_Quaternion.hh, Utils_minimize_DifferentialEvolution.hh) e
       # quindi serve pure a chi compila contro la libreria installata.
       $<$<OR:$<BOOL:${WIN32}>,$<BOOL:${MINGW}>>:_USE_MATH_DEFINES>
-      # EIGEN_MAX_ALIGN_BYTES fissato, e PUBLIC.
-      #
-      # Senza, l'allineamento (e quindi sizeof e il layout) dei tipi Eigen a
-      # dimensione fissa dipende dalle opzioni -march della singola unita' di
-      # compilazione: 16 byte con solo SSE2, 32 con AVX, 64 con AVX-512.
-      # Qui la libreria si compila con -march=native mentre i test e i
-      # progetti a valle (Splines, PINS) no: gli stessi tipi avevano due
-      # layout diversi nei due insiemi di unita', un'violazione della ODR.
-      # Un oggetto costruito nella libreria e distrutto nel test corrompeva
-      # l'heap -> 0xC0000374 su Windows, "double free or corruption" con
-      # glibc, e nessuna diagnosi dai sanitizer perche' ogni unita' presa da
-      # sola e' coerente.
-      #
-      # Fissando il valore l'ABI non dipende piu' da -march.  32 e' il
-      # massimo che serve ad AVX2; con AVX-512 Eigen usa load non allineate
-      # invece di pretendere 64 byte, il che costa poco e vale molto meno di
-      # una corruzione dell'heap.
-      EIGEN_MAX_ALIGN_BYTES=32
   )
 
   # Diagnostics and conformance warnings.  Keep them target-local so UtilsLite
@@ -1185,8 +1167,9 @@ if(UTILS_ENABLE_TESTS)
     # UTILS_USE_NATIVE_ARCH va rispecchiata qui come le altre: mancava, e i
     # test venivano compilati senza -march=native mentre la libreria con.
     # Oltre a falsare i benchmark, cambiava l'allineamento dei tipi Eigen a
-    # dimensione fissa fra i due insiemi di unita' di compilazione (vedi il
-    # commento su EIGEN_MAX_ALIGN_BYTES piu' sopra).
+    # dimensione fissa fra le unita' della libreria e quelle dei test (16
+    # byte con solo SSE2, 32 con AVX, 64 con AVX-512): stessi tipi con due
+    # layout diversi, violazione della ODR, e l'heap si corrompeva.
     if(UTILS_USE_NATIVE_ARCH AND NOT UTILS_APPLE_MULTI_ARCH)
       target_compile_options(
         ${TEST_NAME}
