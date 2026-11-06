@@ -1022,21 +1022,24 @@ function(utils_add_platform_library_alias target_name base_name library_kind)
   if(library_kind STREQUAL "STATIC")
     set(output_name "${base_name}_${UTILS_PLATFORM_SUFFIX}_static")
     set(alias_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${base_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
-    if(WIN32)
-      set(real_filename "lib${output_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+      # Il prefisso "lib" va aggiunto A MANO solo dove CMake non lo mette da
+      # solo, cioe' con MSVC (CMAKE_STATIC_LIBRARY_PREFIX vuoto).  Sotto
+      # MinGW WIN32 e' vero ma il prefisso c'e' gia': aggiungerlo produceva
+      # liblibUtilsLite_mingw64_static.a, e PINS cercando
+      # UtilsLite_mingw64_static non trovava niente.
+      # Cosi' il file si chiama lib<nome>_<piattaforma>_static.<ext> su
+      # tutte le piattaforme.
+    if(WIN32 AND NOT CMAKE_STATIC_LIBRARY_PREFIX)
       set(output_name "lib${output_name}")
-    else()
-      set(real_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${output_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
     endif()
+    set(real_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${output_name}${CMAKE_STATIC_LIBRARY_SUFFIX}")
   else()
     set(output_name "${base_name}_${UTILS_PLATFORM_SUFFIX}")
     set(alias_filename "${CMAKE_SHARED_LIBRARY_PREFIX}${base_name}${CMAKE_SHARED_LIBRARY_SUFFIX}")
-    if(WIN32)
-      set(real_filename "lib${output_name}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    if(WIN32 AND NOT CMAKE_SHARED_LIBRARY_PREFIX)
       set(output_name "lib${output_name}")
-    else()
-      set(real_filename "${CMAKE_SHARED_LIBRARY_PREFIX}${output_name}${CMAKE_SHARED_LIBRARY_SUFFIX}")
     endif()
+    set(real_filename "${CMAKE_SHARED_LIBRARY_PREFIX}${output_name}${CMAKE_SHARED_LIBRARY_SUFFIX}")
   endif()
 
   # Apply the computed real output name to the CMake target.
