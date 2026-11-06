@@ -71,8 +71,8 @@ public:
       for ( integer j = 0; j < 5; ++j )
       {
         real_type d = c[j];
-        for ( integer i = 0; i < n; ++i ) d += power2( x( i ) - a[i][j] );
-        f( k ) += 2.0 * ( x( k ) - a[k][j] ) / ( d * d );
+        for ( integer i = 0; i < n; ++i ) d += power2( x( i ) - a[j][i] );
+        f( k ) += 2.0 * ( x( k ) - a[j][k] ) / ( d * d );
       }
     }
   }
@@ -88,8 +88,8 @@ public:
         for ( integer j = 0; j < 5; ++j )
         {
           real_type d = c[j];
-          for ( integer i = 0; i < n; ++i ) d += power2( x( i ) - a[i][j] );
-          J_full( ii, jj ) -= 8.0 * ( ( x[ii] - a[ii][j] ) * ( x[jj] - a[jj][j] ) ) / ( d * d * d );
+          for ( integer i = 0; i < n; ++i ) d += power2( x( i ) - a[j][i] );
+          J_full( ii, jj ) -= 8.0 * ( ( x[ii] - a[j][ii] ) * ( x[jj] - a[j][jj] ) ) / ( d * d * d );
           if ( ii == jj ) J_full( ii, jj ) += 2 / ( d * d );
         }
       }
@@ -178,8 +178,8 @@ public:
       for ( integer j = 0; j < 7; ++j )
       {
         real_type d = c[j];
-        for ( integer i = 0; i < n; ++i ) d += power2( x( i ) - a[i][j] );
-        f( k ) += 2.0 * ( x( k ) - a[k][j] ) / ( d * d );
+        for ( integer i = 0; i < n; ++i ) d += power2( x( i ) - a[j][i] );
+        f( k ) += 2.0 * ( x( k ) - a[j][k] ) / ( d * d );
       }
     }
   }
@@ -195,8 +195,8 @@ public:
         for ( integer j = 0; j < 7; ++j )
         {
           real_type d = c[j];
-          for ( integer i = 0; i < n; ++i ) d += power2( x( i ) - a[i][j] );
-          J_full( ii, jj ) -= 8.0 * ( ( x[ii] - a[ii][j] ) * ( x[jj] - a[jj][j] ) ) / ( d * d * d );
+          for ( integer i = 0; i < n; ++i ) d += power2( x( i ) - a[j][i] );
+          J_full( ii, jj ) -= 8.0 * ( ( x[ii] - a[j][ii] ) * ( x[jj] - a[j][jj] ) ) / ( d * d * d );
           if ( ii == jj ) J_full( ii, jj ) += 2 / ( d * d );
         }
       }
@@ -300,8 +300,8 @@ public:
       for ( integer j = 0; j < 10; ++j )
       {
         real_type d = c[j];
-        for ( integer i = 0; i < n; ++i ) d += power2( x( i ) - a[i][j] );
-        f( k ) += 2.0 * ( x( k ) - a[k][j] ) / ( d * d );
+        for ( integer i = 0; i < n; ++i ) d += power2( x( i ) - a[j][i] );
+        f( k ) += 2.0 * ( x( k ) - a[j][k] ) / ( d * d );
       }
     }
   }
@@ -317,8 +317,8 @@ public:
         for ( integer j = 0; j < 10; ++j )
         {
           real_type d = c[j];
-          for ( integer i = 0; i < n; ++i ) d += power2( x( i ) - a[i][j] );
-          J_full( ii, jj ) -= 8.0 * ( ( x[ii] - a[ii][j] ) * ( x[jj] - a[jj][j] ) ) / ( d * d * d );
+          for ( integer i = 0; i < n; ++i ) d += power2( x( i ) - a[j][i] );
+          J_full( ii, jj ) -= 8.0 * ( ( x[ii] - a[j][ii] ) * ( x[jj] - a[j][jj] ) ) / ( d * d * d );
           if ( ii == jj ) J_full( ii, jj ) += 2 / ( d * d );
         }
       }
