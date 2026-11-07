@@ -292,7 +292,7 @@ namespace Utils
    * }
    * @endcode
    */
-  inline void Error( std::string_view msg, std::source_location loc = std::source_location::current() )
+  [[noreturn]] inline void Error( std::string_view msg, std::source_location loc = std::source_location::current() )
   { throw Utils::Runtime_Error( std::string{ msg }, loc.file_name(), loc.line() ); }
 
   /**
@@ -426,7 +426,8 @@ namespace Utils
    * Error("Cannot process {} with ID {}", name, id);
    * @endcode
    */
-  template <class... Args> inline void Error( Format_With_Location<std::type_identity_t<Args>...> f, Args &&... args )
+  template <class... Args>
+  [[noreturn]] inline void Error( Format_With_Location<std::type_identity_t<Args>...> f, Args &&... args )
   {
     throw Utils::Runtime_Error( std::format( f.fmt, std::forward<Args>( args )... ), f.loc.file_name(), f.loc.line() );
   }

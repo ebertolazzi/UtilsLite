@@ -781,8 +781,12 @@ namespace Utils
       //
       bool ffa = false;
       bool ffb = false;
-      while ( ( ffa = !is_finite( fa ) ) || ( ffb = !is_finite( fb ) ) )
+      for ( ;; )
       {
+        ffa = !is_finite( fa );
+        ffb = !is_finite( fb );
+        if ( !ffa && !ffb ) break;
+
         Utils::Check(
           ++m_iteration_count <= m_max_iteration,
           "AlgoBracket::eval() too many iteration\n"
