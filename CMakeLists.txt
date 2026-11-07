@@ -435,6 +435,15 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang")
 endif()
 
 # --------------------------------------------------------------------------
+# MSVC: UTF-8 source and execution character sets
+# --------------------------------------------------------------------------
+# The fmt library requires UTF-8 support when compiling with MSVC.
+# Apply this option to all targets, including test executables.
+if(MSVC)
+  add_compile_options( "$<$<COMPILE_LANGUAGE:C,CXX>:/utf-8>" )
+endif()
+
+# --------------------------------------------------------------------------
 # Optional local customization hook
 # --------------------------------------------------------------------------
 # A sibling CMakeLists-customize.txt file can inject site-specific settings
