@@ -530,6 +530,47 @@ function(utils_resolve_dependency dep_name local_dir probe_rel expected_ref url 
         endif()
       endif()
     endif()
+
+    # Ultime due possibilita', necessarie per i sorgenti vendorizzati e per i
+    # checkout aperti su un commit successivo al ref richiesto:
+    #   - la directory sta nello STESSO work tree git di questo progetto
+    #     (nessun .git proprio: git risponde col branch del repo contenitore,
+    #     che non coincidera' mai col ref richiesto);
+    #   - HEAD contiene il commit puntato dal ref.
+    if(NOT _local_matches)
+      execute_process(
+        COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_CURRENT_SOURCE_DIR}" rev-parse --show-toplevel
+        RESULT_VARIABLE _self_root_result OUTPUT_VARIABLE _self_root
+        OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
+      )
+      execute_process(
+        COMMAND "${GIT_EXECUTABLE}" -C "${_local_abs}" rev-parse --show-toplevel
+        RESULT_VARIABLE _local_root_result OUTPUT_VARIABLE _local_root
+        OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
+      )
+      if(_self_root_result EQUAL 0 AND _local_root_result EQUAL 0 AND
+         _self_root STREQUAL _local_root)
+        set(_local_matches TRUE)
+        set(_local_desc "shared Git worktree")
+      endif()
+    endif()
+    if(NOT _local_matches AND _rev_result EQUAL 0)
+      execute_process(
+        COMMAND "${GIT_EXECUTABLE}" -C "${_local_abs}" rev-parse "${expected_ref}^{commit}"
+        RESULT_VARIABLE _ref_result OUTPUT_VARIABLE _ref_commit
+        OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
+      )
+      if(_ref_result EQUAL 0)
+        execute_process(
+          COMMAND "${GIT_EXECUTABLE}" -C "${_local_abs}" merge-base --is-ancestor "${_ref_commit}" "${_local_commit}"
+          RESULT_VARIABLE _ref_is_ancestor ERROR_QUIET
+        )
+        if(_ref_is_ancestor EQUAL 0)
+          set(_local_matches TRUE)
+          set(_local_desc "${_local_desc} (contiene '${expected_ref}')")
+        endif()
+      endif()
+    endif()
   endif()
 
   if(_local_matches)
