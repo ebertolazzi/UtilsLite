@@ -26,6 +26,22 @@
 #ifndef UTILS_BOBYQA_dot_HH
 #define UTILS_BOBYQA_dot_HH
 
+//
+// Le nove lambda di fase qui sotto stanno tutte dentro una sola funzione e
+// catturano per riferimento: inlinate, formano un corpo enorme che il
+// back-end di MSVC 19.38 non regge piu' a /O2 /Ob2 ("fatal error C1001",
+// compiler file p2/main.c).  Impedirne l'inlining riporta la funzione a una
+// dimensione trattabile; il costo e' nullo, sono chiamate una volta per
+// iterazione dell'algoritmo, non nei cicli interni.
+//
+// [[msvc::noinline]] esiste da VS2019 16.10; altrove la macro e' vuota.
+//
+#if defined(_MSC_VER) && !defined(__clang__)
+  #define UTILS_BOBYQA_PHASE_NOINLINE [[msvc::noinline]]
+#else
+  #define UTILS_BOBYQA_PHASE_NOINLINE
+#endif
+
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc++98-compat"
@@ -640,7 +656,7 @@ namespace Utils
      * includendo sia la parte quadratica (m_hq) che la parte polinomiale (m_pq).
      * Viene eseguita quando il punto ottimo cambia rispetto alla base corrente.
      */
-    auto phase_update_gradient = [&]() -> Phase
+    auto phase_update_gradient = [&]() UTILS_BOBYQA_PHASE_NOINLINE -> Phase
     {
       if ( m_kopt != kbase ) add_hessian_product( m_x_opt, m_g_opt );
       return Phase::TRUST_REGION;  // Passa alla fase successiva
@@ -654,7 +670,7 @@ namespace Utils
      * Determina se il passo è sufficientemente grande o se è necessario ridurre rho
      * o cercare un punto di interpolazione lontano.
      */
-    auto phase_trust_region = [&]() -> Phase
+    auto phase_trust_region = [&]() UTILS_BOBYQA_PHASE_NOINLINE -> Phase
     {
       // Risolve il problema quadratico vincolato nella regione di fiducia
       trsbox();
@@ -720,7 +736,7 @@ namespace Utils
      * al punto ottimo corrente e aggiorna tutte le matrici (BMAT, ZMAT, HQ)
      * per mantenere l'interpolazione quadratica.
      */
-    auto phase_shift_base = [&]() -> Phase
+    auto phase_shift_base = [&]() UTILS_BOBYQA_PHASE_NOINLINE -> Phase
     {
       // Controlla se il passo è significativamente più piccolo della distanza dal centro
       if ( m_dsq <= m_x_opt_square * Scalar( 0.001 ) )
@@ -806,7 +822,7 @@ namespace Utils
      * o quando i denominatori diventano troppo piccoli. Rigenera il set
      * di punti di interpolazione mantenendo l'interpolazione quadratica.
      */
-    auto phase_rescue = [&]() -> Phase
+    auto phase_rescue = [&]() UTILS_BOBYQA_PHASE_NOINLINE -> Phase
     {
       n_num_f_saved = m_num_f_eval;  // Salva il numero corrente di valutazioni
       kbase         = m_kopt;        // Salva il punto ottimo corrente come base
@@ -855,7 +871,7 @@ namespace Utils
      * Chiama altmov() per generare un passo alternativo quando la regione
      * di fiducia è ristretta o quando non sono state fatte valutazioni di funzione.
      */
-    auto phase_altmov = [&]() -> Phase
+    auto phase_altmov = [&]() UTILS_BOBYQA_PHASE_NOINLINE -> Phase
     {
       // Calcola un passo alternativo
       altmov();
@@ -874,7 +890,7 @@ namespace Utils
      * da sostituire e il denominatore m_denom per la regola di aggiornamento.
      * Sceglie anche il punto da rimuovere (m_knew) se necessario.
      */
-    auto phase_compute_vlag = [&]() -> Phase
+    auto phase_compute_vlag = [&]() UTILS_BOBYQA_PHASE_NOINLINE -> Phase
     {
       Vector W0( m_npt );
       // Fase 1: Calcola contributi base dai punti di interpolazione
@@ -1010,7 +1026,7 @@ namespace Utils
      * Valuta la funzione obiettivo nel nuovo punto, aggiorna il modello quadratico,
      * e decide se accettare il passo, ridurre la regione di fiducia, o ridurre rho.
      */
-    auto phase_evaluate = [&]() -> Phase
+    auto phase_evaluate = [&]() UTILS_BOBYQA_PHASE_NOINLINE -> Phase
     {
       // Fase 1: Proietta il nuovo punto sui bound con trattamento speciale
       X = ( m_x_base + m_x_new ).cwiseMax( m_x_lower ).cwiseMin( m_x_upper );
@@ -1250,7 +1266,7 @@ namespace Utils
      * Cerca il punto di interpolazione più lontano dal punto ottimo corrente
      * per sostituirlo con un nuovo punto che migliori la geometria dell'interpolazione.
      */
-    auto phase_find_far = [&]() -> Phase
+    auto phase_find_far = [&]() UTILS_BOBYQA_PHASE_NOINLINE -> Phase
     {
       m_knew = -1;
 
@@ -1308,7 +1324,7 @@ namespace Utils
      * ha convergentro alla precisione desiderata o quando è necessario
      * esplorare su scala più fine.
      */
-    auto phase_reduce_rho = [&]() -> Phase
+    auto phase_reduce_rho = [&]() UTILS_BOBYQA_PHASE_NOINLINE -> Phase
     {
       // Controlla se siamo al limite di precisione
       if ( m_rho > m_rhoend )
@@ -3313,6 +3329,8 @@ namespace Utils
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
+
+#undef UTILS_BOBYQA_PHASE_NOINLINE
 
 #endif
 
