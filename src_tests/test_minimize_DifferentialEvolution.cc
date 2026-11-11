@@ -26,6 +26,8 @@
  |  on all nonlinear system test problems.                                  |
 \*--------------------------------------------------------------------------*/
 
+#include <string_view>
+
 #include "Utils_fmt.hh"
 #include "Utils_minimize_DifferentialEvolution.hh"
 #include "Utils_nonlinear_system.hh"
@@ -39,6 +41,14 @@ using real_type = double;
 using integer   = int;
 using DE        = DifferentialEvolution<real_type>;
 using Vector    = DifferentialEvolution<real_type>::Vector;
+
+static std::string repeat_utf8( std::string_view glyph, std::size_t count )
+{
+  std::string result;
+  result.reserve( glyph.size() * count );
+  for ( std::size_t i = 0; i < count; ++i ) result.append( glyph );
+  return result;
+}
 
 // Struttura per memorizzare i risultati di un test
 struct DETestResult
@@ -139,7 +149,7 @@ void print_summary_table( const vector<DETestResult> & results )
     total_width );
 
   // Linea divisoria
-  fmt::print( fg( fmt::color::cyan ), "┏{}┓\n", std::format( "{:━^{}}", "", total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "┏{}┓\n", repeat_utf8( "━", static_cast<size_t>( total_width - 2 ) ) );
 
   // Intestazione delle colonne
   fmt::print( fg( fmt::color::cyan ), "┃ " );
@@ -156,7 +166,7 @@ void print_summary_table( const vector<DETestResult> & results )
   fmt::print( fg( fmt::color::cyan ), "┃\n" );
 
   // Linea divisoria
-  fmt::print( fg( fmt::color::cyan ), "┠{}┨\n", std::format( "{:─^{}}", "", total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "┠{}┨\n", repeat_utf8( "─", static_cast<size_t>( total_width - 2 ) ) );
 
   // Dati
   for ( size_t i = 0; i < results.size(); ++i )
@@ -219,7 +229,7 @@ void print_summary_table( const vector<DETestResult> & results )
   }
 
   // Linea finale
-  fmt::print( fg( fmt::color::cyan ), "┗{}┛\n", std::format( "{:━^{}}", "", total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "┗{}┛\n", repeat_utf8( "━", static_cast<size_t>( total_width - 2 ) ) );
 }
 
 // Funzione per calcolare e stampare le statistiche
@@ -270,7 +280,7 @@ void print_statistics( const vector<DETestResult> & results )
   // Stampa delle statistiche
   fmt::print( "\n" );
   fmt::print( fg( fmt::color::cyan ) | fmt::emphasis::bold, "{:━^{}}\n", " STATISTICAL SUMMARY ", stat_total_width );
-  fmt::print( fg( fmt::color::cyan ), "┏{}┓\n", std::format( "{:━^{}}", "", stat_total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "┏{}┓\n", repeat_utf8( "━", static_cast<size_t>( stat_total_width - 2 ) ) );
   fmt::print( fg( fmt::color::cyan ), "┃" );
   fmt::print( "{:^{}}", "", stat_total_width - 2 );
   fmt::print( fg( fmt::color::cyan ), "┃\n" );
@@ -302,7 +312,7 @@ void print_statistics( const vector<DETestResult> & results )
   fmt::print( fg( fmt::color::cyan ), " ┃\n" );
 
   // Linea divisoria
-  fmt::print( fg( fmt::color::cyan ), "┠{}┨\n", std::format( "{:─^{}}", "", stat_total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "┠{}┨\n", repeat_utf8( "─", static_cast<size_t>( stat_total_width - 2 ) ) );
 
   if ( stats.converged_tests > 0 )
   {
@@ -346,7 +356,7 @@ void print_statistics( const vector<DETestResult> & results )
   fmt::print( fg( fmt::color::cyan ), "┃" );
   fmt::print( "{:^{}}", "", stat_total_width - 2 );
   fmt::print( fg( fmt::color::cyan ), "┃\n" );
-  fmt::print( fg( fmt::color::cyan ), "┗{}┛\n", std::format( "{:━^{}}", "", stat_total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "┗{}┛\n", repeat_utf8( "━", static_cast<size_t>( stat_total_width - 2 ) ) );
 }
 
 // Funzione per determinare i bound basati sui punti iniziali

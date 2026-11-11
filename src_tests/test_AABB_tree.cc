@@ -925,7 +925,7 @@ void test_tree_info_and_queries()
     fmt::print( fg( fmt::color::yellow ), "  ⚠ No nodes with bboxes found for testing\n" );
 
   // Test get_root_bbox
-  real_type root_min[dim], root_max[dim];
+  real_type root_min[dim]{}, root_max[dim]{};
   tree.get_root_bbox( root_min, root_max );
   fmt::print(
     "  ├─ Root bbox: [{:.2f}, {:.2f}] - [{:.2f}, {:.2f}]\n",

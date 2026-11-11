@@ -375,7 +375,6 @@ namespace Utils
       Scalar           Df_lo,
       Scalar           a_hi,
       Scalar           f_hi,
-      Scalar           Df_hi,
       Scalar           f0,
       Scalar           c1_Df0,
       Scalar           c2_Df0,
@@ -409,7 +408,6 @@ namespace Utils
         {
           a_hi  = a_j;
           f_hi  = f_j;
-          Df_hi = Df_j;
         }
         else
         {
@@ -483,7 +481,7 @@ namespace Utils
         // Armijo condition failed or function not decreasing
         if ( phi > f0 + alpha * c1_Df0 || ( iter > 0 && phi >= phi_prev ) )
         {
-          Scalar new_alpha = zoom( alpha_prev, phi_prev, der_prev, alpha, phi, der, f0, c1_Df0, c2_Df0, eval );
+          Scalar new_alpha = zoom( alpha_prev, phi_prev, der_prev, alpha, phi, f0, c1_Df0, c2_Df0, eval );
           if ( new_alpha > 0 ) return std::tuple<Scalar, size_t>( new_alpha, n_evals );
           return std::nullopt;
         }
@@ -494,7 +492,7 @@ namespace Utils
         // Positive gradient - we've passed a minimum
         if ( der >= 0 )
         {
-          Scalar new_alpha = zoom( alpha_prev, phi_prev, der_prev, alpha, phi, der, f0, c1_Df0, c2_Df0, eval );
+          Scalar new_alpha = zoom( alpha_prev, phi_prev, der_prev, alpha, phi, f0, c1_Df0, c2_Df0, eval );
           if ( new_alpha > 0 ) return std::tuple<Scalar, size_t>( new_alpha, n_evals );
           return std::nullopt;
         }
@@ -510,7 +508,7 @@ namespace Utils
         // Prevent tiny increments
         if ( alpha_new - alpha < m_alpha_min )
         {
-          Scalar new_alpha = zoom( alpha_prev, phi_prev, der_prev, alpha, phi, der, f0, c1_Df0, c2_Df0, eval );
+          Scalar new_alpha = zoom( alpha_prev, phi_prev, der_prev, alpha, phi, f0, c1_Df0, c2_Df0, eval );
           if ( new_alpha > 0 ) return std::tuple<Scalar, size_t>( new_alpha, n_evals );
           return std::nullopt;
         }

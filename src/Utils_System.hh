@@ -46,9 +46,20 @@
 #endif
 
 #if defined( __linux__ )
+#include <arpa/inet.h>
+#include <dirent.h>
+#include <ifaddrs.h>
+#include <net/if.h>
+#include <netdb.h>
 #include <set>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <sys/sysinfo.h>
 #include <unistd.h>
+#include <cstdio>
+#include <cstring>
 #endif
 
 #if defined( _WIN32 ) || defined( _WIN64 )
@@ -1102,18 +1113,6 @@ namespace Utils
 // =========================================================================
 #elif defined( __linux__ )
 
-#include <arpa/inet.h>
-#include <dirent.h>
-#include <ifaddrs.h>
-#include <net/if.h>
-#include <netdb.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/statvfs.h>  // Added for statvfs
-#include <unistd.h>
-#include <cstdio>
-#include <cstring>
 
   /**
    * @brief Gets the value of an environment variable (Linux).

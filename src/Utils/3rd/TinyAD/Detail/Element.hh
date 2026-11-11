@@ -76,6 +76,8 @@ struct Element
      * This prevents accidentally missing an "&" in the per-element lambda signature.
      */
     Element(const Element&) = delete;
+    // Element slots are assigned after default construction by TinyAD.
+    Element& operator=(const Element&) = default;
 
     /**
      * Constructor for internal use only.
@@ -160,7 +162,7 @@ template <int variable_dimension, typename VariableHandleT>
 Eigen::Index global_idx(
         const VariableHandleT& _v,
         const Eigen::Index _i_offset,
-        const Eigen::Index _n_global)
+        [[maybe_unused]] const Eigen::Index _n_global)
 {
     const Eigen::Index idx_global = variable_dimension * idx_from_handle(_v) + _i_offset;
 

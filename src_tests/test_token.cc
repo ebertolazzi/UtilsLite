@@ -352,7 +352,7 @@ void test_13_performance_test()
   // Test with Tokenizer
   {
     Utils::Tokenizer tokenizer( long_string, delimiters );
-    int              count = 0;
+    [[maybe_unused]] int count = 0;
     while ( tokenizer.next_token() ) { ++count; }
     assert( count == NUM_TOKENS );
   }

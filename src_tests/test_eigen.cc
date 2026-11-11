@@ -32,9 +32,6 @@ using real_type = double;
 // Unicode symbols
 const std::string CHECK_MARK  = "✓";
 const std::string CROSS_MARK  = "✗";
-const std::string ARROW_RIGHT = "→";
-const std::string MICROSECOND = "μs";
-const std::string NANOSECOND  = "ns";
 
 static unsigned     seed1 = 2;
 static std::mt19937 generator( seed1 );

@@ -757,9 +757,9 @@ namespace Utils
     //! Hamilton product:
     //! \f[
     //! \begin{aligned}
-    //! Q_1 Q_2 = &(a_1 a_2 - b_1 b_2 - c_1 c_2 - d_1 d_2) \\
-    //!          &+ (a_1 b_2 + b_1 a_2 + c_1 d_2 - d_1 c_2)\mathbf{i} \\
-    //!          &+ (a_1 c_2 - b_1 d_2 + c_1 a_2 + d_1 b_2)\mathbf{j} \\
+    //! Q_1 Q_2 = &(a_1 a_2 - b_1 b_2 - c_1 c_2 - d_1 d_2) \\\relax
+    //!          &+ (a_1 b_2 + b_1 a_2 + c_1 d_2 - d_1 c_2)\mathbf{i} \\\relax
+    //!          &+ (a_1 c_2 - b_1 d_2 + c_1 a_2 + d_1 b_2)\mathbf{j} \\\relax
     //!          &+ (a_1 d_2 + b_1 c_2 - c_1 b_2 + d_1 a_2)\mathbf{k}
     //! \end{aligned}
     //! \f]

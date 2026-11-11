@@ -97,7 +97,6 @@ namespace Unicode
   const std::string ARROW_UP    = "↑";
   const std::string ARROW_DOWN  = "↓";
   const std::string ARROW_RIGHT = "→";
-  const std::string ARROW_LEFT  = "←";
 }  // namespace Unicode
 
 // ===========================================================================

@@ -34,10 +34,12 @@
 // dimensione trattabile; il costo e' nullo, sono chiamate una volta per
 // iterazione dell'algoritmo, non nei cicli interni.
 //
-// [[msvc::noinline]] esiste da VS2019 16.10; altrove la macro e' vuota.
+// Nelle lambda MSVC richiede __declspec subito dopo la lista dei parametri;
+// [[msvc::noinline]] in quella posizione si applica invece al tipo di funzione
+// e viene ignorato (C4649).
 //
 #if defined(_MSC_VER) && !defined(__clang__)
-  #define UTILS_BOBYQA_PHASE_NOINLINE [[msvc::noinline]]
+  #define UTILS_BOBYQA_PHASE_NOINLINE __declspec(noinline)
 #else
   #define UTILS_BOBYQA_PHASE_NOINLINE
 #endif
@@ -2585,7 +2587,7 @@ namespace Utils
     Scalar  blen = 0, ds = 0, resid = 0, shs = 0, stepsq = 0, stplen = 0;
     Scalar  dredsq = 0, dredg = 0, sredg = 0;
     Scalar  dhd = 0, dhs = 0;
-    Scalar  angbd = 0, tempa = 0, tempb = 0, ratio = 0;
+    Scalar  angbd = 0, tempa = 0, tempb = 0;
     integer xsav = 0;
     integer isav = 0, iu = 0;
     Scalar  redmax = 0, redsav = 0, rdprev = 0, rdnext = 0, rednew = 0;
@@ -2970,7 +2972,6 @@ namespace Utils
                   break;
                 }
 
-                ratio      = 1;
                 Scalar ssq = m_d( i ) * m_d( i ) + m_s( i ) * m_s( i );
 
                 // Controlla il limite inferiore

@@ -18,7 +18,7 @@ namespace TinyAD
 {
 
 inline int get_n_threads(
-        const EvalSettings& _settings)
+        [[maybe_unused]] const EvalSettings& _settings)
 {
     #ifdef _OPENMP
         if (_settings.n_threads >= 1)
@@ -36,14 +36,16 @@ inline int get_n_threads(
  */
 inline void parallel_for(
         const Eigen::Index n,
-        const EvalSettings& settings,
+        [[maybe_unused]] const EvalSettings& settings,
         std::function<void(Eigen::Index)> function_body)
 {
     std::mutex exception_mutex;
     std::optional<std::exception_ptr> exception_ptr;
     std::atomic<bool> cancel_requested(false);
 
+#ifdef _OPENMP
     #pragma omp parallel for schedule(static) num_threads(get_n_threads(settings))
+#endif
     for (Eigen::Index i = 0; i < n; ++i)
     {
         if (cancel_requested)

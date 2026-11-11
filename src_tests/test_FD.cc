@@ -146,7 +146,7 @@ void test_first_derivatives( Real x0, const std::vector<Real> & steps, GridType 
     for ( size_t i = 0; i < grid.size(); ++i ) { y[i] = test_function( grid[i] ); }
 
     Real exact = exact_first_derivative( x0 );
-    Real errors[4];
+    Real errors[4] = { NAN, NAN, NAN, NAN };
 
     // 2 points
     errors[0] = std::abs( first_derivative_2p( grid[0], y[0], grid[1], y[1] ) - exact );
@@ -249,7 +249,7 @@ void test_second_derivatives( Real x0, const std::vector<Real> & steps, GridType
     for ( size_t i = 0; i < grid.size(); ++i ) { y[i] = test_function( grid[i] ); }
 
     Real exact = exact_second_derivative( x0 );
-    Real errors[3];
+    Real errors[3] = { NAN, NAN, NAN };
 
     // 3 points
     if ( grid.size() >= 3 )

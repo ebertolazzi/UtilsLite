@@ -573,7 +573,7 @@ public:
       0,
       2,
       std::format( "bad scaling: exp({}*(x-1))-1", k ),
-      [scale, k]( real_type x ) { return std::exp( k * ( x - 1 ) ) - 1; } );
+      [k]( real_type x ) { return std::exp( k * ( x - 1 ) ) - 1; } );
     add_zero( 0, 2, std::format( "bad scaling: 1e{}*(x-1)", k ), [scale]( real_type x ) { return scale * ( x - 1 ); } );
   }
 

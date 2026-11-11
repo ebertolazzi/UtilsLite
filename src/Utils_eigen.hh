@@ -49,11 +49,23 @@
 
 #include <type_traits>
 
+#if defined(__linux__) && defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wduplicated-branches"
+#pragma GCC diagnostic ignored "-Winterference-size"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 #include "Utils/3rd/Eigen/Core"
 #include "Utils/3rd/Eigen/Dense"
 #include "Utils/3rd/Eigen/QR"
 #include "Utils/3rd/Eigen/Sparse"
 #include "Utils/3rd/Eigen/Eigenvalues"
+
+#if defined(__linux__) && defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 

@@ -22,6 +22,9 @@
 // -----------------------------------------------------------------------------
 
 #include "Utils_fmt.hh"
+#include <string>
+#include <string_view>
+
 #include "Utils_nonlinear_system_NewtonSubspace.hh"
 #include "Utils_nonlinear_system.hh"
 #include "Utils_TicToc.hh"
@@ -29,6 +32,14 @@
 
 using namespace Utils;
 using namespace std;
+
+static std::string repeat_utf8( std::string_view glyph, std::size_t count )
+{
+  std::string result;
+  result.reserve( glyph.size() * count );
+  for ( std::size_t i = 0; i < count; ++i ) result.append( glyph );
+  return result;
+}
 
 struct TestResult
 {
@@ -166,7 +177,7 @@ void print_summary_table( const vector<TestResult> & results )
     fmt::print( fg( fmt::color::cyan ), "┃\n" );
   }
 
-  fmt::print( fg( fmt::color::cyan ), "┗{}┛\n", std::format( "{:━^{}}", "", total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "┗{}┛\n", repeat_utf8( "━", static_cast<std::size_t>( total_width - 2 ) ) );
 }
 
 void print_statistics( const vector<TestResult> & results )
@@ -221,7 +232,7 @@ void print_statistics( const vector<TestResult> & results )
     "╭{:─^{}}╮\n",
     " STATISTICAL SUMMARY ",
     stat_total_width - 2 );
-  fmt::print( fg( fmt::color::cyan ), "├{}┤\n", std::format( "{:─^{}}", "", stat_total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "├{}┤\n", repeat_utf8( "─", static_cast<std::size_t>( stat_total_width - 2 ) ) );
   fmt::print( fg( fmt::color::cyan ), "│" );
   fmt::print( "{:^{}}", "", stat_total_width - 2 );
   fmt::print( fg( fmt::color::cyan ), "│\n" );
@@ -249,7 +260,7 @@ void print_statistics( const vector<TestResult> & results )
     stat_col_value );
   fmt::print( fg( fmt::color::cyan ), " │\n" );
 
-  fmt::print( fg( fmt::color::cyan ), "├{}┤\n", std::format( "{:─^{}}", "", stat_total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "├{}┤\n", repeat_utf8( "─", static_cast<std::size_t>( stat_total_width - 2 ) ) );
 
   if ( stats.converged_tests > 0 )
   {
@@ -292,7 +303,7 @@ void print_statistics( const vector<TestResult> & results )
   fmt::print( fg( fmt::color::cyan ), "│" );
   fmt::print( "{:^{}}", "", stat_total_width - 2 );
   fmt::print( fg( fmt::color::cyan ), "│\n" );
-  fmt::print( fg( fmt::color::cyan ), "╰{}╯\n", std::format( "{:─^{}}", "", stat_total_width - 2 ) );
+  fmt::print( fg( fmt::color::cyan ), "╰{}╯\n", repeat_utf8( "─", static_cast<std::size_t>( stat_total_width - 2 ) ) );
 }
 
 int main( int argc, char * argv[] )

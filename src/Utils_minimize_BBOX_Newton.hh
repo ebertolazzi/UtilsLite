@@ -797,7 +797,7 @@ namespace Utils::Minimize_BBOX_Newton_details
       ConstVectorRef<Real> x0,
       ConstVectorRef<Real> lower,
       ConstVectorRef<Real> upper,
-      Callback &&          callback )
+      [[maybe_unused]] Callback && callback )
     {
       constexpr Real eps     = std::numeric_limits<Real>::epsilon();
       auto const &   options = m_options;

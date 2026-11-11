@@ -159,7 +159,7 @@ namespace Utils
     //!
     //! \param c The polynomial to be copied.
     //!
-    Poly( Poly_t const & c ) : m_order( c.m_order ) { *this = c; }
+    Poly( Poly_t const & c ) : dvec_t( c ), m_order( c.m_order ) {}
 
     //!
     //! Constructs a polynomial by copying the given vector of

@@ -124,7 +124,7 @@ struct RecorderElement
     // Dummy implementations for other functions functions that might be called by the user.
     // See Element.hh for an exhaustive list.
     PassiveT variable(const VariableHandleT& _vh) { return variables(_vh)[0]; }
-    Eigen::Matrix<PassiveT, variable_dimension, 1> variables_passive(const VariableHandleT& _vh) { return Eigen::Matrix<PassiveT, variable_dimension, 1>::Zero(); }
+    Eigen::Matrix<PassiveT, variable_dimension, 1> variables_passive([[maybe_unused]] const VariableHandleT& _vh) { return Eigen::Matrix<PassiveT, variable_dimension, 1>::Zero(); }
     PassiveT variable_passive(const VariableHandleT& _vh) { return variables_passive(_vh)[0]; }
 };
 

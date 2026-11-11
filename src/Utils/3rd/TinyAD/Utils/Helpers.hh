@@ -36,7 +36,7 @@ Eigen::Index count(
         const RangeT& _range)
 {
     Eigen::Index n = 0;
-    for (const auto& r : _range)
+    for ([[maybe_unused]] const auto& r : _range)
         ++n;
 
     return n;

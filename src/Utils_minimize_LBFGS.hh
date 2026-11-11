@@ -242,7 +242,6 @@ namespace Utils
       Scalar base_step = std::min( m_options.very_small_step, Scalar( 1.0 ) / ( m_p.norm() + m_epsi ) );
 
       Scalar best_f     = f_current;
-      Scalar best_gnorm = gnorm_current;
       bool   improved   = false;
       Vector best_x_new = m_x_new;
       Vector best_g_new = m_g_new;
@@ -268,7 +267,6 @@ namespace Utils
           gnorm_test < gnorm_current * Scalar( 1.2 ) )  // Allow 20% gradient increase
         {
           best_f     = f_test;
-          best_gnorm = gnorm_test;
           best_x_new = m_x_new;
           best_g_new = m_g_new;
           improved   = true;

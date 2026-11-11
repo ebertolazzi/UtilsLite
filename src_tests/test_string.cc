@@ -364,7 +364,7 @@ void test_utf8_core_functions( TestRunner & runner )
       std::string invalid = "\xC3";  // Start byte without continuation
       int         pos     = 0;
 
-      int cp = Utils::utf8_next( invalid, pos );
+      [[maybe_unused]] int cp = Utils::utf8_next( invalid, pos );
       assert( cp == -1 );  // Should return -1 for error
       assert( pos == 1 );  // Should skip invalid byte
 
