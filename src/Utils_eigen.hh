@@ -49,8 +49,9 @@
 
 #include <type_traits>
 
-#if defined(__linux__) && defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Wduplicated-branches"
 #pragma GCC diagnostic ignored "-Winterference-size"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -63,7 +64,7 @@
 #include "Utils/3rd/Eigen/Sparse"
 #include "Utils/3rd/Eigen/Eigenvalues"
 
-#if defined(__linux__) && defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
 
