@@ -226,7 +226,12 @@ namespace Utils
   std::vector<NonlinearSystem *> nonlinear_system_tests;
   std::map<string, unsigned>     nonlinear_system_tests_map;
 
-  void init_nonlinear_system_tests()
+  // The list below holds several hundred statements. Kept in a single
+  // function it becomes one huge basic block with as many exception
+  // regions, and GCC 16.2 on MinGW runs cc1plus out of stack on it at -O2/-O3
+  // (the process dies with no diagnostic at all). Splitting the list into
+  // chunks keeps every function small enough to compile.
+  static void init_nonlinear_system_tests_01()
   {
     nonlinear_system_tests.push_back( new ArtificialTestOfNowakAndWeimann() );
     nonlinear_system_tests.push_back( new BadlyScaledAugmentedPowellFunction( 3 ) );
@@ -289,7 +294,10 @@ namespace Utils
     nonlinear_system_tests.push_back( new ChebyquadFunction( 7 ) );
     // nonlinear_system_tests.push_back( new ChebyquadFunction(8) );
     nonlinear_system_tests.push_back( new ChebyquadFunction( 9 ) );
+  }
 
+  static void init_nonlinear_system_tests_02()
+  {
     nonlinear_system_tests.push_back( new ChemicalEquilibriumApplication() );
     nonlinear_system_tests.push_back( new ChemicalEquilibriumPartialMethaneOxidation() );
     nonlinear_system_tests.push_back( new ChemicalReactorEquilibriumConversion() );
@@ -356,7 +364,10 @@ namespace Utils
 
     nonlinear_system_tests.push_back( new Easom() );
     nonlinear_system_tests.push_back( new EsterificReaction() );
+  }
 
+  static void init_nonlinear_system_tests_03()
+  {
     nonlinear_system_tests.push_back( new ExponentialFunction1( 2 ) );
     nonlinear_system_tests.push_back( new ExponentialFunction1( 10 ) );
     nonlinear_system_tests.push_back( new ExponentialFunction1( 50 ) );
@@ -423,7 +434,10 @@ namespace Utils
     nonlinear_system_tests.push_back( new GriewankFunction( 2 ) );
     nonlinear_system_tests.push_back( new GriewankFunction( 5 ) );
     nonlinear_system_tests.push_back( new GriewankFunction( 10 ) );
+  }
 
+  static void init_nonlinear_system_tests_04()
+  {
     nonlinear_system_tests.push_back( new Gulf() );
 
     nonlinear_system_tests.push_back( new Hammarling2x2matrixSquareRoot() );
@@ -487,7 +501,10 @@ namespace Utils
     nonlinear_system_tests.push_back( new MexicanHatFunction( 1e4 ) );
     nonlinear_system_tests.push_back( new MexicanHatFunction( 1e6 ) );
     nonlinear_system_tests.push_back( new MexicanHatFunction( 1e8 ) );
+  }
 
+  static void init_nonlinear_system_tests_05()
+  {
     nonlinear_system_tests.push_back( new MieleAndCantrellFunction() );
 
     nonlinear_system_tests.push_back( new ModelEquationsForTheCSTR() );
@@ -558,7 +575,10 @@ namespace Utils
     nonlinear_system_tests.push_back( new RooseKullaLombMeressoo207( 10 ) );
     nonlinear_system_tests.push_back( new RooseKullaLombMeressoo207( 20 ) );
     nonlinear_system_tests.push_back( new RooseKullaLombMeressoo207( 30 ) );
+  }
 
+  static void init_nonlinear_system_tests_06()
+  {
     nonlinear_system_tests.push_back( new RooseKullaLombMeressoo208( 2 ) );
     nonlinear_system_tests.push_back( new RooseKullaLombMeressoo208( 5 ) );
     nonlinear_system_tests.push_back( new RooseKullaLombMeressoo208( 10 ) );
@@ -621,7 +641,10 @@ namespace Utils
     nonlinear_system_tests.push_back( new SampleProblem18() );
     nonlinear_system_tests.push_back( new SampleProblem19() );
     nonlinear_system_tests.push_back( new ScalarProblem() );
+  }
 
+  static void init_nonlinear_system_tests_07()
+  {
     nonlinear_system_tests.push_back( new SchafferF6() );
     nonlinear_system_tests.push_back( new SchafferF7() );
 
@@ -692,7 +715,10 @@ namespace Utils
     nonlinear_system_tests.push_back( new StrictlyConvexFunction2( 50 ) );
     nonlinear_system_tests.push_back( new StrictlyConvexFunction2( 500 ) );
     // nonlinear_system_tests.push_back(new StrictlyConvexFunction2(5000));
+  }
 
+  static void init_nonlinear_system_tests_08()
+  {
     nonlinear_system_tests.push_back( new Toint225( 10 ) );
     nonlinear_system_tests.push_back( new Toint225( 100 ) );
     nonlinear_system_tests.push_back( new Toint225( 500 ) );
@@ -746,10 +772,32 @@ namespace Utils
     nonlinear_system_tests.push_back( new ZeroJacobianFunction( 10 ) );
     nonlinear_system_tests.push_back( new ZeroJacobianFunction( 50 ) );
     nonlinear_system_tests.push_back( new ZeroJacobianFunction( 101 ) );
+  }
 
-    for ( unsigned i = 0; i < unsigned( nonlinear_system_tests_map.size() ); ++i )
+  void init_nonlinear_system_tests()
+  {
+    init_nonlinear_system_tests_01();
+    init_nonlinear_system_tests_02();
+    init_nonlinear_system_tests_03();
+    init_nonlinear_system_tests_04();
+    init_nonlinear_system_tests_05();
+    init_nonlinear_system_tests_06();
+    init_nonlinear_system_tests_07();
+    init_nonlinear_system_tests_08();
+
+    // The map is keyed by title, so two tests sharing one title would silently
+    // hide each other: only the last of them would ever be reachable by name.
+    for ( unsigned i = 0; i < unsigned( nonlinear_system_tests.size() ); ++i )
     {
-      nonlinear_system_tests_map[nonlinear_system_tests[i]->title()] = i;
+      string const & name{ nonlinear_system_tests[i]->title() };
+      auto const [it, inserted] { nonlinear_system_tests_map.try_emplace( name, i ) };
+      UTILS_WARNING(
+        inserted,
+        "init_nonlinear_system_tests: duplicated title '{}' (tests {} and {}); "
+        "the second one is not reachable by name\n",
+        name, it->second, i
+      );
+      it->second = i;
     }
   }
 
