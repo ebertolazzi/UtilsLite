@@ -884,13 +884,65 @@ namespace Utils
    * @param[out] res Value of the environment variable.
    * @return true if variable exists, false otherwise.
    */
-  inline bool get_environment( std::string_view ename, std::string & res )
-  {
-    char  buffer[1024];
-    DWORD var_size = GetEnvironmentVariableA( ename.data(), buffer, 1024 );
-    if ( var_size == 0 ) return false;
-    res = std::string{ buffer, var_size };
-    return true;
+  //inline bool get_environment( std::string_view ename, std::string & res )
+  //{
+  //  char  buffer[1024];
+  //  DWORD var_size = GetEnvironmentVariableA( ename.data(), buffer, 1024 );
+  //  if ( var_size == 0 ) return false;
+  //  res = std::string{ buffer, var_size };
+  //  return true;
+  //}
+
+  inline bool
+  get_environment( std::string_view ename, std::string & res ) {
+
+    // Garantisce la terminazione con '\0'
+    std::string name( ename );
+
+    // Buffer locale: nessuna allocazione per valori brevi
+    char buffer[4096];
+
+    DWORD size = GetEnvironmentVariableA( name.c_str(), buffer, sizeof(buffer) );
+
+    if ( size == 0 ) {
+      DWORD err = GetLastError();
+      if ( err != ERROR_SUCCESS ) return false;
+      res.clear();
+      return true;
+    }
+
+    // Caso comune: valore contenuto nel buffer locale
+    if ( size < sizeof(buffer) ) {
+      res.assign( buffer, size );
+      return true;
+    }
+
+    // Caso raro: valore superiore alla capacità del buffer
+    std::string tmp;
+
+    for ( int attempt = 0; attempt < 3; ++attempt ) {
+      tmp.resize( size );
+      DWORD len = GetEnvironmentVariableA( name.c_str(), tmp.data(), size );
+
+      if ( len == 0 ) {
+        if ( GetLastError() != ERROR_SUCCESS )
+          return false;
+
+        res.clear();
+        return true;
+      }
+
+      if ( len < size ) {
+        tmp.resize( len );
+        res.swap( tmp );
+        return true;
+      }
+
+      // La variabile è cresciuta
+      size = len;
+    }
+
+    return false;
   }
 
   /**
